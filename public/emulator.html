@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="gu" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gyan Yatra — Android Mobile Emulator Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Noto+Sans+Gujarati:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-workspace: #0b0f19;
+      --bg-panel: #111827;
+      --bg-panel-border: rgba(255, 255, 255, 0.08);
+      --accent-red: #ff0000;
+      --accent-blue: #38bdf8;
+      --accent-green: #10b981;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --phone-bezel: #1a1e29;
+      --phone-rim: #2d3748;
+      --phone-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 40px rgba(56, 189, 248, 0.15);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      background: radial-gradient(circle at 50% 20%, #151d30 0%, #080c14 100%);
+      font-family: 'Outfit', 'Noto Sans Gujarati', system-ui, sans-serif;
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 20px 40px;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    /* Top Studio Header */
+    .studio-header {
+      width: 100%;
+      max-width: 1200px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding: 12px 20px;
+      background: rgba(17, 24, 39, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--bg-panel-border);
+      border-radius: 16px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .studio-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .studio-logo {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #ff0000, #990000);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 4px 14px rgba(255, 0, 0, 0.4);
+    }
+
+    .studio-title h1 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .studio-title p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+      animation: pulseGlow 2s infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
+    }
+
+    /* Top Quick Route Buttons */
+    .route-bar {
+      width: 100%;
+      max-width: 1200px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      margin-bottom: 20px;
+    }
+
+    .route-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--bg-panel-border);
+      color: var(--text-muted);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .route-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .route-btn.active {
+      background: rgba(255, 0, 0, 0.2);
+      border-color: rgba(255, 0, 0, 0.5);
+      color: #ff6b6b;
+    }
+
+    /* Workspace Layout: Toolbar + Phone */
+    .emulator-workspace {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 1200px;
+      gap: 16px;
+    }
+
+    /* Controls Bar */
+    .controls-panel {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 10px 18px;
+      background: rgba(17, 24, 39, 0.9);
+      border: 1px solid var(--bg-panel-border);
+      border-radius: 14px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-control {
+      padding: 7px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      color: #ffffff;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-control:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .btn-control.active {
+      background: #0284c7;
+      border-color: #38bdf8;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+    }
+
+    .divider {
+      width: 1px;
+      height: 22px;
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Zoom / Scale Container */
+    .phone-viewport-wrapper {
+      position: relative;
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      transform-origin: top center;
+      margin: 8px 0 20px;
+    }
+
+    /* Realistic Android Smartphone Hardware Frame */
+    .android-phone {
+      position: relative;
+      width: 390px;
+      height: 844px;
+      background: #0f131a;
+      border-radius: 50px;
+      box-shadow: var(--phone-shadow), inset 0 0 0 3px #374151, inset 0 0 0 5px #111827;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      transition: width 0.3s ease, height 0.3s ease, border-radius 0.3s ease;
+    }
+
+    /* Hardware Buttons (External Mockups) */
+    .android-phone::before {
+      /* Power button */
+      content: '';
+      position: absolute;
+      right: -5px;
+      top: 140px;
+      width: 4px;
+      height: 60px;
+      background: #4b5563;
+      border-radius: 0 4px 4px 0;
+    }
+
+    .android-phone::after {
+      /* Volume Rockers */
+      content: '';
+      position: absolute;
+      left: -5px;
+      top: 130px;
+      width: 4px;
+      height: 110px;
+      background: #4b5563;
+      border-radius: 4px 0 0 4px;
+    }
+
+    /* Screen Bezel & Display Area */
+    .phone-screen {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      border-radius: 38px;
+      background: #0a0d14;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.8);
+    }
+
+    /* Android Status Bar */
+    .android-status-bar {
+      height: 28px;
+      background: rgba(10, 13, 20, 0.98);
+      color: #f1f5f9;
+      font-size: 0.74rem;
+      font-weight: 700;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      position: relative;
+      z-index: 10;
+      flex-shrink: 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* Android Punch Hole Camera Notch */
+    .camera-notch {
+      position: absolute;
+      left: 50%;
+      top: 6px;
+      transform: translateX(-50%);
+      width: 14px;
+      height: 14px;
+      background: #000000;
+      border-radius: 50%;
+      box-shadow: inset 0 0 2px rgba(255, 255, 255, 0.3), 0 0 2px rgba(0, 0, 0, 0.8);
+      z-index: 15;
+    }
+
+    .camera-notch::after {
+      content: '';
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #1e3a8a;
+      opacity: 0.7;
+    }
+
+    .status-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .status-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.72rem;
+    }
+
+    /* Frame App Iframe Host */
+    .iframe-container {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      position: relative;
+      background: #0a0d14;
+    }
+
+    .app-iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+      background: #0a0d14;
+    }
+
+    /* Android 3-Button Navigation Bar */
+    .android-nav-bar {
+      height: 38px;
+      background: #0a0d14;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    .nav-btn {
+      background: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.7);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 16px;
+      border-radius: 8px;
+      transition: all 0.15s ease;
+    }
+
+    .nav-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      transform: scale(1.1);
+    }
+
+    .nav-btn:active {
+      transform: scale(0.92);
+    }
+
+    .nav-btn svg {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
+    }
+
+    /* Gesture Pill Option */
+    .gesture-pill-bar {
+      height: 16px;
+      background: #0a0d14;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    .gesture-pill {
+      width: 120px;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.4);
+      transition: background 0.2s;
+    }
+
+    .gesture-pill-bar:hover .gesture-pill {
+      background: rgba(255, 255, 255, 0.8);
+    }
+
+    /* Info Footer */
+    .emulator-footer {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .emulator-footer a {
+      color: var(--accent-blue);
+      text-decoration: none;
+    }
+
+    .emulator-footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* Error Overlay if App Dev Server is Down */
+    .error-banner {
+      display: none;
+      max-width: 500px;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    /* Landscape mode override */
+    .android-phone.landscape {
+      border-radius: 40px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Studio Header -->
+  <header class="studio-header">
+    <div class="studio-brand">
+      <div class="studio-logo">📱</div>
+      <div class="studio-title">
+        <h1>Gyan Yatra Android Emulator <span style="font-size: 0.75rem; color: #38bdf8; font-weight: 600;">v2.0 PRO</span></h1>
+        <p>વાસ્તવિક એન્ડ્રોઇડ ફોનમાં તમારો લાઇવ સ્ટુડિયો ટેસ્ટ કરો (Interactive Mobile Preview)</p>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+      <div class="status-badge" id="server-status">
+        <span class="status-dot"></span>
+        <span id="status-text">લાઇવ કનેક્શન સક્રિય (Live App Connected)</span>
+      </div>
+      <a href="/" target="_blank" class="btn-control" style="text-decoration: none;" title="ડેસ્કટોપ ટેબમાં સીધું ખોલો">
+        <span>↗️</span> બ્રાઉઝરમાં ખોલો
+      </a>
+    </div>
+  </header>
+
+  <!-- Route Switcher Bar (Direct Jump to Any Screen) -->
+  <nav class="route-bar" aria-label="Quick Screen Navigation">
+    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">સ્ક્રીન:</span>
+    <button class="route-btn active" data-hash="topics">💡 ૧. આઈડિયા & 48h ટ્રેન્ડ</button>
+    <button class="route-btn" data-hash="slideprompts">📑 ૨. સ્લાઇડ્સ (Tool 2)</button>
+    <button class="route-btn" data-hash="myvoice">🎙️ ૩. મારો અવાજ</button>
+    <button class="route-btn" data-hash="scriptwriter">📝 ૪. સ્ક્રિપ્ટ રાઇટર</button>
+    <button class="route-btn" data-hash="seo">🖼️ ૫. થંબનેલ</button>
+    <button class="route-btn" data-hash="seodescription">🚀 ૬. SEO & ChatGPT</button>
+    <button class="route-btn" data-hash="settings">⚙️ સેટિંગ્સ</button>
+  </nav>
+
+  <!-- Main Emulator Workspace -->
+  <main class="emulator-workspace">
+
+    <!-- Controls Panel -->
+    <div class="controls-panel">
+      <!-- Device Preset Buttons -->
+      <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">મોડેલ:</span>
+      <button class="btn-control active" id="btn-p-390" data-w="390" data-h="844" title="iPhone 14 / Pixel 7 (390 × 844)">
+        📱 390 × 844
+      </button>
+      <button class="btn-control" id="btn-p-412" data-w="412" data-h="915" title="Samsung Galaxy S23+ / Pixel 8 Pro (412 × 915)">
+        📱 412 × 915
+      </button>
+      <button class="btn-control" id="btn-p-360" data-w="360" data-h="800" title="Compact Android / Galaxy A (360 × 800)">
+        📱 360 × 800
+      </button>
+
+      <div class="divider"></div>
+
+      <!-- Orientation Toggle -->
+      <button class="btn-control" id="btn-rotate" title="આડો / ઊભો ફોન ફેરવો (Rotate Orientation)">
+        🔄 રોટેટ
+      </button>
+
+      <!-- Zoom / Fit to Screen -->
+      <button class="btn-control" id="btn-fit" title="સ્ક્રીન મુજબ ફીટ કરો (Fit to Screen)">
+        🔍 ફીટ સાઈઝ
+      </button>
+
+      <div class="divider"></div>
+
+      <!-- App Reload -->
+      <button class="btn-control" id="btn-refresh" title="એપ રિલોડ કરો">
+        ⚡ રિફ્રેશ
+      </button>
+
+      <!-- Nav Style Toggle -->
+      <button class="btn-control" id="btn-nav-toggle" title="નેવિગેશન બાર સ્ટાઇલ બદલો (3-Button vs Gesture)">
+        🔘 3-બટન બાર
+      </button>
+    </div>
+
+    <!-- Error Banner -->
+    <div class="error-banner" id="errorBanner">
+      ⚠️ એપ સર્વર કનેક્શન મળતું નથી. કૃપા કરીને ખાતરી કરો કે <code>npm run dev</code> ચાલુ છે.
+    </div>
+
+    <!-- Phone Viewport Wrapper with Scale Support -->
+    <div class="phone-viewport-wrapper" id="phoneWrapper">
+      <div class="android-phone" id="phoneDevice">
+        
+        <!-- Screen -->
+        <div class="phone-screen">
+          
+          <!-- Punch Hole Camera Lens -->
+          <div class="camera-notch"></div>
+
+          <!-- Realistic Android Status Bar -->
+          <div class="android-status-bar">
+            <div class="status-left">
+              <span id="clock-time">09:41</span>
+              <span style="font-size: 0.65rem; color: #38bdf8;">• GyanYatra</span>
+            </div>
+            <div class="status-right">
+              <span>📶 5G</span>
+              <span>Wi-Fi</span>
+              <span>🔋 98%</span>
+            </div>
+          </div>
+
+          <!-- Live App Iframe Container -->
+          <div class="iframe-container">
+            <iframe 
+              id="appFrame" 
+              class="app-iframe" 
+              src="/" 
+              title="Gyan Yatra Live Application"
+              allow="clipboard-read; clipboard-write; autoplay; microphone; camera; display-capture"
+            ></iframe>
+          </div>
+
+          <!-- Realistic Android 3-Button Navigation Bar -->
+          <nav class="android-nav-bar" id="threeBtnNav" aria-label="Android System Navigation">
+            <!-- Back Button -->
+            <button class="nav-btn" id="android-back-btn" title="પાછળ જાઓ (Android Back)">
+              <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+            </button>
+            <!-- Home Button -->
+            <button class="nav-btn" id="android-home-btn" title="મુખ્ય સ્ક્રીન (Android Home)">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/></svg>
+            </button>
+            <!-- Recents / Menu Button -->
+            <button class="nav-btn" id="android-recents-btn" title="મેનૂ / એપ ટાસ્ક (Overview / Menu)">
+              <svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>
+            </button>
+          </nav>
+
+          <!-- Alternative Gesture Pill Bar -->
+          <div class="gesture-pill-bar" id="gestureNav" title="સ્વાઇપ જેસ્ચર બાર (Gesture Pill)">
+            <div class="gesture-pill"></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Viewport Info Footer -->
+    <footer class="emulator-footer">
+      <span id="viewportInfo">Viewport: 390 × 844 px (DPR: 1.0)</span>
+      <span>•</span>
+      <span id="activeRouteInfo">Active Route: /#topics</span>
+      <span>•</span>
+      <span>Ultra-Smooth Mobile Touch Support ✓</span>
+    </footer>
+
+  </main>
+
+  <script>
+    // 1. Clock in Android Status Bar
+    function updateClock() {
+      const now = new Date();
+      const hrs = String(now.getHours()).padStart(2, '0');
+      const mins = String(now.getMinutes()).padStart(2, '0');
+      const el = document.getElementById('clock-time');
+      if (el) el.textContent = `${hrs}:${mins}`;
+    }
+    updateClock();
+    setInterval(updateClock, 10000);
+
+    // Elements
+    const phone = document.getElementById('phoneDevice');
+    const phoneWrapper = document.getElementById('phoneWrapper');
+    const iframe = document.getElementById('appFrame');
+    const errorBanner = document.getElementById('errorBanner');
+    const viewportInfo = document.getElementById('viewportInfo');
+    const activeRouteInfo = document.getElementById('activeRouteInfo');
+    const routeButtons = document.querySelectorAll('.route-btn');
+    const sizeButtons = document.querySelectorAll('.controls-panel button[data-w]');
+
+    let currentW = 390;
+    let currentH = 844;
+    let isLandscape = false;
+    let isFitScale = false;
+
+    // 2. Responsive Auto-Fit Scaling Helper
+    function applyFitScale() {
+      const availH = window.innerHeight - 240; // Room for studio header + controls + footer
+      const targetH = isLandscape ? currentW : currentH;
+      if (isFitScale || availH < targetH) {
+        const scale = Math.min(1, Math.max(0.65, (availH / (targetH + 40))));
+        phoneWrapper.style.transform = `scale(${scale.toFixed(2)})`;
+        phoneWrapper.style.marginBottom = `${Math.round((scale - 1) * targetH)}px`;
+      } else {
+        phoneWrapper.style.transform = 'scale(1)';
+        phoneWrapper.style.marginBottom = '20px';
+      }
+    }
+    window.addEventListener('resize', () => {
+      if (isFitScale) applyFitScale();
+    });
+
+    // 3. Size Presets
+    sizeButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        sizeButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        currentW = parseInt(btn.getAttribute('data-w'), 10);
+        currentH = parseInt(btn.getAttribute('data-h'), 10);
+        isLandscape = false;
+        phone.classList.remove('landscape');
+
+        phone.style.width = `${currentW}px`;
+        phone.style.height = `${currentH}px`;
+        viewportInfo.textContent = `Viewport: ${currentW} × ${currentH} px`;
+        applyFitScale();
+      });
+    });
+
+    // 4. Rotate Orientation
+    document.getElementById('btn-rotate').addEventListener('click', () => {
+      isLandscape = !isLandscape;
+      phone.classList.toggle('landscape', isLandscape);
+
+      const w = isLandscape ? currentH : currentW;
+      const h = isLandscape ? currentW : currentH;
+      phone.style.width = `${w}px`;
+      phone.style.height = `${h}px`;
+      viewportInfo.textContent = `Viewport: ${w} × ${h} px (${isLandscape ? 'Landscape' : 'Portrait'})`;
+      applyFitScale();
+    });
+
+    // 5. Fit Size Toggle
+    document.getElementById('btn-fit').addEventListener('click', (e) => {
+      isFitScale = !isFitScale;
+      e.currentTarget.classList.toggle('active', isFitScale);
+      applyFitScale();
+    });
+
+    // 6. Reload App
+    document.getElementById('btn-refresh').addEventListener('click', () => {
+      try {
+        iframe.contentWindow.location.reload();
+      } catch (e) {
+        iframe.src = iframe.src;
+      }
+    });
+
+    // 7. Navigation Style Toggle (3-Button vs Gesture Pill)
+    const threeBtnNav = document.getElementById('threeBtnNav');
+    const gestureNav = document.getElementById('gestureNav');
+    const navToggleBtn = document.getElementById('btn-nav-toggle');
+
+    navToggleBtn.addEventListener('click', () => {
+      if (threeBtnNav.style.display === 'none') {
+        threeBtnNav.style.display = 'flex';
+        gestureNav.style.display = 'none';
+        navToggleBtn.textContent = '🔘 3-બટન બાર';
+      } else {
+        threeBtnNav.style.display = 'none';
+        gestureNav.style.display = 'flex';
+        navToggleBtn.textContent = '➖ જેસ્ચર બાર';
+      }
+    });
+
+    // 8. Android Hardware Navigation Buttons
+    // Back: History Back or default to topics
+    document.getElementById('android-back-btn').addEventListener('click', () => {
+      try {
+        if (iframe.contentWindow.history.length > 1) {
+          iframe.contentWindow.history.back();
+        } else if (iframe.contentWindow.creatorApp) {
+          iframe.contentWindow.creatorApp.navigateTo('topics');
+        }
+      } catch (err) {
+        console.warn('Back nav fallback:', err);
+      }
+    });
+
+    // Home: Route to #topics
+    document.getElementById('android-home-btn').addEventListener('click', () => {
+      try {
+        if (iframe.contentWindow.creatorApp) {
+          iframe.contentWindow.creatorApp.navigateTo('topics');
+        } else {
+          iframe.contentWindow.location.hash = 'topics';
+        }
+      } catch (err) {
+        iframe.contentWindow.location.hash = 'topics';
+      }
+    });
+
+    // Recents: Toggle Sidebar Menu
+    document.getElementById('android-recents-btn').addEventListener('click', () => {
+      try {
+        const doc = iframe.contentDocument;
+        const sidebar = doc.getElementById('sidebar');
+        if (sidebar) sidebar.classList.toggle('open');
+      } catch (e) {
+        console.warn('Recents toggle error:', e);
+      }
+    });
+
+    // Gesture Pill click
+    gestureNav.addEventListener('click', () => {
+      try {
+        if (iframe.contentWindow.creatorApp) {
+          iframe.contentWindow.creatorApp.navigateTo('topics');
+        }
+      } catch (_) {}
+    });
+
+    // 9. Screen Quick Switcher Buttons
+    routeButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const hash = btn.getAttribute('data-hash');
+        routeButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        try {
+          if (iframe.contentWindow.creatorApp) {
+            iframe.contentWindow.creatorApp.navigateTo(hash);
+          } else {
+            iframe.contentWindow.location.hash = hash;
+          }
+        } catch (e) {
+          iframe.contentWindow.location.hash = hash;
+        }
+      });
+    });
+
+    // 10. Sync Route with Iframe URL changes
+    function syncRouteIndicator() {
+      try {
+        const win = iframe.contentWindow;
+        if (!win) return;
+        const currentHash = (win.location.hash || '#topics').replace('#', '');
+        activeRouteInfo.textContent = `Active Route: /#${currentHash}`;
+
+        routeButtons.forEach(b => {
+          b.classList.toggle('active', b.getAttribute('data-hash') === currentHash);
+        });
+      } catch (_) {}
+    }
+
+    iframe.addEventListener('load', () => {
+      errorBanner.style.display = 'none';
+      syncRouteIndicator();
+
+      try {
+        iframe.contentWindow.addEventListener('hashchange', syncRouteIndicator);
+      } catch (_) {}
+    });
+
+    iframe.addEventListener('error', () => {
+      errorBanner.style.display = 'block';
+    });
+
+    // Initial scale check on load
+    setTimeout(applyFitScale, 100);
+  </script>
+</body>
+</html>

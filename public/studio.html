@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="gu" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>YouTube Creator AI Studio | જ્ઞાન યાત્રા સ્ટુડિયો</title>
+  <meta name="description" content="All-in-One YouTube Creator AI Studio for Gujarati creators. 48-hour views & earnings analytics, trending topic finder, one-click SEO generator, AI thumbnail studio, sequential script writer, and built-in ChatGPT creator assistant.">
+  <meta name="theme-color" content="#0a0d14">
+
+  <!-- PWA Manifest & Mobile Optimization -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Gyan Yatra Studio">
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>">
+
+  <!-- Google Fonts: Outfit (UI) & Noto Sans Gujarati (Authentic Script) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Core Stylesheets -->
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/components.css">
+</head>
+<body>
+  <div id="app-layout">
+    <!-- Streamlined Creator Sidebar -->
+    <aside id="sidebar">
+      <div class="brand-header">
+        <div class="brand-icon" style="background: linear-gradient(135deg, #ff0000, #b91c1c);">
+          <span>🎯</span>
+        </div>
+        <div class="brand-title">
+          <span class="main-name">GYAN YATRA</span>
+          <span class="sub-name">મોબાઇલ ક્રિએટર સ્ટુડિયો</span>
+        </div>
+      </div>
+
+      <nav class="nav-menu">
+        <a class="nav-item active" data-view="topics" id="nav-topics">
+          <span class="nav-icon">💡</span>
+          <span>૧. આઈડિયા & 48h ટ્રેન્ડ</span>
+          <span class="badge-pill" style="background: var(--yt-red);">Hot</span>
+        </a>
+
+        <a class="nav-item" data-view="slideprompts" id="nav-slideprompts">
+          <span class="nav-icon">📑</span>
+          <span>૨. સ્લાઇડ્સ (Tool 2)</span>
+          <span class="badge-pill" style="background: #8b5cf6;">૧૬:૯ PPT</span>
+        </a>
+
+        <a class="nav-item" data-view="scriptwriter" id="nav-scriptwriter">
+          <span class="nav-icon">📝</span>
+          <span>૩. સ્ક્રિપ્ટ રાઇટર</span>
+          <span class="badge-pill" style="background: #10b981;">PDF Master</span>
+        </a>
+
+        <a class="nav-item" data-view="myvoice" id="nav-myvoice">
+          <span class="nav-icon">🎙️</span>
+          <span>૪. મારો અવાજ</span>
+          <span class="badge-pill" style="background: #ec4899;">Cloned</span>
+        </a>
+
+        <a class="nav-item" data-view="seo" id="nav-seo">
+          <span class="nav-icon">🖼️</span>
+          <span>૫. થંબનેલ</span>
+        </a>
+
+        <a class="nav-item" data-view="seodescription" id="nav-seodescription">
+          <span class="nav-icon">🚀</span>
+          <span>૬. SEO, ટાઈટલ & ડિસ્ક્રિપ્શન</span>
+          <span class="badge-pill" style="background: #10b981;">ChatGPT</span>
+        </a>
+
+
+      </nav>
+
+      <div class="sidebar-footer">
+        <div style="font-size: 0.75rem; color: var(--text-muted);">
+          <span>Gyan Yatra Mobile App</span><br>
+          <span class="font-en">v2.0 • Ultra-Smooth Studio</span>
+        </div>
+        <button id="btn-toggle-theme" class="btn btn-outline btn-sm" title="ડાર્ક / લાઇટ થીમ બદલો">
+          🌙
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Layout -->
+    <main id="main-content">
+      <!-- Sticky Top Bar -->
+      <header class="top-bar">
+        <div class="top-bar-left">
+          <button id="mobile-menu-toggle" class="btn btn-outline btn-sm" style="display: none; padding: 6px 10px;" aria-label="Toggle Menu">
+            ☰
+          </button>
+          <h1 class="page-title" id="top-page-title">💡 વિડીયો આઈડિયા & પ્રોમ્પ્ટ</h1>
+        </div>
+
+        <div class="top-bar-right">
+
+
+          <!-- Direct Android APK Download Button -->
+          <a href="/gyan_yatra_studio.apk" download="gyan_yatra_studio.apk" id="top-download-apk-btn" class="btn btn-outline btn-sm" style="font-weight: 700; padding: 6px 12px; font-size: 0.8rem; border-color: #38bdf8; color: #38bdf8; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 8px rgba(56,189,248,0.25);" title="મોબાઇલ માટે Android APK ફાઇલ ડાઉનલોડ કરો">
+            <span>📱</span> APK ડાઉનલોડ
+          </a>
+
+
+
+          <!-- Channel Profile Quick Chip -->
+          <div class="channel-chip" id="top-channel-chip" title="ચેનલ વિગત & સેટિંગ્સ">
+            <img id="top-channel-avatar" class="channel-avatar" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120" alt="Avatar">
+            <div class="channel-info">
+              <span class="channel-name" id="top-channel-name">જ્ઞાન યાત્રા</span>
+              <span class="channel-status-badge" id="top-channel-badge">
+                <span class="status-dot demo"></span> ડેમો મોડ
+              </span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Dynamic View Container -->
+      <div class="content-body" id="view-container">
+        <!-- Rendered by public/js/app.js -->
+      </div>
+    </main>
+  </div>
+
+  <!-- Mobile Bottom Navigation Bar (Ultra-Touch Friendly 6 Core Tabs) -->
+  <nav id="mobile-nav">
+    <a class="mobile-nav-item active" data-view="topics">
+      <span class="mobile-icon">💡</span>
+      <span>આઈડિયા</span>
+    </a>
+    <a class="mobile-nav-item" data-view="slideprompts">
+      <span class="mobile-icon">📑</span>
+      <span>સ્લાઇડ્સ</span>
+    </a>
+    <a class="mobile-nav-item" data-view="scriptwriter">
+      <span class="mobile-icon">📝</span>
+      <span>૩. સ્ક્રિપ્ટ</span>
+    </a>
+    <a class="mobile-nav-item" data-view="myvoice">
+      <span class="mobile-icon">🎙️</span>
+      <span>૪. અવાજ</span>
+    </a>
+    <a class="mobile-nav-item" data-view="seo">
+      <span class="mobile-icon">🖼️</span>
+      <span>૫. થંબનેલ</span>
+    </a>
+    <a class="mobile-nav-item" data-view="seodescription">
+      <span class="mobile-icon">🚀</span>
+      <span>૬. SEO</span>
+    </a>
+
+  </nav>
+
+  <!-- Global Toast Notification Container for Android/Desktop Copy Feedback -->
+  <div id="toast-container"></div>
+
+  <!-- Responsive Mobile Menu Toggle Display Helper -->
+  <style>
+    @media (max-width: 768px) {
+      #mobile-menu-toggle {
+        display: inline-flex !important;
+      }
+    }
+  </style>
+
+  <!-- Local Tesseract OCR Engine for YouTube Studio Screenshot Processing -->
+  <script src="/vendor/tesseract.min.js"></script>
+
+  <!-- Main ES Module Script with Cache Busting -->
+  <script type="module" src="/js/app.js?v=2.2"></script>
+</body>
+</html>

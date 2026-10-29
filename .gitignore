@@ -1,0 +1,12 @@
+node_modules/
+.env
+scratch/
+.DS_Store
+*.log
+*.apk
+public/**/*.apk
+public/*.apk
+data/database.json
+*.mp3
+public/audio/*.mp3
+test/*.mp3

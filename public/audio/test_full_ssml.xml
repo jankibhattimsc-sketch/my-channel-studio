@@ -1,0 +1,6 @@
+
+<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="gu-IN">
+  <voice name="gu-IN-DhwaniNeural">
+    <prosody pitch="+6Hz" rate="+2%">નમસ્તે મિત્રો!</prosody><break time="350ms"/> <prosody pitch="-4Hz" rate="-3%">આજના વિડીયોમાં આપણે વાત કરીશું ગુજરાત સરકારી કર્મચારીઓ અને આંગણવાડી બહેનોના પગાર વધારાના મોટા નિર્ણય વિશે.</prosody><break time="380ms"/> <prosody pitch="-4Hz" rate="-3%">શું ખરેખર નવો પરિપત્ર!</prosody><break time="380ms"/> <prosody pitch="+7Hz" rate="+1%">જાહેર થઈ ગયો છે?</prosody><break time="400ms"/> <prosody pitch="-4Hz" rate="-3%">નાણાં વિભાગ ગાંધીનગર દ્વારા સત્તાવાર ઠરાવ ક્રમાંક એક હજાર બેસો અઠ્ઠાવન જાહેર કરવામાં આવ્યો છે.</prosody><break time="380ms"/> <prosody pitch="-4Hz" rate="-3%">આ ઠરાવ મુજબ તમામ કર્મચારીઓના ખાતામાં સીધા પંદર હજાર થી પિસ્તાલીસ હજાર રૂપિયા જમા થશે.</prosody><break time="380ms"/> <prosody pitch="+3Hz" rate="-2%">ધ્યાન રાખજો, છેલ્લી તારીખ પહેલાં આ ફોર્મ ભરવું ફરજિયાત છે.</prosody><break time="450ms"/> <prosody pitch="+6Hz" rate="+2%">આ વિડીયો તમારા તમામ કર્મચારી મિત્રો સાથે શેર કરજો અને ચેનલને સબ્સ્ક્રાઇબ કરી લેજો.</prosody><break time="350ms"/> <prosody pitch="+2Hz" rate="+0%">જય હિન્દ, જય ભારત!</prosody><break time="500ms"/>
+  </voice>
+</speak>

@@ -1,0 +1,326 @@
+    <!-- ========================================================= -->
+    <!-- DEDICATED TOOL: 1-CLICK WHITE SLIDE MAKER (USER REQUEST)  -->
+    <!-- ========================================================= -->
+    <div class="card" style="margin-bottom: 24px; border: 2px solid #38bdf8; background: linear-gradient(135deg, rgba(56,189,248,0.08) 0%, rgba(139,92,246,0.06) 100%); padding: 18px 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.6rem; background: rgba(56,189,248,0.2); padding: 6px 10px; border-radius: 8px;">🎯</span>
+          <div>
+            <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">
+              ૧-ક્લિક વ્હાઇટ સ્લાઇડ્સ જનરેટર (White Slide Maker Tool)
+            </h3>
+            <p style="color: var(--text-muted); font-size: 0.8rem; margin: 2px 0 0 0;">
+              કોઈપણ વિષય લખો અને મેળવો: <strong>શુદ્ધ સફેદ બેકગ્રાઉન્ડ</strong> + <strong>પ્રખ્યાત હેડિંગ બોક્સ</strong> + <strong>સત્તાવાર બુલેટ પોઇન્ટ્સ</strong>.
+            </p>
+          </div>
+        </div>
+        <span class="badge badge-blue" style="font-size: 0.75rem; padding: 4px 8px;">✓ 100% White #FFFFFF Canvas</span>
+      </div>
+
+      <!-- Topic Input -->
+      <div style="margin-bottom: 12px;">
+        <label class="form-label" style="font-size: 0.82rem; font-weight: 700; color: #e2e8f0;">
+          સ્લાઇડ્સ માટે વિષય અથવા સરકારી યોજનાનું નામ દાખલ કરો:
+        </label>
+        <div style="display: flex; gap: 10px;">
+          <input type="text" id="maker-slide-topic" class="form-input font-gu" style="flex: 1; font-weight: 600; font-size: 0.95rem; background: rgba(15,23,42,0.6);" value="${project.topic || 'ગુજરાત કર્મચારી પગાર અને DA વધારો ૨૦૨૬'}" placeholder="દા.ત. ગુજરાત આંગણવાડી ભરતી અને પગાર વધારો ૨૦૨૬">
+        </div>
+      </div>
+
+      <!-- Quick Preset Chips -->
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;">
+        <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 700;">રેડીમેડ વિષયો:</span>
+        <button class="btn btn-outline btn-sm maker-preset-chip" data-topic="ગુજરાત આંગણવાડી ભરતી અને માનદવેતન ૨૦૨૬" style="font-size: 0.74rem; padding: 3px 8px; border-color: #ec4899; color: #f472b6;">
+          🌸 આંગણવાડી ભરતી & પગાર
+        </button>
+        <button class="btn btn-outline btn-sm maker-preset-chip" data-topic="ગુજરાત કર્મચારી ૫૩% મોંઘવારી ભથ્થું (DA) અને એરિયર્સ પરિપત્ર" style="font-size: 0.74rem; padding: 3px 8px; border-color: #38bdf8; color: #38bdf8;">
+          💼 કર્મચારી ૫૩% DA વધારો
+        </button>
+        <button class="btn btn-outline btn-sm maker-preset-chip" data-topic="મુખ્યમંત્રી કિસાન સહાય યોજના અને ખેડૂત સબસિડી" style="font-size: 0.74rem; padding: 3px 8px; border-color: #10b981; color: #34d399;">
+          🌾 કિસાન સહાય યોજના
+        </button>
+        <button class="btn btn-outline btn-sm maker-preset-chip" data-topic="TET / TAT શિક્ષક ભરતી ૨૦૨૬ નવી પરીક્ષા પદ્ધતિ & નિયમો" style="font-size: 0.74rem; padding: 3px 8px; border-color: #f59e0b; color: #fbbf24;">
+          📚 TET / TAT નવી પરીક્ષા
+        </button>
+        <button class="btn btn-outline btn-sm maker-preset-chip" data-topic="ગુજરાત પોલીસ કોન્સ્ટેબલ અને PSI ભરતી ૨૦૨૬" style="font-size: 0.74rem; padding: 3px 8px; border-color: #a855f7; color: #c084fc;">
+          👮 પોલીસ કોન્સ્ટેબલ ભરતી
+        </button>
+      </div>
+
+      <!-- Generator Options: Heading Box Style, Slide Count, Accent Color -->
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08);">
+        
+        <!-- Heading Box Style -->
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 700;">📦 હેડિંગ બોક્સ:</span>
+          <div class="btn-group" style="display: inline-flex; border-radius: 6px; overflow: hidden; border: 1px solid var(--border-color);">
+            <button type="button" class="btn btn-sm maker-style-btn active" data-style="solid" style="font-size: 0.75rem; padding: 4px 10px; background: #DC2626; color: #fff; font-weight: 700;">
+              🟥 સોલિડ બોક્સ
+            </button>
+            <button type="button" class="btn btn-sm maker-style-btn" data-style="outline" style="font-size: 0.75rem; padding: 4px 10px; background: rgba(255,255,255,0.05); color: #cbd5e1;">
+              ⬜ આઉટલાઇન ફ્રેમ
+            </button>
+            <button type="button" class="btn btn-sm maker-style-btn" data-style="banner" style="font-size: 0.75rem; padding: 4px 10px; background: rgba(255,255,255,0.05); color: #cbd5e1;">
+              🟨 બેનર બોક્સ
+            </button>
+          </div>
+        </div>
+
+        <!-- Slide Count -->
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 700;">🔢 સ્લાઇડ્સ સંખ્યા:</span>
+          <select id="maker-slide-count" class="form-input" style="padding: 4px 8px; font-size: 0.8rem; width: auto; background: rgba(15,23,42,0.7); color: #fff;">
+            <option value="3">૩ સ્લાઇડ્સ (Short)</option>
+            <option value="5" selected>૫ સ્લાઇડ્સ (Standard - રિકમેન્ડેડ)</option>
+            <option value="6">૬ સ્લાઇડ્સ (Detailed)</option>
+            <option value="8">૮ સ્લાઇડ્સ (Full Deck)</option>
+          </select>
+        </div>
+
+        <!-- Accent Color -->
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 700;">🎨 બોક્સ કલર:</span>
+          <div style="display: flex; gap: 6px;">
+            <button class="maker-color-dot active" data-color="#DC2626" style="width: 24px; height: 24px; border-radius: 50%; background: #DC2626; border: 2px solid #fff; cursor: pointer;" title="લાલ"></button>
+            <button class="maker-color-dot" data-color="#2563EB" style="width: 24px; height: 24px; border-radius: 50%; background: #2563EB; border: 2px solid transparent; cursor: pointer;" title="રોયલ બ્લુ"></button>
+            <button class="maker-color-dot" data-color="#0F172A" style="width: 24px; height: 24px; border-radius: 50%; background: #0F172A; border: 2px solid transparent; cursor: pointer;" title="ડાર્ક નેવી"></button>
+            <button class="maker-color-dot" data-color="#10B981" style="width: 24px; height: 24px; border-radius: 50%; background: #10B981; border: 2px solid transparent; cursor: pointer;" title="ગ્રીન"></button>
+          </div>
+        </div>
+
+        <!-- Primary Generate Action -->
+        <button id="btn-generate-white-slides" class="btn btn-primary" style="background: linear-gradient(135deg, #38bdf8, #2563eb); font-weight: 800; padding: 6px 16px; font-size: 0.88rem; box-shadow: 0 4px 12px rgba(56,189,248,0.3);">
+          ✨ ૧-ક્લિકમાં વ્હાઇટ સ્લાઇડ્સ બનાવો
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- 2 DEDICATED NOTEBOOKLM TOOLS (USER REQUEST)               -->
+    <!-- ========================================================= -->
+    <div class="card" style="margin-bottom: 24px; border: 2px solid #8b5cf6; background: rgba(139,92,246,0.03); padding: 18px 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.6rem; background: rgba(139,92,246,0.2); padding: 6px 10px; border-radius: 8px;">📑</span>
+          <div>
+            <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px;">
+              NotebookLM ૨ સ્પેશિયલ ટૂલ્સ (કન્ટેન્ટ મેકર & ૧૬:૯ વ્હાઇટ PPT)
+              <span class="badge badge-amber" style="font-size: 0.72rem;">૨ ટૂલ્સ સક્રિય</span>
+            </h3>
+            <p style="color: var(--text-muted); font-size: 0.8rem; margin: 2px 0 0 0;">
+              આ વિષય માટે Google NotebookLM ના બંને સત્તાવાર પ્રોમ્પ્ટ્સ (સોર્સ કન્ટેન્ટ & શ્રેષ્ઠ અસલી ફોટા PPT):
+            </p>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button id="btn-editor-goto-slideprompts" class="btn btn-outline btn-sm" style="border-color: #38bdf8; color: #7dd3fc; font-weight: 700;">
+            <span>📑</span> ડિટેઇલ્ડ NotebookLM સ્ટુડિયો ↗
+          </button>
+          <a href="https://notebooklm.google.com" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm" style="border-color: #8b5cf6; color: #c4b5fd; font-weight: 700;">
+            <span>🚀</span> Open Google NotebookLM ↗
+          </a>
+          <button id="btn-editor-goto-chatgpt" class="btn btn-primary btn-sm" style="background: linear-gradient(135deg, #10b981, #059669); border-color: #059669; font-weight: 700;">
+            <span>💬</span> Built-in ChatGPT
+          </button>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+        <!-- Tool 1 Card -->
+        <div style="background: rgba(15,23,42,0.65); border: 1.5px solid #38bdf8; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 1.2rem;">📄</span>
+                <strong style="color: #ffffff; font-size: 0.95rem;">ટૂલ ૧: NotebookLM કન્ટેન્ટ & સોર્સ પ્રોમ્પ્ટ</strong>
+              </div>
+              <button id="editor-btn-copy-content-prompt" class="btn btn-primary btn-sm" style="background: #0284c7; border-color: #38bdf8; font-size: 0.76rem; font-weight: 700; padding: 5px 12px; display: inline-flex; align-items: center; gap: 6px;">
+                <span>📋</span> કોપી ટૂલ ૧
+              </button>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.76rem; margin-bottom: 8px; line-height: 1.4;">
+              NotebookLM ના Sources માં ઉમેરવા માટે સત્તાવાર GR નંબર, પાત્રતા ટેબલ & ઓડિયો પોડકાસ્ટ માટે ૧૦૦% સાચો કન્ટેન્ટ સોર્સ.
+            </p>
+          </div>
+          <div style="position: relative;">
+            <div style="position: absolute; right: 10px; top: 8px; z-index: 2;">
+              <button id="editor-quick-copy-content" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 0.7rem; background: rgba(56,189,248,0.25); border-color: #38bdf8; color: #7dd3fc;">
+                📋 1-Click Copy
+              </button>
+            </div>
+            <textarea id="editor-content-prompt-ta" class="form-textarea font-gu" style="height: 180px; font-size: 0.82rem; line-height: 1.5; background: #07090e; border-color: rgba(56,189,248,0.25); color: #f1f5f9; padding: 10px; border-radius: 6px; width: 100%; resize: vertical; cursor: pointer;" title="ટેપ કરીને સિલેક્ટ કરો" readonly>${initialContentPrompt}</textarea>
+          </div>
+        </div>
+
+        <!-- Tool 2 Card -->
+        <div style="background: rgba(15,23,42,0.65); border: 1.5px solid #8b5cf6; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 1.2rem;">🖥️</span>
+                <strong style="color: #ffffff; font-size: 0.95rem;">ટૂલ ૨: ૧૬:૯ વ્હાઇટ PPT & શ્રેષ્ઠ અસલી ફોટા</strong>
+              </div>
+              <button id="editor-btn-copy-ppt-prompt" class="btn btn-secondary btn-sm" style="background: #8b5cf6; color: white; font-size: 0.76rem; font-weight: 700; padding: 5px 12px; display: inline-flex; align-items: center; gap: 6px;">
+                <span>📋</span> કોપી ટૂલ ૨
+              </button>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.76rem; margin-bottom: 8px; line-height: 1.4;">
+              NotebookLM ના Slide Deck માટે ૧૦૦% શુદ્ધ સફેદ બેકગ્રાઉન્ડ (#FFFFFF), બોલ્ડ હેડિંગ બોક્સ, બુલેટ પોઇન્ટ્સ અને શ્રેષ્ઠ અસલી ફોટા.
+            </p>
+          </div>
+          <div style="position: relative;">
+            <div style="position: absolute; right: 10px; top: 8px; z-index: 2;">
+              <button id="editor-quick-copy-ppt" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 0.7rem; background: rgba(139,92,246,0.25); border-color: #8b5cf6; color: #c4b5fd;">
+                📋 1-Click Copy
+              </button>
+            </div>
+            <textarea id="editor-ppt-prompt-ta" class="form-textarea font-gu" style="height: 180px; font-size: 0.82rem; line-height: 1.5; background: #07090e; border-color: rgba(139,92,246,0.25); color: #f1f5f9; padding: 10px; border-radius: 6px; width: 100%; resize: vertical; cursor: pointer;" title="ટેપ કરીને સિલેક્ટ કરો" readonly>${initialPptPrompt}</textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Master Audio Bar -->
+    <div class="card" style="margin-bottom: 20px; padding: 14px 18px; border-left: 4px solid #38bdf8; background: rgba(56,189,248,0.04);">
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.2rem;">🎙️</span>
+          <span style="font-weight: 700; font-size: 0.92rem; color: #fff;">
+            ઓડિયો ટ્રેક (${project.voiceAudio?.provider || 'ElevenLabs Cloned Voice'}):
+          </span>
+        </div>
+        <button id="btn-change-audio" class="btn btn-outline btn-sm" style="font-size: 0.76rem; padding: 3px 8px;">
+          નવો ઓડિયો બનાવો (My Voice) ↗
+        </button>
+      </div>
+
+      <audio id="slide-master-audio" controls style="width: 100%; height: 38px; outline: none;" src="${loadedAudioUrl}"></audio>
+    </div>
+
+    <!-- Main Visual Editor Layout: 16:9 Canvas on Left, Slide Controls on Right -->
+    <div style="display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 20px; margin-bottom: 30px;" id="slide-editor-grid">
+      
+      <!-- Left: 16:9 Slide Canvas Live Preview -->
+      <div>
+        <div class="card" style="padding: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <div style="font-weight: 800; font-size: 0.95rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+              <span>🖥️</span> 16:9 લાઈવ વિડીયો પ્રિવ્યૂ (YouTube Standard)
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button id="btn-canvas-export-video" class="btn btn-primary btn-sm" style="background: linear-gradient(135deg, #10b981, #059669); font-weight: 800; padding: 4px 10px; font-size: 0.76rem;">
+                🎬 વિડીયો રેકોર્ડ
+              </button>
+              <button id="btn-prev-slide" class="btn btn-secondary btn-sm" style="padding: 4px 10px;">◀ પાછળ</button>
+              <span id="slide-counter-badge" class="badge badge-blue" style="font-weight: 800;">૧ / ${slides.length}</span>
+              <button id="btn-next-slide" class="btn btn-secondary btn-sm" style="padding: 4px 10px;">આગળ ▶</button>
+            </div>
+          </div>
+
+          <!-- The Canvas Aspect Ratio Wrapper -->
+          <div style="position: relative; width: 100%; padding-top: 56.25%; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.6); border: 2px solid #e2e8f0;">
+            <canvas id="slide-render-canvas" width="1280" height="720" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></canvas>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-size: 0.8rem; color: var(--text-muted); flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #10b981;"></span>
+              <span>૧૦૦% શુદ્ધ સફેદ બેકગ્રાઉન્ડ (#FFFFFF) • સ્પષ્ટ હેડિંગ બોક્સ</span>
+            </div>
+            <button id="btn-play-current-slide-audio" class="btn btn-outline btn-sm" style="border-color: #10b981; color: #34d399; font-size: 0.78rem;">
+              ▶️ આ સ્લાઇડનો ઓડિયો સાંભળો
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Active Slide Editor Controls -->
+      <div>
+        <div class="card" style="padding: 18px;" id="active-slide-edit-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+            <div style="font-weight: 800; font-size: 1rem; color: #fff;" id="edit-slide-heading">
+              ✏️ સ્લાઇડ #૧ એડિટ કરો
+            </div>
+            <button id="btn-add-new-slide" class="btn btn-primary btn-sm" style="font-size: 0.78rem; background: linear-gradient(135deg, #38bdf8, #2563eb);">
+              ➕ નવી સ્લાઇડ ઉમેરો
+            </button>
+          </div>
+
+          <!-- Slide Title (Heading Box Content) -->
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label class="form-label" style="font-size: 0.82rem; font-weight: 700; color: #e2e8f0;">
+              મુખ્ય શીર્ષક (Heading Box માં દર્શાવવા માટે):
+            </label>
+            <input type="text" id="slide-edit-title" class="form-input font-gu" style="font-weight: 700; color: #ffffff;" value="${slides[0].title}">
+          </div>
+
+          <!-- Heading Box Style for this slide -->
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label class="form-label" style="font-size: 0.82rem;">આ સ્લાઇડનો હેડિંગ બોક્સ પ્રકાર:</label>
+            <select id="slide-edit-box-style" class="form-input font-gu" style="font-size: 0.82rem;">
+              <option value="solid" ${slides[0].headingBoxStyle === 'solid' ? 'selected' : ''}>🟥 સોલિડ હેડિંગ બોક્સ (Solid Filled)</option>
+              <option value="outline" ${slides[0].headingBoxStyle === 'outline' ? 'selected' : ''}>⬜ આઉટલાઇન ફ્રેમ બોક્સ (Bordered Box)</option>
+              <option value="banner" ${slides[0].headingBoxStyle === 'banner' ? 'selected' : ''}>🟨 બેનર હેડિંગ બોક્સ (Top Wide Banner)</option>
+            </select>
+          </div>
+
+          <!-- Subtitle / Tagline -->
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label class="form-label" style="font-size: 0.82rem;">ગૌણ ટેક્સ્ટ (Subtitle / Tagline):</label>
+            <input type="text" id="slide-edit-subtitle" class="form-input font-gu" value="${slides[0].subtitle || ''}">
+          </div>
+
+          <!-- Audio Timestamp Sync -->
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label class="form-label" style="font-size: 0.82rem;">ઓડિયો સમયગાળો (Audio Timing Sync):</label>
+            <input type="text" id="slide-edit-audiotime" class="form-input font-en" value="${slides[0].audioTime || '0:00 - 0:45'}" placeholder="e.g. 0:00 - 0:45">
+          </div>
+
+          <!-- Bullet Points -->
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label class="form-label" style="font-size: 0.82rem; font-weight: 700; color: #e2e8f0;">
+              મુખ્ય મુદ્દાઓ (Bullet Points - લીટી દીઠ ૧ મુદ્દો):
+            </label>
+            <textarea id="slide-edit-bullets" class="form-textarea font-gu" style="height: 110px; font-size: 0.88rem; line-height: 1.5;">${(slides[0].bulletPoints || []).join('\n')}</textarea>
+          </div>
+
+          <!-- Accent Color for Active Slide -->
+          <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 14px;">
+            <span style="font-size: 0.8rem; color: var(--text-muted);">કલર થીમ:</span>
+            <button class="btn btn-outline btn-sm slide-color-btn ${slides[0].accentColor === '#DC2626' ? 'active' : ''}" data-accent="#DC2626" style="border-color: #DC2626; color: #DC2626; font-size: 0.75rem;">
+              🔴 લાલ
+            </button>
+            <button class="btn btn-outline btn-sm slide-color-btn ${slides[0].accentColor === '#2563EB' ? 'active' : ''}" data-accent="#2563EB" style="border-color: #2563EB; color: #2563EB; font-size: 0.75rem;">
+              🔵 રોયલ બ્લુ
+            </button>
+            <button class="btn btn-outline btn-sm slide-color-btn ${slides[0].accentColor === '#0F172A' ? 'active' : ''}" data-accent="#0F172A" style="border-color: #94A3B8; color: #E2E8F0; font-size: 0.75rem;">
+              ⚫ નેવી
+            </button>
+            <button class="btn btn-outline btn-sm slide-color-btn ${slides[0].accentColor === '#10B981' ? 'active' : ''}" data-accent="#10B981" style="border-color: #10B981; color: #10B981; font-size: 0.75rem;">
+              🟢 ગ્રીન
+            </button>
+          </div>
+
+          <!-- Delete / Autosave status -->
+          <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid var(--border-color);">
+            <button id="btn-delete-slide" class="btn btn-danger btn-sm" style="font-size: 0.75rem;">
+              🗑️ આ સ્લાઇડ ડિલીટ
+            </button>
+            <span style="font-size: 0.75rem; color: #10b981;">✓ લાઈવ કેનવાસ પર આપોઆપ સેવ થાય છે</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide Timeline Strip -->
+    <div class="card" style="margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+        <div style="font-weight: 800; font-size: 0.95rem; color: #fff;">
+          📑 સ્લાઇડ લિસ્ટ (Slide Timeline Strip)
+        </div>
+        <span style="font-size: 0.78rem; color: var(--text-muted);">ક્લિક કરીને કોઈપણ સ્લાઇડ પર જાઓ</span>
+      </div>
+      <div style="display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px;" id="slides-timeline-strip">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>

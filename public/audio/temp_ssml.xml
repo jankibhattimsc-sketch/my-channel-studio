@@ -1,0 +1,10 @@
+
+<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="gu-IN">
+  <voice name="gu-IN-DhwaniNeural">
+    <prosody pitch="+5Hz" rate="+2%">નમસ્તે મિત્રો!</prosody>
+    <break time="300ms"/>
+    <prosody pitch="-3Hz" rate="-2%">ગાંધીનગર સચિવાલય દ્વારા સત્તાવાર પરિપત્ર જાહેર કરવામાં આવ્યો છે.</prosody>
+    <break time="400ms"/>
+    <prosody pitch="+2Hz" rate="+0%">આ વિડીયો તમારા તમામ મિત્રો સાથે શેર કરજો.</prosody>
+  </voice>
+</speak>

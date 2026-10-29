@@ -1,0 +1,23 @@
+{
+  "settings": {
+    "googleClientId": "",
+    "googleClientSecret": "",
+    "googleRedirectUri": "http://localhost:5000/api/auth/google/callback",
+    "googleApiKey": "",
+    "openaiApiKey": "",
+    "openaiModel": "gpt-4o",
+    "creatorEmail": "",
+    "demoMode": true,
+    "theme": "dark"
+  },
+  "auth": {
+    "isConnected": false,
+    "tokens": null,
+    "activeChannelId": null,
+    "channels": []
+  },
+  "conversations": [],
+  "messages": [],
+  "projects": [],
+  "generatedAudio": []
+}
