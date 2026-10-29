@@ -634,6 +634,33 @@ export async function renderScriptWriter(container, navigateTo) {
     navigateTo('myvoice');
   });
 
+  // Restore saved script text from project
+  const savedScript = currentProject?.script?.fullText || currentProject?.script?.teleprompterText;
+  if (savedScript && narrationScriptTextarea) {
+    narrationScriptTextarea.value = savedScript;
+  }
+
+  // Restore saved PDF state if present
+  if (currentProject?.script?.pdfName && pdfUploadedFilename) {
+    pdfUploadedFilename.textContent = currentProject.script.pdfName;
+    if (pdfEmptyState) pdfEmptyState.style.display = 'none';
+    if (pdfSuccessState) pdfSuccessState.style.display = 'block';
+  }
+
+  // Pre-load previously saved audio
+  (async () => {
+    try {
+      const savedAudio = await projectState.getAudioRecording(currentProject?.id);
+      const audioUrl = savedAudio?.url || currentProject?.voice?.audioUrl;
+      if (audioUrl) {
+        currentAudioUrl = audioUrl;
+        if (audioPlayerCard) audioPlayerCard.style.display = 'block';
+        if (audioPlayer) audioPlayer.src = audioUrl;
+        if (btnDownloadAudio) btnDownloadAudio.href = audioUrl;
+      }
+    } catch (_) {}
+  })();
+
   // Initialize Side-by-Side Teleprompter & Live Voice Recording Studio
   const tpMount = container.querySelector('#scriptwriter-teleprompter-mount');
   let scriptTpStudio = null;
@@ -652,6 +679,11 @@ export async function renderScriptWriter(container, navigateTo) {
     });
 
     narrationScriptTextarea?.addEventListener('input', () => {
+      projectState.updateTool('script', {
+        fullText: narrationScriptTextarea.value,
+        teleprompterText: narrationScriptTextarea.value,
+        isCompleted: narrationScriptTextarea.value.trim().length > 20
+      });
       if (scriptTpStudio) {
         scriptTpStudio.setScriptText(narrationScriptTextarea.value);
       }

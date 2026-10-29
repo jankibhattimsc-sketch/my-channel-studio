@@ -19,6 +19,8 @@ export function mountTeleprompterStudio(targetContainer, options = {}) {
   let initialScriptText = '';
   if (options.initialText) {
     initialScriptText = options.initialText;
+  } else if (activeProj && activeProj.script && (activeProj.script.fullText || activeProj.script.teleprompterText)) {
+    initialScriptText = activeProj.script.fullText || activeProj.script.teleprompterText;
   } else if (activeProj && activeProj.script && activeProj.script.sections && activeProj.script.sections.length > 0) {
     initialScriptText = activeProj.script.sections.map(s => `${s.sectionName || ''}:\n${s.content || ''}`).join('\n\n');
   } else if (activeProj && activeProj.topic) {
@@ -396,22 +398,45 @@ export function mountTeleprompterStudio(targetContainer, options = {}) {
     }
   });
 
+  // Direct user typing/editing inside teleprompter auto-saves
+  readerContent.addEventListener('input', () => {
+    currentScriptText = readerContent.innerText;
+    updateWordCount();
+    projectState.updateTool('script', {
+      fullText: currentScriptText,
+      teleprompterText: currentScriptText,
+      isCompleted: currentScriptText.trim().length > 20
+    });
+  });
+
   // Paste from clipboard
   btnPasteClipboard?.addEventListener('click', async () => {
     try {
       const text = await navigator.clipboard.readText();
       if (text && text.trim()) {
         readerContent.innerText = text.trim();
+        currentScriptText = text.trim();
         updateWordCount();
         screenBox.scrollTop = 0;
+        projectState.updateTool('script', {
+          fullText: currentScriptText,
+          teleprompterText: currentScriptText,
+          isCompleted: true
+        });
       }
     } catch (e) {
       // Fallback
       const userText = prompt('અહીં તમારી સ્ક્રિપ્ટ અથવા લખાણ પેસ્ટ કરો:');
       if (userText && userText.trim()) {
         readerContent.innerText = userText.trim();
+        currentScriptText = userText.trim();
         updateWordCount();
         screenBox.scrollTop = 0;
+        projectState.updateTool('script', {
+          fullText: currentScriptText,
+          teleprompterText: currentScriptText,
+          isCompleted: true
+        });
       }
     }
   });
@@ -419,13 +444,21 @@ export function mountTeleprompterStudio(targetContainer, options = {}) {
   // Load active project script
   btnLoadProjectScript?.addEventListener('click', () => {
     const cur = projectState.getActiveProject();
-    if (cur && cur.script && cur.script.sections && cur.script.sections.length > 0) {
+    if (cur && cur.script && (cur.script.fullText || cur.script.teleprompterText)) {
+      currentScriptText = cur.script.fullText || cur.script.teleprompterText;
+      readerContent.innerText = currentScriptText;
+      updateWordCount();
+      screenBox.scrollTop = 0;
+    } else if (cur && cur.script && cur.script.sections && cur.script.sections.length > 0) {
       const full = cur.script.sections.map(s => `${s.sectionName || ''}:\n${s.content || ''}`).join('\n\n');
+      currentScriptText = full;
       readerContent.innerText = full;
       updateWordCount();
       screenBox.scrollTop = 0;
+      projectState.updateTool('script', { fullText: full, teleprompterText: full, isCompleted: true });
     } else if (cur && cur.topic) {
-      readerContent.innerText = `વિષય: ${cur.topic}\n\nનમસ્તે મિત્રો! આજના વિડીયોમાં આપણે વાત કરીશું "${cur.topic}" વિશે.\n\nસત્તાવાર પરિપત્ર અને નિયમો જાહેર થઈ ગયા છે. સંપૂર્ણ વિગત આ વિડીયોમાં જોઈશું.`;
+      currentScriptText = `વિષય: ${cur.topic}\n\nનમસ્તે મિત્રો! આજના વિડીયોમાં આપણે વાત કરીશું "${cur.topic}" વિશે.\n\nસત્તાવાર પરિપત્ર અને નિયમો જાહેર થઈ ગયા છે. સંપૂર્ણ વિગત આ વિડીયોમાં જોઈશું.`;
+      readerContent.innerText = currentScriptText;
       updateWordCount();
       screenBox.scrollTop = 0;
     }
@@ -440,8 +473,15 @@ export function mountTeleprompterStudio(targetContainer, options = {}) {
       const reader = new FileReader();
       reader.onload = (evt) => {
         readerContent.innerText = evt.target.result;
+        currentScriptText = evt.target.result;
         updateWordCount();
         screenBox.scrollTop = 0;
+        projectState.updateTool('script', {
+          fullText: currentScriptText,
+          teleprompterText: currentScriptText,
+          pdfName: file.name,
+          isCompleted: true
+        });
       };
       reader.readAsText(file);
       pdfFileInput.value = '';
@@ -459,19 +499,36 @@ export function mountTeleprompterStudio(targetContainer, options = {}) {
         });
 
         if (res && res.fullPdfText && res.fullPdfText.trim()) {
-          readerContent.innerText = res.fullPdfText.trim();
+          currentScriptText = res.fullPdfText.trim();
+          readerContent.innerText = currentScriptText;
         } else if (res && res.slides && res.slides.length > 0) {
           const slideTexts = res.slides.map((s, idx) => `--- સ્લાઇડ ${idx + 1}: ${s.title || ''} ---\n${s.content || ''}`).join('\n\n');
+          currentScriptText = slideTexts;
           readerContent.innerText = slideTexts;
         } else {
-          readerContent.innerText = `[PDF: ${file.name}]\n\nનમસ્તે મિત્રો! સત્તાવાર પરિપત્ર અને નિયમો મુજબ આજના વિડીયોમાં સંપૂર્ણ વિગત સમજીશું.`;
+          currentScriptText = `[PDF: ${file.name}]\n\nનમસ્તે મિત્રો! સત્તાવાર પરિપત્ર અને નિયમો મુજબ આજના વિડીયોમાં સંપૂર્ણ વિગત સમજીશું.`;
+          readerContent.innerText = currentScriptText;
         }
         updateWordCount();
         screenBox.scrollTop = 0;
+
+        projectState.updateTool('script', {
+          fullText: currentScriptText,
+          teleprompterText: currentScriptText,
+          pdfName: file.name,
+          isCompleted: true
+        });
       } catch (err) {
         console.warn('PDF Read Notice:', err);
-        readerContent.innerText = `[PDF: ${file.name}]\n\nનમસ્તે મિત્રો! "${file.name.replace('.pdf', '')}" બાબતે સત્તાવાર પરિપત્ર જાહેર થઈ ગયો છે.`;
+        currentScriptText = `[PDF: ${file.name}]\n\nનમસ્તે મિત્રો! "${file.name.replace('.pdf', '')}" બાબતે સત્તાવાર પરિપત્ર જાહેર થઈ ગયો છે.`;
+        readerContent.innerText = currentScriptText;
         updateWordCount();
+        projectState.updateTool('script', {
+          fullText: currentScriptText,
+          teleprompterText: currentScriptText,
+          pdfName: file.name,
+          isCompleted: true
+        });
       }
       pdfFileInput.value = '';
     };
@@ -671,14 +728,14 @@ export function mountTeleprompterStudio(targetContainer, options = {}) {
 
     if (!activeUrl) return;
 
+    const blobToSave = (isEnhancedActive && enhancedResult && enhancedResult.blob) 
+      ? enhancedResult.blob 
+      : (recordedResult ? recordedResult.blob : null);
+
     // Convert audio to base64 for persistent localStorage save if small
     let audioDataToSave = activeUrl;
     try {
-      const blobToSave = (isEnhancedActive && enhancedResult && enhancedResult.blob) 
-        ? enhancedResult.blob 
-        : (recordedResult ? recordedResult.blob : null);
-
-      if (blobToSave && blobToSave.size < 4000000) { // < 4MB
+      if (blobToSave && blobToSave.size < 2000000) { // < 2MB
         const b64 = await new Promise((resolve) => {
           const reader = new FileReader();
           reader.onloadend = () => resolve(reader.result);
@@ -690,20 +747,29 @@ export function mountTeleprompterStudio(targetContainer, options = {}) {
       console.warn('Audio base64 save notice:', e);
     }
 
-    // Save to Project State
-    projectState.updateActiveProject({
-      voice: {
-        audioUrl: audioDataToSave,
-        filename: `${(activeProj && activeProj.name) || 'project'}_voiceover.wav`,
-        provider: '🎙️ My Studio Voice (Recorded Live)',
-        isCompleted: true
-      }
+    const durationSec = Math.round((recordedResult && recordedResult.duration) || 0);
+    const projName = (activeProj && activeProj.name) ? activeProj.name.replace(/[\s/\\?%*:|"<>]+/g, '_') : 'my_channel';
+
+    // Save audio into IndexedDB & Project State
+    await projectState.saveAudioRecording({
+      blob: blobToSave,
+      dataUrl: audioDataToSave,
+      duration: durationSec,
+      filename: `${projName}_Audio.wav`
     });
 
+    // Save current script text into project
+    projectState.updateTool('script', {
+      fullText: currentScriptText,
+      teleprompterText: currentScriptText,
+      isCompleted: true
+    });
+
+    saveNotif.innerHTML = '💾 ઓડિયો અને સ્ક્રિપ્ટ સફળતાપૂર્વક પ્રોજેક્ટમાં સચવાઈ ગયા છે! ✓';
     saveNotif.style.display = 'block';
     setTimeout(() => {
       saveNotif.style.display = 'none';
-    }, 3500);
+    }, 4000);
 
     if (typeof onSave === 'function') {
       onSave({ audioUrl: activeUrl, text: currentScriptText });
@@ -722,6 +788,33 @@ export function mountTeleprompterStudio(targetContainer, options = {}) {
       screenBox.scrollTop = 0;
     }
   });
+
+  // Pre-load previously saved audio for this project if exists
+  (async () => {
+    try {
+      const savedAudio = await projectState.getAudioRecording(activeProj?.id);
+      const audioUrl = savedAudio?.url || activeProj?.voice?.audioUrl;
+      if (audioUrl) {
+        playbackAudio.src = audioUrl;
+        recordedAudioBox.style.display = 'block';
+        actionButtonsWrap.style.display = 'flex';
+        btnDownloadWav.href = audioUrl;
+        const projName = (activeProj && activeProj.name) ? activeProj.name.replace(/[\s/\\?%*:|"<>]+/g, '_') : 'my_channel';
+        btnDownloadWav.download = `${projName}_Audio.wav`;
+        const durationSec = Math.round(savedAudio?.duration || activeProj?.voice?.duration || 0);
+        if (durationSec > 0) {
+          const mins = Math.floor(durationSec / 60);
+          const secs = durationSec % 60;
+          audioDurationBadge.textContent = `સમય: ${mins}:${String(secs).padStart(2, '0')}`;
+        } else {
+          audioDurationBadge.textContent = 'સેવ કરેલ ઓડિયો';
+        }
+        micStatusText.textContent = '✓ પ્રોજેક્ટમાં અગાઉ રેકોર્ડ કરેલો ઓડિયો સચવાયેલો છે! સાંભળો અથવા નવો રેકોર્ડ કરો.';
+      }
+    } catch (e) {
+      console.warn('Audio pre-load notice:', e);
+    }
+  })();
 
   return {
     getScriptText: () => currentScriptText,

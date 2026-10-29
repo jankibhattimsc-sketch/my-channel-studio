@@ -26,9 +26,10 @@ export async function renderSlideEditor(container, navigateTo) {
   let currentHeadingBoxStyle = 'solid'; // 'solid' | 'outline' | 'banner'
   let currentAccentColor = '#DC2626';
 
-  let loadedAudioUrl = window.autoMatchTrigger?.audioUrl || project.voiceAudio?.audioUrl || '/audio/my_real_cloned_voice.mp3';
-  let loadedAudioName = window.autoMatchTrigger?.audioName || project.voiceAudio?.filename || 'my_real_cloned_voice.mp3';
-  let loadedPdfName = window.autoMatchTrigger?.pdfName || '';
+  const savedAudio = await projectState.getAudioRecording(project?.id);
+  let loadedAudioUrl = window.autoMatchTrigger?.audioUrl || savedAudio?.url || project.voiceAudio?.audioUrl || project.voice?.audioUrl || '/audio/my_real_cloned_voice.mp3';
+  let loadedAudioName = window.autoMatchTrigger?.audioName || savedAudio?.filename || project.voiceAudio?.filename || project.voice?.filename || 'my_real_cloned_voice.mp3';
+  let loadedPdfName = window.autoMatchTrigger?.pdfName || project.slide?.pdfName || '';
   let loadedPdfBase64 = '';
   let isExportingVideo = false;
   let hasPendingAutoMatch = Boolean(window.autoMatchTrigger);

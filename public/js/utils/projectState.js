@@ -5,9 +5,24 @@
  * Auto-saves per-project and restores work upon reopening.
  */
 
+import { saveProjectAudioRecord, getProjectAudioRecord } from './audioStorage.js';
+
 const STORAGE_PROJECTS_KEY = 'gyan_yatra_projects_v3';
 const STORAGE_ACTIVE_ID_KEY = 'gyan_yatra_active_project_id_v3';
 const LEGACY_KEY = 'gyan_yatra_active_project';
+
+export const STEP_METADATA = {
+  topics: { id: 'topics', num: 1, name: 'Idea', nameGuj: '૧. આઈડિયા & વિષય', icon: '💡' },
+  slideprompts: { id: 'slideprompts', num: 2, name: 'Slides', nameGuj: '૨. સ્લાઇડ્સ & PPT', icon: '📑' },
+  scriptwriter: { id: 'scriptwriter', num: 3, name: 'Script', nameGuj: '૩. સ્ક્રિપ્ટ રાઇટર', icon: '📝' },
+  myvoice: { id: 'myvoice', num: 4, name: 'Voice', nameGuj: '૪. અવાજ રેકોર્ડિંગ', icon: '🎙️' },
+  editing: { id: 'editing', num: 5, name: 'Editing', nameGuj: '૫. એડિટિંગ ગાઇડ', icon: '🎬' },
+  canva: { id: 'canva', num: 6, name: 'Canva', nameGuj: '૬. કેન્વા ગ્રાફિક્સ', icon: '🎨' },
+  seodescription: { id: 'seodescription', num: 7, name: 'SEO', nameGuj: '૭. SEO & ટાઇટલ', icon: '🚀' },
+  seo: { id: 'seo', num: 8, name: 'Thumbnail', nameGuj: '૮. થંબનેલ પ્લાન', icon: '🖼️' },
+  slideeditor: { id: 'slideeditor', num: 2, name: 'SlideEditor', nameGuj: 'સ્લાઇડ એડિટર', icon: '🖥️' },
+  workspace: { id: 'workspace', num: 0, name: 'Workspace', nameGuj: 'પ્રોજેક્ટ વર્કસ્પેસ', icon: '🌐' }
+};
 
 export function createBlankProject(name = '', topic = '', category = 'સરકારી યોજના') {
   const pId = 'proj_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
@@ -21,6 +36,7 @@ export function createBlankProject(name = '', topic = '', category = 'સરક�
     category: category,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    lastStep: 'topics', // Track exact tool where user stopped
     
     // 8 Core Tools State
     idea: {
@@ -34,6 +50,8 @@ export function createBlankProject(name = '', topic = '', category = 'સરક�
       slideCount: '8-10',
       template: 'white-real',
       notes: '',
+      pdfName: '',
+      pdfText: '',
       slides: [
         {
           id: 1,
@@ -51,6 +69,10 @@ export function createBlankProject(name = '', topic = '', category = 'સરક�
     script: {
       title: pName + ': સત્તાવાર માહિતી',
       durationMinutes: 10,
+      fullText: '',
+      teleprompterText: '',
+      pdfName: '',
+      pdfText: '',
       sections: [
         {
           sectionName: 'ધમાકેદાર શરૂઆત (Hook)',
@@ -82,7 +104,9 @@ export function createBlankProject(name = '', topic = '', category = 'સરક�
     voice: {
       audioUrl: '',
       filename: '',
-      provider: '👑 ElevenLabs STS v2 (My Real Voice)',
+      duration: 0,
+      hasSavedAudio: false,
+      provider: '🎙️ My Studio Voice (Recorded Live)',
       notes: '',
       isCompleted: false
     },
@@ -352,6 +376,53 @@ class ProjectStateManager {
     }
 
     this.saveProjects();
+  }
+
+  setLastStep(stepKey) {
+    const active = this.getActiveProject();
+    if (active && stepKey) {
+      active.lastStep = stepKey;
+      active.updatedAt = new Date().toISOString();
+      this.saveProjects();
+    }
+  }
+
+  getLastStep(proj) {
+    const p = proj || this.getActiveProject();
+    return (p && p.lastStep) || 'topics';
+  }
+
+  async saveAudioRecording(audioData) {
+    const active = this.getActiveProject();
+    if (!active) return null;
+
+    const { blob, dataUrl, duration, filename } = audioData || {};
+    const pFilename = filename || `${(active.name || 'project').replace(/[\s/\\?%*:|"<>]+/g, '_')}_Audio.wav`;
+
+    await saveProjectAudioRecord(active.id, {
+      blob,
+      dataUrl,
+      duration: duration || 0,
+      filename: pFilename
+    });
+
+    if (!active.voice) active.voice = {};
+    active.voice.audioUrl = dataUrl && dataUrl.length < 2000000 ? dataUrl : (active.voice.audioUrl || '');
+    active.voice.filename = pFilename;
+    active.voice.duration = duration || active.voice.duration || 0;
+    active.voice.hasSavedAudio = true;
+    active.voice.provider = '🎙️ My Studio Voice (Recorded Live)';
+    active.voice.isCompleted = true;
+    active.updatedAt = new Date().toISOString();
+
+    this.saveProjects();
+    return active.voice;
+  }
+
+  async getAudioRecording(projectId) {
+    const pId = projectId || this.activeProjectId;
+    if (!pId) return null;
+    return await getProjectAudioRecord(pId);
   }
 
   // Backwards compatibility methods

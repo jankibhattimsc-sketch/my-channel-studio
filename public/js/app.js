@@ -213,6 +213,12 @@ class App {
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
+    // Auto-record last visited tool for the active project so creator can resume seamlessly
+    const projectTools = ['topics', 'slideprompts', 'slideeditor', 'scriptwriter', 'myvoice', 'editing', 'canva', 'seodescription', 'seo', 'workspace'];
+    if (projectTools.includes(viewName)) {
+      projectState.setLastStep(viewName);
+    }
+
     // Render corresponding view
     const navCallback = (target) => this.navigateTo(target);
 

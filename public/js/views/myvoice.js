@@ -678,9 +678,17 @@ export async function renderMyVoice(container, navigateTo) {
   `;
 
   // Prepopulate script from project state if available
+  const curVoiceProj = projectState.getActiveProject();
   const scriptTextarea = document.getElementById('voice-script-text');
   const wordCountSpan = document.getElementById('word-count');
   const estTimeSpan = document.getElementById('est-time');
+
+  const savedVoiceScript = curVoiceProj?.script?.fullText || curVoiceProj?.script?.teleprompterText;
+  if (savedVoiceScript && scriptTextarea) {
+    scriptTextarea.value = savedVoiceScript;
+  } else if (curVoiceProj?.script?.sections?.length > 0 && scriptTextarea) {
+    scriptTextarea.value = curVoiceProj.script.sections.map(s => `${s.sectionName || ''}:\n${s.content || ''}`).join('\n\n');
+  }
 
   function updateCounters() {
     const text = scriptTextarea.value.trim();
@@ -689,6 +697,7 @@ export async function renderMyVoice(container, navigateTo) {
     wordCountSpan.textContent = words;
     estTimeSpan.textContent = `${estSec}s (~${(estSec / 60).toFixed(1)} મિનિટ)`;
   }
+  updateCounters();
 
   // --- Mount Teleprompter & Live Recording Studio ---
   const voiceTpMount = document.getElementById('myvoice-teleprompter-mount');
@@ -698,14 +707,17 @@ export async function renderMyVoice(container, navigateTo) {
       toolContext: 'voice',
       initialText: scriptTextarea?.value || '',
       onSave: ({ audioUrl, text }) => {
-        if (playerCard) playerCard.style.display = 'block';
-        if (mainAudioPlayer) {
-          mainAudioPlayer.src = audioUrl;
-          mainAudioPlayer.load();
+        const pCard = document.getElementById('generated-player-card');
+        const mPlayer = document.getElementById('main-audio-player');
+        const dlBtn = document.getElementById('btn-download-audio');
+        if (pCard) pCard.style.display = 'block';
+        if (mPlayer) {
+          mPlayer.src = audioUrl;
+          mPlayer.load();
         }
-        if (btnDownloadAudio) {
-          btnDownloadAudio.href = audioUrl;
-          btnDownloadAudio.download = 'my_studio_voiceover.wav';
+        if (dlBtn) {
+          dlBtn.href = audioUrl;
+          dlBtn.download = 'my_studio_voiceover.wav';
         }
         if (scriptTextarea) {
           scriptTextarea.value = text;
@@ -716,6 +728,12 @@ export async function renderMyVoice(container, navigateTo) {
     });
 
     scriptTextarea?.addEventListener('input', () => {
+      updateCounters();
+      projectState.updateTool('script', {
+        fullText: scriptTextarea.value,
+        teleprompterText: scriptTextarea.value,
+        isCompleted: scriptTextarea.value.trim().length > 20
+      });
       if (voiceTpStudio) {
         voiceTpStudio.setScriptText(scriptTextarea.value);
       }
@@ -1113,6 +1131,23 @@ export async function renderMyVoice(container, navigateTo) {
   const mainAudioPlayer = document.getElementById('main-audio-player');
   const playerTitle = document.getElementById('player-title');
   const btnDownloadAudio = document.getElementById('btn-download-audio');
+
+  // Pre-load previously saved audio for this project
+  (async () => {
+    try {
+      const savedAudio = await projectState.getAudioRecording(curVoiceProj?.id);
+      const audioUrl = savedAudio?.url || curVoiceProj?.voice?.audioUrl;
+      if (audioUrl) {
+        if (playerCard) playerCard.style.display = 'block';
+        if (mainAudioPlayer) mainAudioPlayer.src = audioUrl;
+        if (playerTitle) playerTitle.textContent = curVoiceProj?.voice?.filename || 'video_narration.mp3';
+        if (btnDownloadAudio) {
+          btnDownloadAudio.href = audioUrl;
+          btnDownloadAudio.download = `${(curVoiceProj?.name || 'my_voice').replace(/[\s/\\?%*:|"<>]+/g, '_')}_Audio.wav`;
+        }
+      }
+    } catch (_) {}
+  })();
 
   generateBtn.addEventListener('click', async () => {
     const text = scriptTextarea.value.trim();

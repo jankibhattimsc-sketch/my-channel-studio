@@ -1,4 +1,4 @@
-import { projectState } from '../utils/projectState.js';
+import { projectState, STEP_METADATA } from '../utils/projectState.js';
 import { copyToClipboard } from '../utils/clipboard.js';
 
 export function renderProjects(container, navigateTo) {
@@ -91,15 +91,17 @@ export function renderProjects(container, navigateTo) {
           ${projects.map(p => {
             const isActive = p.id === activeId;
             const progress = projectState.getProjectProgress(p);
+            const lastStepKey = p.lastStep || 'topics';
+            const stepMeta = STEP_METADATA[lastStepKey] || STEP_METADATA['topics'];
             const tools = [
-              { icon: '💡', name: 'આઈડિયા', ok: !!(p.idea?.topic && p.idea?.topic !== 'નવો વિડીયો વિષય') },
-              { icon: '📑', name: 'સ્લાઇડ્સ', ok: !!(p.slide?.slides?.length > 1) },
-              { icon: '📝', name: 'સ્ક્રિપ્ટ', ok: !!(p.script?.sections?.length > 1) },
-              { icon: '🎙️', name: 'અવાજ', ok: !!(p.voice?.audioUrl || p.voice?.notes) },
-              { icon: '🎬', name: 'એડિટિંગ', ok: !!(p.editing?.customNotes || Object.values(p.editing?.checklist || {}).some(v => v)) },
-              { icon: '🎨', name: 'કેન્વા', ok: !!(p.canva?.notes || p.canva?.headline) },
-              { icon: '🚀', name: 'SEO', ok: !!(p.seo?.title && p.seo?.description) },
-              { icon: '🖼️', name: 'થંબનેલ', ok: !!(p.thumbnail?.gujaratiWords || p.thumbnail?.dalleShortPrompt) }
+              { id: 'topics', icon: '💡', name: 'આઈડિયા', ok: !!(p.idea?.topic && p.idea?.topic !== 'નવો વિડીયો વિષય') },
+              { id: 'slideprompts', icon: '📑', name: 'સ્લાઇડ્સ', ok: !!(p.slide?.slides?.length > 1 || p.slide?.tool2Prompt) },
+              { id: 'scriptwriter', icon: '📝', name: 'સ્ક્રિપ્ટ', ok: !!(p.script?.sections?.length > 1 || p.script?.fullText) },
+              { id: 'myvoice', icon: '🎙️', name: 'અવાજ', ok: !!(p.voice?.audioUrl || p.voice?.hasSavedAudio) },
+              { id: 'editing', icon: '🎬', name: 'એડિટિંગ', ok: !!(p.editing?.customNotes || Object.values(p.editing?.checklist || {}).some(v => v)) },
+              { id: 'canva', icon: '🎨', name: 'કેન્વા', ok: !!(p.canva?.notes || p.canva?.headline) },
+              { id: 'seodescription', icon: '🚀', name: 'SEO', ok: !!(p.seo?.title && p.seo?.description) },
+              { id: 'seo', icon: '🖼️', name: 'થંબનેલ', ok: !!(p.thumbnail?.gujaratiWords || p.thumbnail?.dalleShortPrompt) }
             ];
 
             return `
@@ -124,9 +126,17 @@ export function renderProjects(container, navigateTo) {
                   </div>
 
                   <!-- Project Title -->
-                  <h3 style="font-size: 1.15rem; font-weight: 800; color: #ffffff; margin: 0 0 10px 0; line-height: 1.35; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                  <h3 style="font-size: 1.15rem; font-weight: 800; color: #ffffff; margin: 0 0 8px 0; line-height: 1.35; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
                     ${p.name}
                   </h3>
+
+                  <!-- Last Visited Step Badge (Resume Banner) -->
+                  <div style="background: rgba(56, 189, 248, 0.08); border: 1px dashed rgba(56, 189, 248, 0.35); border-radius: 8px; padding: 6px 10px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+                    <span style="font-size: 0.74rem; color: #94a3b8;">છેલ્લે તમે અહીં હતા:</span>
+                    <span style="font-size: 0.78rem; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 5px;">
+                      <span>${stepMeta.icon}</span> <span>${stepMeta.nameGuj}</span>
+                    </span>
+                  </div>
 
                   <!-- Progress Bar -->
                   <div style="margin-bottom: 14px;">
@@ -139,20 +149,24 @@ export function renderProjects(container, navigateTo) {
                     </div>
                   </div>
 
-                  <!-- 8 Tools Mini Chips -->
+                  <!-- 8 Tools Mini Chips (Clickable to jump directly) -->
                   <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 16px;">
                     ${tools.map(t => `
-                      <div style="background: ${t.ok ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.03)'}; border: 1px solid ${t.ok ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.06)'}; border-radius: 6px; padding: 4px 6px; text-align: center; font-size: 0.7rem; color: ${t.ok ? '#a7f3d0' : 'var(--text-muted)'};" title="${t.name}: ${t.ok ? 'તૈયાર' : 'બાકી'}">
+                      <div class="btn-tool-chip" data-id="${p.id}" data-tool="${t.id}" style="background: ${t.ok ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.03)'}; border: 1px solid ${t.ok ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.06)'}; border-radius: 6px; padding: 5px 6px; text-align: center; font-size: 0.7rem; color: ${t.ok ? '#a7f3d0' : 'var(--text-muted)'}; cursor: pointer; transition: all 0.2s;" title="${t.name}: સીધું આ ટૂલ ખોલવા ટેપ કરો">
                         <span>${t.icon}</span> ${t.ok ? '✓' : '•'}
                       </div>
                     `).join('')}
                   </div>
                 </div>
 
-                <!-- Action Buttons -->
+                <!-- Action Buttons: Resume & Workspace -->
                 <div style="padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-                  <button class="btn btn-primary btn-sm btn-open-project" data-id="${p.id}" style="flex: 1; font-weight: 800; background: ${isActive ? 'linear-gradient(135deg, #10b981, #059669)' : '#2563eb'}; border: none; padding: 8px 12px;">
-                    <span>🚀</span> ${isActive ? 'સ્ટુડિયો ખોલો (Open)' : 'આ પ્રોજેક્ટ ખોલો'}
+                  <button class="btn btn-primary btn-sm btn-resume-project" data-id="${p.id}" data-step="${lastStepKey}" style="flex: 1.2; font-weight: 800; background: linear-gradient(135deg, #10b981, #059669); border: none; padding: 9px 12px; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 14px rgba(16,185,129,0.35);">
+                    <span>▶️</span> જ્યાંથી અટક્યા ત્યાંથી ચાલુ કરો
+                  </button>
+
+                  <button class="btn btn-outline btn-sm btn-open-workspace" data-id="${p.id}" title="આખો પ્રોજેક્ટ ઓવરવ્યુ / વર્કસ્પેસ" style="padding: 8px 10px; font-size: 0.78rem; font-weight: 700; border-color: rgba(56,189,248,0.4); color: #7dd3fc;">
+                    <span>🌐</span>
                   </button>
 
                   <div style="display: flex; gap: 4px;">
@@ -322,13 +336,35 @@ export function renderProjects(container, navigateTo) {
       }
     });
 
-    // Open Project Button
-    container.querySelectorAll('.btn-open-project').forEach(btn => {
+    // Resume Project Button (resumes directly from last step)
+    container.querySelectorAll('.btn-resume-project').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        const step = btn.getAttribute('data-step') || 'topics';
+        projectState.setActiveProject(id);
+        navigateTo(step);
+      });
+    });
+
+    // Direct Tool Chip Click (e.g. click 🎙️ to open Voice, 📑 to open Slides)
+    container.querySelectorAll('.btn-tool-chip').forEach(chip => {
+      chip.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = chip.getAttribute('data-id');
+        const tool = chip.getAttribute('data-tool');
+        if (id && tool) {
+          projectState.setActiveProject(id);
+          navigateTo(tool);
+        }
+      });
+    });
+
+    // Open Workspace Button
+    container.querySelectorAll('.btn-open-workspace').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = btn.getAttribute('data-id');
         projectState.setActiveProject(id);
-        // Navigate to Step 1 (Idea)
-        navigateTo('topics');
+        navigateTo('workspace');
       });
     });
 

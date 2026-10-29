@@ -22,7 +22,15 @@ export function renderSlidePrompts(container, navigateTo) {
     return res.pptDeckPrompt || res.promptText || '';
   }
 
-  let tool2Prompt = getTool2PromptText(activeTopic);
+  const curProj = projectState?.getActiveProject();
+  let tool2Prompt = (curProj && curProj.slide && curProj.slide.tool2Prompt) 
+    ? curProj.slide.tool2Prompt 
+    : getTool2PromptText(activeTopic);
+
+  // If first time, persist generated prompt
+  if (curProj && (!curProj.slide || !curProj.slide.tool2Prompt)) {
+    projectState.updateTool('slide', { tool2Prompt, isCompleted: true });
+  }
 
   // Render Page 2 - Simple Mobile App Design with ONLY Element 1 (Topic) and Element 2 (Tool 2 Prompt)
   container.innerHTML = `
@@ -167,12 +175,25 @@ export function renderSlidePrompts(container, navigateTo) {
     pptTextarea.select();
   });
 
+  // User manual edits to Tool 2 prompt auto-save into project
+  pptTextarea?.addEventListener('input', () => {
+    tool2Prompt = pptTextarea.value;
+    projectState.updateTool('slide', {
+      tool2Prompt: pptTextarea.value,
+      isCompleted: true
+    });
+  });
+
   // Re-generate Tool 2 prompt when topic updates
   const updateTopic = (newTopic) => {
     activeTopic = newTopic.trim() || 'ગુજરાત કર્મચારી પગાર અને DA વધારો 2026';
     projectState?.setTopic(activeTopic);
     tool2Prompt = getTool2PromptText(activeTopic);
     if (pptTextarea) pptTextarea.value = tool2Prompt;
+    projectState.updateTool('slide', {
+      tool2Prompt,
+      isCompleted: true
+    });
   };
 
   topicInput?.addEventListener('input', (e) => {
@@ -192,6 +213,10 @@ export function renderSlidePrompts(container, navigateTo) {
       if (res && (res.pptDeckPrompt || res.promptText)) {
         tool2Prompt = res.pptDeckPrompt || res.promptText;
         if (pptTextarea) pptTextarea.value = tool2Prompt;
+        projectState.updateTool('slide', {
+          tool2Prompt,
+          isCompleted: true
+        });
       }
     } catch (_) {
       // Client-side fallback is already 100% complete and accurate
