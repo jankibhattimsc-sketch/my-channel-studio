@@ -339,7 +339,9 @@ async function extractFromMultipleImages(imagesBase64, knownChannelTitles = []) 
 
   try {
     console.log(`[Server OCR] Initializing worker for ${imagesBase64.length} screenshot(s)...`);
-    worker = await createWorker(['guj', 'eng']);
+    const workerPromise = createWorker(['guj', 'eng']);
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Server OCR Timeout / Cloud Container restricted')), 3500));
+    worker = await Promise.race([workerPromise, timeoutPromise]);
 
     for (let i = 0; i < imagesBase64.length; i++) {
       const base64Data = imagesBase64[i];
