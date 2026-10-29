@@ -216,7 +216,25 @@ export async function renderScriptWriter(container, navigateTo) {
         </div>
       </div>
 
-      <textarea id="narration-script-textarea" class="form-textarea font-gu" style="width: 100%; height: 160px; font-size: 0.9rem; line-height: 1.6; background: #07090e; border: 1.5px solid #334155; color: #f1f5f9; padding: 12px; border-radius: 8px; resize: vertical; box-sizing: border-box;" placeholder="ChatGPT માંથી તૈયાર થયેલી અથવા PDF માંથી મળેલી શબ્દશઃ સ્ક્રિપ્ટ અહીં પેસ્ટ કરો..."></textarea>
+      <!-- Slides & Script Synchronization Bar -->
+      <div style="background: rgba(56, 189, 248, 0.06); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.1rem;">📑</span>
+          <span style="font-size: 0.82rem; color: #e2e8f0; font-weight: 700;">
+            સ્ટેપ ૨ સ્લાઇડ્સ સાથે જોડાણ: <strong style="color: #38bdf8;" id="scriptwriter-slides-count">${currentProject?.slide?.slides?.length || 0} સ્લાઇડ્સ ઉપલબ્ધ</strong>
+          </span>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button id="btn-import-slides-to-script" type="button" class="btn btn-outline btn-sm" style="border-color: #38bdf8; color: #7dd3fc; font-weight: 700; font-size: 0.78rem;">
+            <span>📥</span> સ્લાઇડ્સમાંથી સ્ક્રિપ્ટ લાવો
+          </button>
+          <button id="btn-export-script-to-slides" type="button" class="btn btn-outline btn-sm" style="border-color: #10b981; color: #34d399; font-weight: 700; font-size: 0.78rem;">
+            <span>📤</span> સ્ક્રિપ્ટને સ્લાઇડ્સમાં મોકલો
+          </button>
+        </div>
+      </div>
+
+      <textarea id="narration-script-textarea" class="form-textarea font-gu" style="width: 100%; height: 180px; font-size: 0.92rem; line-height: 1.6; background: #07090e; border: 1.5px solid #334155; color: #f1f5f9; padding: 12px; border-radius: 8px; resize: vertical; box-sizing: border-box;" placeholder="અહીં તમારી શબ્દશઃ સ્ક્રિપ્ટ લખો અથવા ઉપર 'સ્લાઇડ્સમાંથી સ્ક્રિપ્ટ લાવો' બટન દબાવો..."></textarea>
 
       <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
         <button id="btn-generate-audio-from-script" type="button" class="btn btn-primary" style="font-weight: 800; font-size: 0.95rem; padding: 10px 24px; background: linear-gradient(135deg, #10b981, #059669); border: none; border-radius: 8px; box-shadow: 0 4px 14px rgba(16,185,129,0.3); cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
@@ -363,6 +381,66 @@ export async function renderScriptWriter(container, navigateTo) {
       showNoticeToast('કૃપા કરીને Ctrl+V વડે સ્ક્રિપ્ટ પેસ્ટ કરો.', 'info');
       narrationScriptTextarea.focus();
     }
+  });
+
+  // 1-Click Import slides script into narration textarea
+  container.querySelector('#btn-import-slides-to-script')?.addEventListener('click', () => {
+    const cur = projectState.getActiveProject();
+    const slides = cur?.slide?.slides || [];
+    if (slides.length > 0) {
+      const combined = slides.map((s, idx) => {
+        const text = s.scriptText ? s.scriptText.trim() : (s.bulletPoints || []).join('\n');
+        return `[સ્લાઇડ ${idx + 1}: ${s.title}]\n${text}`;
+      }).join('\n\n');
+
+      narrationScriptTextarea.value = combined;
+      projectState.updateTool('script', {
+        fullText: combined,
+        teleprompterText: combined,
+        isCompleted: true
+      });
+      if (scriptTpStudio) {
+        scriptTpStudio.setScriptText(combined);
+      }
+      showNoticeToast(`✅ સ્ટેપ ૨ ની ${slides.length} સ્લાઇડ્સમાંથી સ્ક્રિપ્ટ સફળતાપૂર્વક લોડ થઈ ગઈ છે! ✓`, 'success');
+    } else {
+      showNoticeToast('સ્ટેપ ૨ માં કોઈ સ્લાઇડ્સ મળી નથી. પહેલા સ્લાઇડ્સ ઉમેરો.', 'warning');
+    }
+  });
+
+  // 1-Click Export script to slides
+  container.querySelector('#btn-export-script-to-slides')?.addEventListener('click', () => {
+    const text = narrationScriptTextarea.value.trim();
+    if (!text) {
+      showNoticeToast('પહેલા સ્ક્રિપ્ટ લખાણ દાખલ કરો.', 'warning');
+      return;
+    }
+    const chunks = text.split(/\n\s*\n/).filter(c => c.trim().length > 0);
+    const updatedSlides = chunks.map((chunk, i) => {
+      const lines = chunk.split('\n').map(l => l.trim()).filter(Boolean);
+      const title = lines[0] ? lines[0].replace(/^\[?(સ્લાઇડ|Slide|ભાગ)\s*[0-9#:\-]+\]?\s*/i, '').replace(/\]$/, '') : `સ્લાઇડ #${i + 1}`;
+      const bullets = lines.slice(1, 4).map(l => l.replace(/^[•\-\*0-9\.\)]+\s*/, ''));
+      return {
+        id: Date.now() + i,
+        title: title || `સ્લાઇડ #${i + 1}`,
+        subtitle: 'સત્તાવાર નિર્ણય સંદર્ભ',
+        bulletPoints: bullets.length > 0 ? bullets : [lines[0] || 'મુખ્ય વિગત'],
+        scriptText: chunk,
+        audioTime: '',
+        bgColor: '#FFFFFF',
+        textColor: '#0F172A',
+        accentColor: i === 0 ? '#DC2626' : '#2563EB'
+      };
+    });
+
+    projectState.updateTool('slide', {
+      slides: updatedSlides,
+      slideCount: `${updatedSlides.length} સ્લાઇડ્સ`,
+      isCompleted: true
+    });
+    const countEl = container.querySelector('#scriptwriter-slides-count');
+    if (countEl) countEl.textContent = `${updatedSlides.length} સ્લાઇડ્સ ઉપલબ્ધ`;
+    showNoticeToast(`✅ સ્ક્રિપ્ટમાંથી ${updatedSlides.length} સ્લાઇડ્સ સ્ટેપ ૨ માં અપડેટ થઈ ગઈ છે! ✓`, 'success');
   });
 
   // Goto Voice Studio

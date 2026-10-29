@@ -59,6 +59,7 @@ export function createBlankProject(name = '', topic = '', category = 'સરક�
           subtitle: 'સત્તાવાર નિર્ણય & વિગત',
           bulletPoints: ['મહત્વપૂર્ણ જાહેરાત પરિપત્ર', 'લાભાર્થી પાત્રતા અને નિયમો', 'ખાતામાં જમા થવાની તારીખ'],
           audioTime: '0:00 - 0:50',
+          scriptText: `નમસ્તે મિત્રો! આજના વિડીયોમાં આપણે વાત કરીશું "${pName}" વિશે. સત્તાવાર પરિપત્ર અને નિયમો જાહેર થઈ ગયા છે. સંપૂર્ણ વિગત આ વિડીયોમાં જોઈશું.`,
           bgColor: '#FFFFFF',
           textColor: '#0F172A',
           accentColor: '#DC2626'
@@ -450,6 +451,7 @@ class ProjectStateManager {
           .map(s => s.trim())
           .filter(s => s.length > 10)
           .slice(0, 3),
+        scriptText: sec.content || '',
         audioTime: sec.timeRange || '',
         bgColor: '#FFFFFF',
         textColor: '#0F172A',

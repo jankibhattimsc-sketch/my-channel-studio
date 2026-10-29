@@ -898,9 +898,14 @@ export async function renderMyVoice(container, navigateTo) {
   // Import Script from Step 3
   document.getElementById('btn-import-script')?.addEventListener('click', () => {
     const p = (projectState && typeof projectState.getProject === 'function') ? projectState.getProject() : null;
-    let foundText = '';
     if (p) {
-      if (p.script && p.script.sections && p.script.sections.length > 0) {
+      if (p.script?.fullText && p.script.fullText.trim().length > 10) {
+        foundText = p.script.fullText.trim();
+      } else if (p.script?.teleprompterText && p.script.teleprompterText.trim().length > 10) {
+        foundText = p.script.teleprompterText.trim();
+      } else if (p.slide?.slides && p.slide.slides.length > 0) {
+        foundText = p.slide.slides.map((s, i) => `[સ્લાઇડ ${i + 1}: ${s.title}]\n${s.scriptText || (s.bulletPoints || []).join(' ')}`).join('\n\n');
+      } else if (p.script && p.script.sections && p.script.sections.length > 0) {
         foundText = p.script.sections.map(s => s.content).join('\n\n');
       } else if (p.masterPrompt) {
         foundText = p.masterPrompt;
