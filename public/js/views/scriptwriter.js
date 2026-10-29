@@ -2,6 +2,7 @@ import { api } from '../api.js';
 import { copyToClipboard, showNoticeToast, animateCopyButton } from '../utils/clipboard.js';
 import { projectState } from '../utils/projectState.js';
 import { generateFullPdfMasterPrompt, renderFormattedScript, extractSpokenScript } from '../utils/slideVoiceoverGenerator.js';
+import { mountTeleprompterStudio } from '../components/teleprompterStudio.js';
 
 export async function renderScriptWriter(container, navigateTo) {
   const currentProject = projectState.getProject();
@@ -223,6 +224,9 @@ export async function renderScriptWriter(container, navigateTo) {
         </button>
       </div>
     </div>
+
+    <!-- 5. STEP 5: Side-by-Side Teleprompter & Live Voice Recording Studio -->
+    <div id="scriptwriter-teleprompter-mount" style="margin-bottom: 24px;"></div>
 
     <!-- 6. Full Audio Player Card -->
     <div class="card" id="audio-player-card" style="${currentAudioUrl ? 'display: block;' : 'display: none;'} margin-bottom: 20px; padding: 22px; background: #0f172a; border: 1.5px solid #10b981; border-radius: 14px; box-shadow: 0 8px 30px rgba(16,185,129,0.15);">
@@ -458,6 +462,11 @@ export async function renderScriptWriter(container, navigateTo) {
               if (spoken && !narrationScriptTextarea.value.trim()) {
                 narrationScriptTextarea.value = spoken;
               }
+              if (scriptTpStudio) {
+                scriptTpStudio.setScriptText(spoken || fullPdfText);
+              }
+            } else if (fullPdfText && scriptTpStudio) {
+              scriptTpStudio.setScriptText(fullPdfText);
             }
           }
 
@@ -624,6 +633,30 @@ export async function renderScriptWriter(container, navigateTo) {
 
     navigateTo('myvoice');
   });
+
+  // Initialize Side-by-Side Teleprompter & Live Voice Recording Studio
+  const tpMount = container.querySelector('#scriptwriter-teleprompter-mount');
+  let scriptTpStudio = null;
+  if (tpMount) {
+    scriptTpStudio = mountTeleprompterStudio(tpMount, {
+      toolContext: 'script',
+      initialText: narrationScriptTextarea?.value || '',
+      onSave: ({ audioUrl, text }) => {
+        currentAudioUrl = audioUrl;
+        if (audioPlayerCard) audioPlayerCard.style.display = 'block';
+        if (audioPlayer) audioPlayer.src = audioUrl;
+        if (btnDownloadAudio) btnDownloadAudio.href = audioUrl;
+        if (narrationScriptTextarea) narrationScriptTextarea.value = text;
+        showNoticeToast('🎙️ લાઈવ ઓડિયો રેકોર્ડ થઈને પ્રોજેક્ટમાં સેવ થઈ ગયો છે! ✓', 'success');
+      }
+    });
+
+    narrationScriptTextarea?.addEventListener('input', () => {
+      if (scriptTpStudio) {
+        scriptTpStudio.setScriptText(narrationScriptTextarea.value);
+      }
+    });
+  }
 
   // Top Project Banner buttons
   container.querySelector('#btn-back-to-projects-script')?.addEventListener('click', () => navigateTo('projects'));

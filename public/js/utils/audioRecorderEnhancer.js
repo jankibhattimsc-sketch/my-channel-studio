@@ -232,16 +232,44 @@ export class LiveAudioRecorder {
 
     this.mediaRecorder.start(100);
     this.isRecording = true;
-    this.startTime = Date.now();
+    this.isPaused = false;
+    this.accumulatedTime = 0;
+    this.lastResumeTime = Date.now();
 
     if (typeof onTick === 'function') {
       this.timerInterval = setInterval(() => {
         if (!this.isRecording) return;
-        const elapsedSec = Math.floor((Date.now() - this.startTime) / 1000);
-        const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
-        const secs = String(elapsedSec % 60).padStart(2, '0');
-        onTick(`${mins}:${secs}`, elapsedSec);
+        const currentElapsed = this.isPaused
+          ? this.accumulatedTime
+          : (this.accumulatedTime + Math.floor((Date.now() - this.lastResumeTime) / 1000));
+        const mins = String(Math.floor(currentElapsed / 60)).padStart(2, '0');
+        const secs = String(currentElapsed % 60).padStart(2, '0');
+        onTick(`${mins}:${secs}`, currentElapsed);
       }, 250);
+    }
+  }
+
+  pause() {
+    if (this.mediaRecorder && this.mediaRecorder.state === 'recording' && !this.isPaused) {
+      try {
+        this.mediaRecorder.pause();
+      } catch (e) {
+        console.warn('pause error:', e);
+      }
+      this.isPaused = true;
+      this.accumulatedTime += Math.floor((Date.now() - this.lastResumeTime) / 1000);
+    }
+  }
+
+  resume() {
+    if (this.mediaRecorder && this.mediaRecorder.state === 'paused' && this.isPaused) {
+      try {
+        this.mediaRecorder.resume();
+      } catch (e) {
+        console.warn('resume error:', e);
+      }
+      this.isPaused = false;
+      this.lastResumeTime = Date.now();
     }
   }
 

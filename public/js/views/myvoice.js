@@ -3,6 +3,7 @@ import { copyToClipboard } from '../utils/clipboard.js';
 import { projectState } from '../utils/projectState.js';
 import { cleanGujaratiPhoneticsClient } from '../utils/voiceActorHelper.js';
 import { LiveAudioRecorder, enhanceAudioBuffer } from '../utils/audioRecorderEnhancer.js';
+import { mountTeleprompterStudio } from '../components/teleprompterStudio.js';
 
 export const AUDIO_TONE_PROMPT = "Read the following Gujarati government job news in a warm, natural, conversational voice, like an experienced news presenter, not a fake TV-anchor voice. Start with an enthusiastic, clear voice to grab attention. For recruitment news: be optimistic, energetic and encouraging, with slight emphasis on number of vacancies, eligibility and last date. For salary hike/DA/allowance news: be happy, excited and reassuring, and say amounts, percentages and effective dates clearly and slightly slower. When mentioning last dates, warnings or important notices: become a little serious and urgent. End with a warm, friendly closing. Keep a medium pace with natural pauses at commas and full stops. Pronounce English words like DA, GPSC, OJAS clearly. Read only the script text below exactly as written, do not add or remove any words, and do not read these instructions aloud.";
 
@@ -401,126 +402,8 @@ export async function renderMyVoice(container, navigateTo) {
           </div>
         </div>
 
-        <!-- CARD: LIVE VOICE RECORDER, NOISE REMOVAL & PITCH TUNING SUITE -->
-        <div class="card" style="margin-bottom: 18px; padding: 18px; border: 1.5px solid #ec4899; background: linear-gradient(135deg, rgba(30, 27, 75, 0.95), rgba(15, 23, 42, 0.9)); border-radius: 12px; box-shadow: 0 4px 20px rgba(236,72,153,0.15);">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <span style="font-size: 1.4rem;">🎙️</span>
-              <div>
-                <h3 style="font-size: 1.05rem; font-weight: 800; color: #f472b6; margin: 0;">
-                  લાઈવ ઓડિયો રેકોર્ડર & પ્રો એડિટર (Live Voice Studio)
-                </h3>
-                <span style="font-size: 0.74rem; color: #cbd5e1;">
-                  પોતાનો અવાજ રેકોર્ડ કરો • પરફેક્ટ નોઈઝ રિમૂવલ • સ્પષ્ટ વાણી • પિચ સેટિંગ્સ
-                </span>
-              </div>
-            </div>
-            <span class="badge" style="background: rgba(236,72,153,0.25); color: #f472b6; font-size: 0.72rem; font-weight: 800; border: 1px solid rgba(236,72,153,0.4);">
-              Studio DSP Engine
-            </span>
-          </div>
-
-          <!-- 1. Recorder Control Bar -->
-          <div style="background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px; margin-bottom: 14px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-              <div style="display: flex; align-items: center; gap: 12px;">
-                <button id="btn-toggle-record" type="button" class="btn btn-primary" style="background: linear-gradient(135deg, #ef4444, #dc2626); border: none; font-weight: 800; font-size: 0.88rem; padding: 10px 20px; border-radius: 8px; box-shadow: 0 4px 14px rgba(239,68,68,0.4); cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
-                  <span id="record-icon" style="font-size: 1rem;">🔴</span>
-                  <span id="record-btn-text">રેકોર્ડિંગ શરૂ કરો</span>
-                </button>
-                <div id="recording-timer" style="font-family: monospace; font-size: 1.15rem; font-weight: 800; color: #ef4444; min-width: 65px; letter-spacing: 1px;">
-                  00:00
-                </div>
-              </div>
-
-              <!-- Live Volume / Mic Level Meter -->
-              <div style="flex: 1; min-width: 140px; display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 0.72rem; color: #94a3b8; font-weight: 600;">માઈક લેવલ:</span>
-                <div style="flex: 1; height: 10px; background: rgba(255,255,255,0.08); border-radius: 5px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
-                  <div id="mic-level-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #10b981 60%, #f59e0b 85%, #ef4444 100%); transition: width 0.08s ease;"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 2. Recorded Audio Enhancer & Controls (Shows once audio is recorded) -->
-          <div id="recorded-editor-box" style="display: none; background: rgba(15,23,42,0.8); border: 1.5px solid #38bdf8; border-radius: 10px; padding: 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-              <div style="font-size: 0.88rem; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
-                <span>✨</span> રેકોર્ડ કરેલો અવાજ & સ્ટુડિયો એડિટર
-              </div>
-              <span id="recorded-meta-badge" class="badge" style="background: rgba(56,189,248,0.2); color: #7dd3fc; font-size: 0.7rem;">0.0s</span>
-            </div>
-
-            <!-- Enhanced Audio Player -->
-            <audio id="recorded-audio-player" controls style="width: 100%; margin-bottom: 14px; border-radius: 8px;"></audio>
-
-            <!-- Audio DSP Tuning Sliders & Toggles -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 14px;">
-              <!-- A. Noise Removal Toggle -->
-              <label style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; cursor: pointer;">
-                <div>
-                  <div style="font-size: 0.82rem; font-weight: 800; color: #34d399;">🛡️ પરફેક્ટ નોઈઝ રિમૂવલ</div>
-                  <div style="font-size: 0.68rem; color: #94a3b8;">પંખો & બેકગ્રાઉન્ડ અવાજ શૂન્ય કરો</div>
-                </div>
-                <input type="checkbox" id="toggle-noise-removal" checked style="width: 18px; height: 18px; accent-color: #10b981; cursor: pointer;">
-              </label>
-
-              <!-- B. Clarity / Vocal Boost Toggle -->
-              <label style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; cursor: pointer;">
-                <div>
-                  <div style="font-size: 0.82rem; font-weight: 800; color: #38bdf8;">✨ સ્પષ્ટ વાણી બૂસ્ટ (Clarity)</div>
-                  <div style="font-size: 0.68rem; color: #94a3b8;">શુદ્ધ શબ્દો & સ્ટુડિયો કમ્પ્રેશન</div>
-                </div>
-                <input type="checkbox" id="toggle-clarity-boost" checked style="width: 18px; height: 18px; accent-color: #38bdf8; cursor: pointer;">
-              </label>
-            </div>
-
-            <!-- C. Pitch & Volume Controls -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 14px;">
-              <!-- Pitch Tuning Slider -->
-              <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); padding: 10px 12px; border-radius: 8px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                  <span style="font-size: 0.78rem; font-weight: 700; color: #f1f5f9;">🎚️ પિચ એડિટ (Pitch Tuning)</span>
-                  <span id="pitch-val-display" style="font-size: 0.74rem; font-weight: 800; color: #ec4899; font-family: monospace;">0 st (સામાન્ય)</span>
-                </div>
-                <input type="range" id="input-pitch-slider" min="-6" max="6" step="1" value="0" style="width: 100%; accent-color: #ec4899; cursor: pointer;">
-                <div style="display: flex; justify-content: space-between; font-size: 0.62rem; color: #64748b; margin-top: 2px;">
-                  <span>-6 (ભારે/ઊંડો)</span>
-                  <span>૦ (સામાન્ય)</span>
-                  <span>+6 (તીણો/હળવો)</span>
-                </div>
-              </div>
-
-              <!-- Volume Gain Booster Slider -->
-              <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); padding: 10px 12px; border-radius: 8px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                  <span style="font-size: 0.78rem; font-weight: 700; color: #f1f5f9;">🔊 અવાજ બૂસ્ટ (Volume)</span>
-                  <span id="volume-val-display" style="font-size: 0.74rem; font-weight: 800; color: #10b981; font-family: monospace;">120%</span>
-                </div>
-                <input type="range" id="input-volume-slider" min="0.5" max="2.5" step="0.1" value="1.2" style="width: 100%; accent-color: #10b981; cursor: pointer;">
-                <div style="display: flex; justify-content: space-between; font-size: 0.62rem; color: #64748b; margin-top: 2px;">
-                  <span>50%</span>
-                  <span>100%</span>
-                  <span>250%</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Apply & Export Action Buttons -->
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-              <button id="btn-apply-enhancements" type="button" class="btn btn-primary btn-sm" style="background: linear-gradient(135deg, #8b5cf6, #ec4899); border: none; font-weight: 800; padding: 8px 16px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-                <span>⚡</span> એન્હાન્સમેન્ટ લાગુ કરો (Apply Clean & Pitch)
-              </button>
-              <a id="btn-download-clean-audio" href="#" download="my_studio_recording.wav" class="btn btn-secondary btn-sm" style="font-weight: 700; color: #10b981; border-color: rgba(16,185,129,0.4); padding: 8px 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
-                <span>💾</span> સાફ WAV ડાઉનલોડ
-              </a>
-              <button id="btn-use-recorded-in-project" type="button" class="btn btn-outline btn-sm" style="border-color: #38bdf8; color: #7dd3fc; font-weight: 700; padding: 8px 14px; border-radius: 8px; cursor: pointer;">
-                <span>🎬</span> Slide Editor માં મોકલો ➔
-              </button>
-            </div>
-          </div>
-        </div>
+        <!-- Teleprompter & Live Voice Recording Studio (Side-by-Side PDF & Script Reader) -->
+        <div id="myvoice-teleprompter-mount" style="margin-bottom: 22px;"></div>
 
         <!-- CARD 2: SCRIPT INPUT, TONE FRAMEWORK & AAROH-AVROH -->
         <div class="card" style="margin-bottom: 18px; padding: 16px;">
@@ -807,6 +690,32 @@ export async function renderMyVoice(container, navigateTo) {
     estTimeSpan.textContent = `${estSec}s (~${(estSec / 60).toFixed(1)} મિનિટ)`;
   }
 
+  // --- Mount Teleprompter & Live Recording Studio ---
+  const voiceTpMount = document.getElementById('myvoice-teleprompter-mount');
+  let voiceTpStudio = null;
+  if (voiceTpMount) {
+    voiceTpStudio = mountTeleprompterStudio(voiceTpMount, {
+      toolContext: 'voice',
+      initialText: scriptTextarea?.value || '',
+      onSave: ({ audioUrl, text }) => {
+        if (playerCard) playerCard.style.display = 'block';
+        if (mainAudioPlayer) {
+          mainAudioPlayer.src = audioUrl;
+          mainAudioPlayer.load();
+        }
+        if (btnDownloadAudio) {
+          btnDownloadAudio.href = audioUrl;
+          btnDownloadAudio.download = 'my_studio_voiceover.wav';
+        }
+        if (scriptTextarea) {
+          scriptTextarea.value = text;
+          updateCounters();
+        }
+        copyToClipboard('', '🎙️ તમારો ઓરિજિનલ અવાજ રેકોર્ડ થઈને પ્રોજેક્ટમાં સેવ થઈ ગયો છે! ✓');
+      }
+    });
+  }
+
   let analysisDebounceTimer = null;
   async function runScriptAnalysis() {
     const text = scriptTextarea.value.trim();
@@ -844,6 +753,9 @@ export async function renderMyVoice(container, navigateTo) {
 
   scriptTextarea.addEventListener('input', () => {
     updateCounters();
+    if (voiceTpStudio) {
+      voiceTpStudio.setScriptText(scriptTextarea.value);
+    }
     clearTimeout(analysisDebounceTimer);
     analysisDebounceTimer = setTimeout(runScriptAnalysis, 450);
     try {
@@ -970,10 +882,11 @@ export async function renderMyVoice(container, navigateTo) {
         foundText = p.masterPrompt;
       }
     }
-    const scriptEl = document.getElementById('script-input-area');
+    const scriptEl = document.getElementById('voice-script-text');
     if (foundText && scriptEl) {
       scriptEl.value = foundText;
-      updateScriptStats();
+      updateCounters();
+      if (voiceTpStudio) voiceTpStudio.setScriptText(foundText);
       copyToClipboard(foundText, 'સ્ક્રિપ્ટ સફળતાપૂર્વક લવાઈ ગઈ! ✓');
     } else {
       if (typeof navigateTo === 'function') {
@@ -1069,6 +982,7 @@ export async function renderMyVoice(container, navigateTo) {
     }
 
     updateCounters();
+    if (voiceTpStudio) voiceTpStudio.setScriptText(scriptTextarea.value);
     try {
       localStorage.setItem('gyan_yatra_custom_user_script', scriptTextarea.value);
     } catch (_) {}
@@ -1080,6 +994,7 @@ export async function renderMyVoice(container, navigateTo) {
     if (scriptTextarea.value.trim()) {
       scriptTextarea.value = cleanGujaratiPhoneticsClient(scriptTextarea.value);
       updateCounters();
+      if (voiceTpStudio) voiceTpStudio.setScriptText(scriptTextarea.value);
       copyToClipboard('', 'સ્ક્રિપ્ટ શુદ્ધ ગુજરાતી ઉચ્ચારો સાથે સાફ થઈ ગઈ! ✓');
     }
   });
@@ -1088,6 +1003,7 @@ export async function renderMyVoice(container, navigateTo) {
   document.getElementById('btn-clear-script').addEventListener('click', () => {
     scriptTextarea.value = '';
     updateCounters();
+    if (voiceTpStudio) voiceTpStudio.setScriptText('');
   });
 
   // Voice Profile Selection
@@ -1310,151 +1226,37 @@ export async function renderMyVoice(container, navigateTo) {
     }
   }
 
-  // --- Live Audio Recorder & DSP Studio Logic ---
-  const recorder = new LiveAudioRecorder();
-  let rawRecordedBuffer = null;
-  let currentEnhancedBlob = null;
-  let currentEnhancedUrl = null;
-
-  const btnToggleRecord = document.getElementById('btn-toggle-record');
-  const recordIcon = document.getElementById('record-icon');
-  const recordBtnText = document.getElementById('record-btn-text');
-  const timerDisplay = document.getElementById('recording-timer');
-  const micLevelBar = document.getElementById('mic-level-bar');
-  const recordedEditorBox = document.getElementById('recorded-editor-box');
-  const recordedAudioPlayer = document.getElementById('recorded-audio-player');
-  const recordedMetaBadge = document.getElementById('recorded-meta-badge');
-  const toggleNoiseRemoval = document.getElementById('toggle-noise-removal');
-  const toggleClarityBoost = document.getElementById('toggle-clarity-boost');
-  const inputPitchSlider = document.getElementById('input-pitch-slider');
-  const pitchValDisplay = document.getElementById('pitch-val-display');
-  const inputVolumeSlider = document.getElementById('input-volume-slider');
-  const volumeValDisplay = document.getElementById('volume-val-display');
-  const btnApplyEnhancements = document.getElementById('btn-apply-enhancements');
-  const btnDownloadCleanAudio = document.getElementById('btn-download-clean-audio');
-  const btnUseRecordedInProject = document.getElementById('btn-use-recorded-in-project');
-
-  btnToggleRecord?.addEventListener('click', async () => {
-    if (!recorder.isRecording) {
-      try {
-        await recorder.start({
-          onLevel: (lvl) => {
-            if (micLevelBar) micLevelBar.style.width = `${lvl}%`;
-          },
-          onTick: (timeStr) => {
-            if (timerDisplay) timerDisplay.textContent = timeStr;
-          }
-        });
-        if (recordIcon) recordIcon.textContent = '⏹️';
-        if (recordBtnText) recordBtnText.textContent = 'રેકોર્ડિંગ બંધ કરો (Stop)';
-        if (btnToggleRecord) btnToggleRecord.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-        copyToClipboard('', '🎙️ માઈક્રોફોન રેકોર્ડિંગ શરૂ થઈ ગયું! સ્પષ્ટ અવાજમાં બોલો...');
-      } catch (recErr) {
-        alert('માઈક્રોફોન ચાલુ કરવામાં સમસ્યા: ' + (recErr.message || recErr));
-      }
-    } else {
-      const result = await recorder.stop();
-      if (recordIcon) recordIcon.textContent = '🔴';
-      if (recordBtnText) recordBtnText.textContent = 'નવું રેકોર્ડિંગ શરૂ કરો';
-      if (btnToggleRecord) btnToggleRecord.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
-      if (micLevelBar) micLevelBar.style.width = '0%';
-
-      if (result && result.buffer) {
-        rawRecordedBuffer = result.buffer;
-        currentEnhancedBlob = result.blob;
-        currentEnhancedUrl = result.url;
-        if (recordedEditorBox) recordedEditorBox.style.display = 'block';
-        if (recordedMetaBadge) recordedMetaBadge.textContent = `${result.duration.toFixed(1)}s • લાઈવ માઈક`;
-        if (recordedAudioPlayer) {
-          recordedAudioPlayer.src = result.url;
-          recordedAudioPlayer.load();
+  // --- Side-by-Side Teleprompter & Live Voice Studio Mount ---
+  const voiceTpMount = document.getElementById('myvoice-teleprompter-mount');
+  let voiceTpStudio = null;
+  if (voiceTpMount) {
+    voiceTpStudio = mountTeleprompterStudio(voiceTpMount, {
+      toolContext: 'voice',
+      initialText: scriptTextarea?.value || '',
+      onSave: ({ audioUrl, text }) => {
+        if (playerCard) playerCard.style.display = 'block';
+        if (mainAudioPlayer) {
+          mainAudioPlayer.src = audioUrl;
+          mainAudioPlayer.load();
         }
-        if (btnDownloadCleanAudio) {
-          btnDownloadCleanAudio.href = result.url;
+        if (btnDownloadAudio) {
+          btnDownloadAudio.href = audioUrl;
+          btnDownloadAudio.download = 'my_studio_voiceover.wav';
         }
-        await applyAudioDSP();
-      }
-    }
-  });
-
-  inputPitchSlider?.addEventListener('input', (e) => {
-    const val = parseInt(e.target.value, 10);
-    const label = val === 0 ? '0 st (સામાન્ય)' : (val > 0 ? `+${val} st (તીણો/હળવો)` : `${val} st (ભારે/ઊંડો)`);
-    if (pitchValDisplay) pitchValDisplay.textContent = label;
-  });
-
-  inputVolumeSlider?.addEventListener('input', (e) => {
-    const val = Math.round(parseFloat(e.target.value) * 100);
-    if (volumeValDisplay) volumeValDisplay.textContent = `${val}%`;
-  });
-
-  async function applyAudioDSP() {
-    if (!rawRecordedBuffer) return;
-    try {
-      if (btnApplyEnhancements) {
-        btnApplyEnhancements.disabled = true;
-        btnApplyEnhancements.innerHTML = '<span>⏳</span> અવાજ ફિલ્ટર થઈ રહ્યો છે...';
-      }
-
-      const noiseRemoval = toggleNoiseRemoval ? toggleNoiseRemoval.checked : true;
-      const clarityBoost = toggleClarityBoost ? toggleClarityBoost.checked : true;
-      const pitchSemitones = inputPitchSlider ? parseInt(inputPitchSlider.value, 10) : 0;
-      const volume = inputVolumeSlider ? parseFloat(inputVolumeSlider.value) : 1.2;
-
-      const enhanced = await enhanceAudioBuffer(rawRecordedBuffer, {
-        noiseRemoval,
-        clarityBoost,
-        pitchSemitones,
-        volume
-      });
-
-      currentEnhancedBlob = enhanced.blob;
-      currentEnhancedUrl = enhanced.url;
-
-      if (recordedAudioPlayer) {
-        recordedAudioPlayer.src = enhanced.url;
-        recordedAudioPlayer.load();
-        recordedAudioPlayer.play().catch(() => {});
-      }
-      if (btnDownloadCleanAudio) {
-        btnDownloadCleanAudio.href = enhanced.url;
-      }
-      if (recordedMetaBadge) {
-        recordedMetaBadge.textContent = `${enhanced.duration.toFixed(1)}s • ફિલ્ટર થયેલ સ્ટુડિયો WAV ✓`;
-      }
-      copyToClipboard('', '✨ અવાજમાંથી નોઈઝ દૂર થઈ ગઈ અને પિચ/સ્પષ્ટતા સેટ થઈ ગઈ! ✓');
-    } catch (dspErr) {
-      alert('ઓડિયો પ્રોસેસિંગમાં ક્ષતિ: ' + (dspErr.message || dspErr));
-    } finally {
-      if (btnApplyEnhancements) {
-        btnApplyEnhancements.disabled = false;
-        btnApplyEnhancements.innerHTML = '<span>⚡</span> એન્હાન્સમેન્ટ લાગુ કરો (Apply Clean & Pitch)';
-      }
-    }
-  }
-
-  btnApplyEnhancements?.addEventListener('click', applyAudioDSP);
-  toggleNoiseRemoval?.addEventListener('change', applyAudioDSP);
-  toggleClarityBoost?.addEventListener('change', applyAudioDSP);
-
-  // Send enhanced recording to Slide Editor / Project State
-  btnUseRecordedInProject?.addEventListener('click', () => {
-    if (!currentEnhancedUrl) {
-      alert('પહેલા અવાજ રેકોર્ડ કરો.');
-      return;
-    }
-    projectState.updateProject({
-      voiceAudio: {
-        audioUrl: currentEnhancedUrl,
-        filename: 'my_live_recording.wav',
-        provider: 'Live Studio Recorder'
+        if (scriptTextarea) {
+          scriptTextarea.value = text;
+          updateCounters();
+        }
+        copyToClipboard('', '🎙️ તમારો ઓરિજિનલ અવાજ રેકોર્ડ થઈને પ્રોજેક્ટમાં સેવ થઈ ગયો છે! ✓');
       }
     });
-    copyToClipboard('', '🎬 આ રેકોર્ડિંગ સફળતાપૂર્વક પ્રોજેક્ટમાં સેવ થઈ ગયું! થંબનેલ (Step ૫) માં મોકલી રહ્યું છે...');
-    setTimeout(() => {
-      if (typeof navigateTo === 'function') navigateTo('seo');
-    }, 600);
-  });
+
+    scriptTextarea?.addEventListener('input', () => {
+      if (voiceTpStudio) {
+        voiceTpStudio.setScriptText(scriptTextarea.value);
+      }
+    });
+  }
 
   // Canva Quick Copy & Open
   document.getElementById('btn-open-canva-thumb')?.addEventListener('click', (e) => {
