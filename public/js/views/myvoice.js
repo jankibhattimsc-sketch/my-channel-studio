@@ -714,6 +714,12 @@ export async function renderMyVoice(container, navigateTo) {
         copyToClipboard('', '🎙️ તમારો ઓરિજિનલ અવાજ રેકોર્ડ થઈને પ્રોજેક્ટમાં સેવ થઈ ગયો છે! ✓');
       }
     });
+
+    scriptTextarea?.addEventListener('input', () => {
+      if (voiceTpStudio) {
+        voiceTpStudio.setScriptText(scriptTextarea.value);
+      }
+    });
   }
 
   let analysisDebounceTimer = null;
@@ -1226,37 +1232,7 @@ export async function renderMyVoice(container, navigateTo) {
     }
   }
 
-  // --- Side-by-Side Teleprompter & Live Voice Studio Mount ---
-  const voiceTpMount = document.getElementById('myvoice-teleprompter-mount');
-  let voiceTpStudio = null;
-  if (voiceTpMount) {
-    voiceTpStudio = mountTeleprompterStudio(voiceTpMount, {
-      toolContext: 'voice',
-      initialText: scriptTextarea?.value || '',
-      onSave: ({ audioUrl, text }) => {
-        if (playerCard) playerCard.style.display = 'block';
-        if (mainAudioPlayer) {
-          mainAudioPlayer.src = audioUrl;
-          mainAudioPlayer.load();
-        }
-        if (btnDownloadAudio) {
-          btnDownloadAudio.href = audioUrl;
-          btnDownloadAudio.download = 'my_studio_voiceover.wav';
-        }
-        if (scriptTextarea) {
-          scriptTextarea.value = text;
-          updateCounters();
-        }
-        copyToClipboard('', '🎙️ તમારો ઓરિજિનલ અવાજ રેકોર્ડ થઈને પ્રોજેક્ટમાં સેવ થઈ ગયો છે! ✓');
-      }
-    });
 
-    scriptTextarea?.addEventListener('input', () => {
-      if (voiceTpStudio) {
-        voiceTpStudio.setScriptText(scriptTextarea.value);
-      }
-    });
-  }
 
   // Canva Quick Copy & Open
   document.getElementById('btn-open-canva-thumb')?.addEventListener('click', (e) => {
