@@ -41,48 +41,68 @@
       </div>
 
       <nav class="nav-menu">
-        <a class="nav-item active" data-view="topics" id="nav-topics">
-          <span class="nav-icon">📈</span>
-          <span>૧. 48h ફોટો & ChatGPT પ્રોમ્પ્ટ</span>
+        <a class="nav-item active" data-view="projects" id="nav-projects">
+          <span class="nav-icon">📁</span>
+          <span>બધા પ્રોજેક્ટ્સ (Projects)</span>
+          <span class="badge-pill" style="background: #10b981;">Hub</span>
+        </a>
+
+        <div style="font-size: 0.68rem; color: var(--text-muted); padding: 10px 12px 4px 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
+          પ્રોજેક્ટ ટૂલ્સ (Tools)
+        </div>
+
+        <a class="nav-item" data-view="topics" id="nav-topics">
+          <span class="nav-icon">💡</span>
+          <span>૧. Idea (આઈડિયા & ChatGPT)</span>
           <span class="badge-pill" style="background: var(--yt-red);">Hot</span>
         </a>
 
         <a class="nav-item" data-view="slideprompts" id="nav-slideprompts">
           <span class="nav-icon">📑</span>
-          <span>૨. સ્લાઇડ્સ (Tool 2)</span>
+          <span>૨. Slide (સ્લાઇડ્સ Tool 2)</span>
           <span class="badge-pill" style="background: #8b5cf6;">૧૬:૯ PPT</span>
         </a>
 
         <a class="nav-item" data-view="scriptwriter" id="nav-scriptwriter">
           <span class="nav-icon">📝</span>
-          <span>૩. સ્ક્રિપ્ટ રાઇટર</span>
+          <span>૩. Script (સ્ક્રિપ્ટ રાઇટર)</span>
           <span class="badge-pill" style="background: #10b981;">PDF Master</span>
         </a>
 
         <a class="nav-item" data-view="myvoice" id="nav-myvoice">
           <span class="nav-icon">🎙️</span>
-          <span>૪. મારો અવાજ</span>
+          <span>૪. Voice (મારો અવાજ)</span>
           <span class="badge-pill" style="background: #ec4899;">Cloned</span>
         </a>
 
-        <a class="nav-item" data-view="seo" id="nav-seo">
-          <span class="nav-icon">🖼️</span>
-          <span>૫. થંબનેલ</span>
+        <a class="nav-item" data-view="editing" id="nav-editing">
+          <span class="nav-icon">🎬</span>
+          <span>૫. Editing (એડિટિંગ ગાઇડ)</span>
+          <span class="badge-pill" style="background: #f59e0b;">Cuts</span>
+        </a>
+
+        <a class="nav-item" data-view="canva" id="nav-canva">
+          <span class="nav-icon">🎨</span>
+          <span>૬. Canva (કેન્વા ડિઝાઇન)</span>
+          <span class="badge-pill" style="background: #7d2ae8;">16:9</span>
         </a>
 
         <a class="nav-item" data-view="seodescription" id="nav-seodescription">
           <span class="nav-icon">🚀</span>
-          <span>૬. SEO, ટાઈટલ & ડિસ્ક્રિપ્શન</span>
+          <span>૭. SEO (ટાઈટલ & ડિસ્ક્રિપ્શન)</span>
           <span class="badge-pill" style="background: #10b981;">ChatGPT</span>
         </a>
 
-
+        <a class="nav-item" data-view="seo" id="nav-seo">
+          <span class="nav-icon">🖼️</span>
+          <span>૮. Thumbnail (થંબનેલ)</span>
+        </a>
       </nav>
 
       <div class="sidebar-footer">
         <div style="font-size: 0.75rem; color: var(--text-muted);">
           <span>Gyan Yatra Mobile App</span><br>
-          <span class="font-en">v2.0 • Ultra-Smooth Studio</span>
+          <span class="font-en">v2.5 • Multi-Project Studio</span>
         </div>
         <button id="btn-toggle-theme" class="btn btn-outline btn-sm" title="ડાર્ક / લાઇટ થીમ બદલો">
           🌙
@@ -98,18 +118,17 @@
           <button id="mobile-menu-toggle" class="btn btn-outline btn-sm" style="display: none; padding: 6px 10px;" aria-label="Toggle Menu">
             ☰
           </button>
-          <h1 class="page-title" id="top-page-title">💡 વિડીયો આઈડિયા & પ્રોમ્પ્ટ</h1>
+          <button id="top-project-badge-btn" class="btn btn-outline btn-sm" style="font-weight: 700; border-color: rgba(56,189,248,0.4); color: #38bdf8; background: rgba(56,189,248,0.08); font-size: 0.8rem; padding: 5px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;" title="બધા પ્રોજેક્ટ્સ જુઓ">
+            <span>📁</span> <span id="top-project-name">પ્રોજેક્ટ્સ મેનેજર</span>
+          </button>
+          <h1 class="page-title" id="top-page-title" style="margin-left: 8px;">📁 વિડીયો પ્રોજેક્ટ્સ મેનેજર</h1>
         </div>
 
         <div class="top-bar-right">
-
-
           <!-- Direct Android APK Download Button -->
           <a href="/gyan_yatra_studio.apk" download="gyan_yatra_studio.apk" id="top-download-apk-btn" class="btn btn-outline btn-sm" style="font-weight: 700; padding: 6px 12px; font-size: 0.8rem; border-color: #38bdf8; color: #38bdf8; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 8px rgba(56,189,248,0.25);" title="મોબાઇલ માટે Android APK ફાઇલ ડાઉનલોડ કરો">
             <span>📱</span> APK ડાઉનલોડ
           </a>
-
-
 
           <!-- Channel Profile Quick Chip -->
           <div class="channel-chip" id="top-channel-chip" title="ચેનલ વિગત & સેટિંગ્સ">
@@ -131,9 +150,13 @@
     </main>
   </div>
 
-  <!-- Mobile Bottom Navigation Bar (Ultra-Touch Friendly 6 Core Tabs) -->
-  <nav id="mobile-nav">
-    <a class="mobile-nav-item active" data-view="topics">
+  <!-- Mobile Bottom Navigation Bar -->
+  <nav id="mobile-nav" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+    <a class="mobile-nav-item active" data-view="projects">
+      <span class="mobile-icon">📁</span>
+      <span>પ્રોજેક્ટ્સ</span>
+    </a>
+    <a class="mobile-nav-item" data-view="topics">
       <span class="mobile-icon">💡</span>
       <span>આઈડિયા</span>
     </a>
@@ -143,21 +166,28 @@
     </a>
     <a class="mobile-nav-item" data-view="scriptwriter">
       <span class="mobile-icon">📝</span>
-      <span>૩. સ્ક્રિપ્ટ</span>
+      <span>સ્ક્રિપ્ટ</span>
     </a>
     <a class="mobile-nav-item" data-view="myvoice">
       <span class="mobile-icon">🎙️</span>
-      <span>૪. અવાજ</span>
+      <span>અવાજ</span>
     </a>
-    <a class="mobile-nav-item" data-view="seo">
-      <span class="mobile-icon">🖼️</span>
-      <span>૫. થંબનેલ</span>
+    <a class="mobile-nav-item" data-view="editing">
+      <span class="mobile-icon">🎬</span>
+      <span>એડિટિંગ</span>
+    </a>
+    <a class="mobile-nav-item" data-view="canva">
+      <span class="mobile-icon">🎨</span>
+      <span>કેન્વા</span>
     </a>
     <a class="mobile-nav-item" data-view="seodescription">
       <span class="mobile-icon">🚀</span>
-      <span>૬. SEO</span>
+      <span>SEO</span>
     </a>
-
+    <a class="mobile-nav-item" data-view="seo">
+      <span class="mobile-icon">🖼️</span>
+      <span>થંબનેલ</span>
+    </a>
   </nav>
 
   <!-- Global Toast Notification Container for Android/Desktop Copy Feedback -->

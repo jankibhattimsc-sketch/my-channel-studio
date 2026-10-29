@@ -1,5 +1,7 @@
 import { api } from './api.js';
 import { copyToClipboard } from './utils/clipboard.js';
+import { projectState } from './utils/projectState.js';
+import { renderProjects } from './views/projects.js';
 import { renderHome } from './views/home.js';
 import { renderAnalytics } from './views/analytics.js';
 import { renderTopics } from './views/topics.js';
@@ -14,10 +16,12 @@ import { renderMyVoice } from './views/myvoice.js';
 import { renderSlideEditor } from './views/slideeditor.js';
 import { renderWorkspace } from './views/workspace.js';
 import { renderSEODescription } from './views/seodescription.js';
+import { renderEditing } from './views/editing.js';
+import { renderCanva } from './views/canva.js';
 
 class App {
   constructor() {
-    this.currentView = 'home';
+    this.currentView = 'projects';
     this.container = document.getElementById('view-container');
     this.topPageTitle = document.getElementById('top-page-title');
     this.init();
@@ -27,12 +31,34 @@ class App {
     this.setupNavigation();
     this.setupThemeToggle();
     this.setupMobileMenu();
+    this.setupProjectStateListeners();
     this.checkOAuthCallback();
     await this.refreshChannelStatus();
 
-    // Route based on URL hash or default to topics (Step 1)
-    const hash = window.location.hash.replace('#', '') || 'topics';
+    // Route based on URL hash or default to projects (First Screen)
+    const hash = window.location.hash.replace('#', '') || 'projects';
     this.navigateTo(hash);
+  }
+
+  setupProjectStateListeners() {
+    const updateChip = () => {
+      const active = projectState.getActiveProject();
+      const chipEl = document.getElementById('top-project-name');
+      if (chipEl && active) {
+        chipEl.innerText = active.name && active.name.length > 22
+          ? active.name.substring(0, 20) + '...'
+          : (active.name || 'પ્રોજેક્ટ્સ મેનેજર');
+        chipEl.title = active.name || 'પ્રોજેક્ટ્સ મેનેજર';
+      }
+    };
+
+    window.addEventListener('projectStateUpdated', updateChip);
+    window.addEventListener('projectsListUpdated', updateChip);
+    updateChip();
+
+    document.getElementById('top-project-badge-btn')?.addEventListener('click', () => {
+      this.navigateTo('projects');
+    });
   }
 
   setupNavigation() {
@@ -56,7 +82,7 @@ class App {
 
     // Top Save & Share Quick Button
     document.getElementById('top-quick-share-btn')?.addEventListener('click', () => {
-      this.navigateTo('package');
+      this.navigateTo('projects');
     });
 
     // Top Channel chip click
@@ -66,7 +92,7 @@ class App {
 
     // Hash change listener
     window.addEventListener('hashchange', () => {
-      const hash = window.location.hash.replace('#', '') || 'home';
+      const hash = window.location.hash.replace('#', '') || 'projects';
       if (hash !== this.currentView) {
         this.navigateTo(hash);
       }
@@ -163,15 +189,18 @@ class App {
 
     // Update page title
     const titles = {
-      topics: '📈 ૧. 48h ડેટા & ChatGPT સમરી પ્રોમ્પ્ટ (Studio 48h to ChatGPT)',
-      slideprompts: '📑 ૨. સ્લાઇડ્સ & NotebookLM ટૂલ ૨ પ્રોમ્પ્ટ (White PPT Slides)',
-      scriptwriter: '📝 ૩. સ્ક્રિપ્ટ રાઇટર (Script Writer & Audio Studio)',
-      myvoice: '🎙️ ૪. મારો અવાજ (Voice Studio)',
-      seo: '🖼️ ૫. થંબનેલ & AI પ્રોમ્પ્ટ (Thumbnail & AI Prompt)',
-      seodescription: '🚀 ૬. SEO, ટાઈટલ & ડિસ્ક્રિપ્શન (ChatGPT Master Prompt)',
-      slideeditor: '🎬 ૭. ઓડિયો & PDF ઓટો-મેચ એડિટર (Audio & PDF Auto-Match Studio)',
-      workspace: '🌐 ૮. ઓલ-ઇન-વન વર્કસ્પેસ (NotebookLM + ChatGPT + Canva)',
-      thumbnails: '🎨 થંબનેલ સ્ટુડિયો (Thumbnail Studio)',
+      projects: '📁 વિડીયો પ્રોજેક્ટ્સ મેનેજર (My Video Projects)',
+      topics: '💡 ૧. Idea (48h વિશ્લેષણ & ChatGPT આઈડિયા)',
+      slideprompts: '📑 ૨. Slide (સ્લાઇડ્સ & ૧૬:૯ White PPT)',
+      scriptwriter: '📝 ૩. Script (સ્ક્રિપ્ટ રાઇટર & ટાઇમસ્ટેમ્પ)',
+      myvoice: '🎙️ ૪. Voice (મારો અવાજ & વૉઇસ ઓડિયો)',
+      editing: '🎬 ૫. Editing (એડિટિંગ ગાઇડ & કટ લિસ્ટ)',
+      canva: '🎨 ૬. Canva (કેન્વા ૧૬:૯ થંબનેલ & ગ્રાફિક્સ)',
+      seodescription: '🚀 ૭. SEO (ટાઈટલ, ડિસ્ક્રિપ્શન & ChatGPT Hub)',
+      seo: '🖼️ ૮. Thumbnail (થંબનેલ ૧ ફોટો + ૪ શબ્દો & AI પ્રોમ્પ્ટ)',
+      slideeditor: '🎬 ઓડિયો & PDF ઓટો-મેચ એડિટર',
+      workspace: '🌐 ઓલ-ઇન-વન વર્કસ્પેસ',
+      thumbnails: '🎨 થંબનેલ સ્ટુડિયો',
       chatgpt: '✨ ChatGPT Assistant',
       home: '🎯 જ્ઞાન યાત્રા હોમ ડેશબોર્ડ',
       settings: '⚙️ સેટિંગ્સ & API કી'
@@ -188,11 +217,14 @@ class App {
     const navCallback = (target) => this.navigateTo(target);
 
     switch (viewName) {
+      case 'projects':
+        renderProjects(this.container, navCallback);
+        break;
       case 'topics':
         renderTopics(this.container, navCallback);
         break;
-      case 'workspace':
-        renderWorkspace(this.container, navCallback);
+      case 'slideprompts':
+        renderSlidePrompts(this.container, navCallback);
         break;
       case 'scriptwriter':
         renderScriptWriter(this.container, navCallback);
@@ -200,23 +232,26 @@ class App {
       case 'myvoice':
         renderMyVoice(this.container, navCallback);
         break;
-      case 'slideeditor':
-        renderSlideEditor(this.container, navCallback);
+      case 'editing':
+        renderEditing(this.container, navCallback);
         break;
-      case 'seo':
-        renderSEO(this.container, navCallback);
+      case 'canva':
+        renderCanva(this.container, navCallback);
         break;
       case 'seodescription':
         renderSEODescription(this.container, navCallback);
         break;
-      case 'package':
-        renderProjectPackage(this.container, navCallback);
+      case 'seo':
+        renderSEO(this.container, navCallback);
+        break;
+      case 'slideeditor':
+        renderSlideEditor(this.container, navCallback);
+        break;
+      case 'workspace':
+        renderWorkspace(this.container, navCallback);
         break;
       case 'thumbnails':
         renderThumbnails(this.container, navCallback);
-        break;
-      case 'slideprompts':
-        renderSlidePrompts(this.container, navCallback);
         break;
       case 'chatgpt':
         renderChatGPT(this.container, navCallback);
@@ -230,9 +265,8 @@ class App {
       case 'settings':
         renderSettings(this.container, navCallback);
         break;
-      case 'home':
       default:
-        renderTopics(this.container, navCallback);
+        renderProjects(this.container, navCallback);
         break;
     }
   }

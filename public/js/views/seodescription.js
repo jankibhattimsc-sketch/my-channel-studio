@@ -92,6 +92,21 @@ Gyan Yatra ચેનલ સબ્સ્ક્રિપ્શન લિંક.
     const currentPrompt = generateMasterSEOPrompt(currentTopic);
 
     container.innerHTML = `
+      <!-- Project Context Header -->
+      <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-lg); padding: 14px 20px; margin-bottom: 18px; box-shadow: 0 8px 25px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <button id="btn-back-to-projects-seo" class="btn btn-outline btn-sm" style="font-weight: 700;">← બધા પ્રોજેક્ટ્સ</button>
+          <button id="btn-prev-canva-seo" class="btn btn-secondary btn-sm" style="font-weight: 700;">← ૬. Canva</button>
+          <span style="font-size: 0.85rem; color: #38bdf8; font-weight: 800;">📁 પ્રોજેક્ટ: ${currentTopic}</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="badge badge-green" style="font-size: 0.72rem; font-weight: 800;">✓ Auto-Saved</span>
+          <button id="btn-next-to-thumb-seo" class="btn btn-primary btn-sm" style="font-weight: 800; background: #dc2626; border: none; padding: 6px 14px;">
+            ૮. Thumbnail (થંબનેલ) →
+          </button>
+        </div>
+      </div>
+
       <!-- Top Hero Header -->
       <div class="card" style="margin-bottom: 22px; padding: 22px 26px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid #10b981; border-radius: 16px; box-shadow: 0 10px 32px rgba(16, 185, 129, 0.2);">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
@@ -101,7 +116,7 @@ Gyan Yatra ચેનલ સબ્સ્ક્રિપ્શન લિંક.
             </div>
             <div>
               <h2 style="font-size: 1.45rem; font-weight: 800; color: #ffffff; margin: 0 0 4px 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <span>૬. SEO, ટાઈટલ & ડિસ્ક્રિપ્શન (ChatGPT Hub)</span>
+                <span>૭. SEO, ટાઈટલ & ડિસ્ક્રિપ્શન (ChatGPT Hub)</span>
                 <span class="badge" style="background: rgba(16,185,129,0.25); color: #34d399; border: 1px solid #10b981; font-size: 0.75rem; font-weight: 800; padding: 4px 10px; border-radius: 6px;">VIRAL SEO READY</span>
               </h2>
               <p style="color: #cbd5e1; font-size: 0.88rem; margin: 0;">
@@ -407,6 +422,11 @@ Gyan Yatra ચેનલ સબ્સ્ક્રિપ્શન લિંક.
 
     container.querySelector('#btn-top-open-chatgpt-web')?.addEventListener('click', openChatGPTWebWithPrompt);
     container.querySelector('#btn-footer-chatgpt-open')?.addEventListener('click', openChatGPTWebWithPrompt);
+
+    // Navigation Banner Buttons
+    container.querySelector('#btn-back-to-projects-seo')?.addEventListener('click', () => navigateTo('projects'));
+    container.querySelector('#btn-prev-canva-seo')?.addEventListener('click', () => navigateTo('canva'));
+    container.querySelector('#btn-next-to-thumb-seo')?.addEventListener('click', () => navigateTo('seo'));
 
     // Send Prompt to Side-by-Side ChatGPT
     container.querySelector('#btn-send-prompt-to-chat')?.addEventListener('click', () => {

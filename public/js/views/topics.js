@@ -82,10 +82,41 @@ ${topVideosFormatted}
   }
 
   function render() {
+    const activeProj = projectState.getActiveProject();
+    const projectHeaderHtml = `
+      <!-- Top Project Context Header -->
+      <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-lg); padding: 14px 20px; margin-bottom: 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <button id="btn-back-to-projects-banner" class="btn btn-outline btn-sm" style="font-weight: 700; display: flex; align-items: center; gap: 6px;">
+            <span>←</span> બધા પ્રોજેક્ટ્સ (Projects)
+          </button>
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 1.2rem;">💡</span>
+              <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">
+                ૧. Idea (48h વિશ્લેષણ & ChatGPT સમરી પ્રોમ્પ્ટ)
+              </h2>
+            </div>
+            <p style="font-size: 0.8rem; color: #38bdf8; margin: 2px 0 0 0; font-weight: 600;">
+              📁 પ્રોજેક્ટ: ${activeProj.name}
+            </p>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="badge badge-green" style="font-size: 0.72rem; font-weight: 800;">✓ Auto-Saved</span>
+          <button id="btn-goto-step2-banner" class="btn btn-primary btn-sm" style="font-weight: 800; background: #8b5cf6; border: none; padding: 6px 14px;">
+            ૨. સ્લાઇડ્સ (Slide) →
+          </button>
+        </div>
+      </div>
+    `;
+
     // STATE 1: Initial state (No photo uploaded yet)
     if (!hasAnalyzed && !isAnalyzing) {
       container.innerHTML = `
         <div style="max-width: 1100px; margin: 0 auto; padding-bottom: 30px;">
+          ${projectHeaderHtml}
           
           <!-- Header -->
           <div style="margin-bottom: 22px; text-align: left;">
@@ -202,6 +233,7 @@ ${topVideosFormatted}
 
     container.innerHTML = `
       <div style="max-width: 1260px; margin: 0 auto; padding-bottom: 30px;">
+        ${projectHeaderHtml}
         
         <!-- Header with Success Tag & Reset Option -->
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 18px;">
@@ -462,6 +494,10 @@ ${topVideosFormatted}
         processUploadedFiles(imageFiles);
       }
     };
+
+    // Project banner buttons
+    container.querySelector('#btn-back-to-projects-banner')?.addEventListener('click', () => navigateTo('projects'));
+    container.querySelector('#btn-goto-step2-banner')?.addEventListener('click', () => navigateTo('slideprompts'));
   }
 
   // Parse numbers from strings like "24,850", "24.8K", "1.5M", "520", etc.
@@ -942,6 +978,10 @@ ${topVideosFormatted}
         processUploadedFiles(imageFiles);
       }
     };
+
+    // Project banner buttons
+    container.querySelector('#btn-back-to-projects-banner')?.addEventListener('click', () => navigateTo('projects'));
+    container.querySelector('#btn-goto-step2-banner')?.addEventListener('click', () => navigateTo('slideprompts'));
   }
 
   // Initial render

@@ -24,6 +24,21 @@ export async function renderScriptWriter(container, navigateTo) {
   });
 
   container.innerHTML = `
+    <!-- Project Context Header -->
+    <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-lg); padding: 14px 20px; margin-bottom: 18px; box-shadow: 0 8px 25px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <button id="btn-back-to-projects-script" class="btn btn-outline btn-sm" style="font-weight: 700;">← બધા પ્રોજેક્ટ્સ</button>
+        <button id="btn-prev-slide-script" class="btn btn-secondary btn-sm" style="font-weight: 700;">← ૨. Slide</button>
+        <span style="font-size: 0.85rem; color: #38bdf8; font-weight: 800;">📁 પ્રોજેક્ટ: ${activeTopic}</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="badge badge-green" style="font-size: 0.72rem; font-weight: 800;">✓ Auto-Saved</span>
+        <button id="btn-next-to-voice-script" class="btn btn-primary btn-sm" style="font-weight: 800; background: #ec4899; border: none; padding: 6px 14px;">
+          ૪. Voice (અવાજ) →
+        </button>
+      </div>
+    </div>
+
     <!-- 1. Header Hero Card -->
     <div class="card" style="margin-bottom: 20px; padding: 20px 24px; background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%); border: 1.5px solid #8b5cf6; border-radius: 14px; box-shadow: 0 8px 30px rgba(139, 92, 246, 0.2);">
       <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
@@ -609,4 +624,9 @@ export async function renderScriptWriter(container, navigateTo) {
 
     navigateTo('myvoice');
   });
+
+  // Top Project Banner buttons
+  container.querySelector('#btn-back-to-projects-script')?.addEventListener('click', () => navigateTo('projects'));
+  container.querySelector('#btn-prev-slide-script')?.addEventListener('click', () => navigateTo('slideprompts'));
+  container.querySelector('#btn-next-to-voice-script')?.addEventListener('click', () => navigateTo('myvoice'));
 }

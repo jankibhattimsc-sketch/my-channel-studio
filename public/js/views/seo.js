@@ -59,20 +59,32 @@ export async function renderSEO(container, navigateTo) {
     : presetConcepts[0];
 
   container.innerHTML = `
+    <!-- Project Context Header -->
+    <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-lg); padding: 14px 20px; margin-bottom: 18px; box-shadow: 0 8px 25px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <button id="btn-back-to-projects-thumb" class="btn btn-outline btn-sm" style="font-weight: 700;">← બધા પ્રોજેક્ટ્સ</button>
+        <button id="btn-prev-seo-thumb" class="btn btn-secondary btn-sm" style="font-weight: 700;">← ૭. SEO</button>
+        <span style="font-size: 0.85rem; color: #38bdf8; font-weight: 800;">📁 પ્રોજેક્ટ: ${currentTopic}</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="badge badge-green" style="font-size: 0.72rem; font-weight: 800;">✓ Auto-Saved</span>
+      </div>
+    </div>
+
     <!-- Top View Header -->
     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 22px;">
       <div>
         <h2 style="font-size: 1.45rem; font-weight: 800; display: flex; align-items: center; gap: 10px; margin: 0 0 4px 0; color: #ffffff;">
-          <span style="font-size: 1.6rem;">🖼️</span> ૫. થંબનેલ (16:9 Thumbnail & AI Prompt)
+          <span style="font-size: 1.6rem;">🖼️</span> ૮. Thumbnail (થંબનેલ & AI Prompt)
         </h2>
         <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 0;">
-          ફક્ત વિષયનું નામ (Topic Name), ૧૬:૯ થંબનેલ ડિઝાઇન અને નીચે સીધો AI પ્રોમ્પ્ટ.
+          ૧ ફોટો + ૪ શબ્દો પ્યોર વ્હાઇટ વાયરલ થંબનેલ ડિઝાઇન અને AI પ્રોમ્પ્ટ.
         </p>
       </div>
 
       <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-        <button id="btn-top-goto-step6" class="btn btn-success btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #10b981, #059669); border: none; padding: 8px 16px; font-size: 0.85rem; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(16,185,129,0.35);">
-          <span>🚀</span> આગળ વધો: ૬. SEO & ટાઈટલ (ChatGPT) ➔
+        <button id="btn-top-goto-step6" class="btn btn-outline btn-sm" style="font-weight: 700; border-color: #38bdf8; color: #38bdf8;">
+          <span>←</span> ૭. SEO (ChatGPT)
         </button>
       </div>
     </div>
@@ -332,4 +344,8 @@ export async function renderSEO(container, navigateTo) {
   container.querySelector('#btn-top-goto-step6')?.addEventListener('click', () => {
     if (typeof navigateTo === 'function') navigateTo('seodescription');
   });
+
+  // Navigation Banner Buttons
+  container.querySelector('#btn-back-to-projects-thumb')?.addEventListener('click', () => navigateTo('projects'));
+  container.querySelector('#btn-prev-seo-thumb')?.addEventListener('click', () => navigateTo('seodescription'));
 }

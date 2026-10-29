@@ -127,6 +127,21 @@ export async function renderMyVoice(container, navigateTo) {
   };
 
   container.innerHTML = `
+    <!-- Project Context Header -->
+    <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-lg); padding: 14px 20px; margin-bottom: 18px; box-shadow: 0 8px 25px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <button id="btn-back-to-projects-voice" class="btn btn-outline btn-sm" style="font-weight: 700;">← બધા પ્રોજેક્ટ્સ</button>
+        <button id="btn-prev-script-voice" class="btn btn-secondary btn-sm" style="font-weight: 700;">← ૩. Script</button>
+        <span style="font-size: 0.85rem; color: #38bdf8; font-weight: 800;">📁 પ્રોજેક્ટ: ${project.topic || project.name || 'મારો પ્રોજેક્ટ'}</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="badge badge-green" style="font-size: 0.72rem; font-weight: 800;">✓ Auto-Saved</span>
+        <button id="btn-next-to-editing-voice" class="btn btn-primary btn-sm" style="font-weight: 800; background: #f59e0b; border: none; padding: 6px 14px;">
+          ૫. Editing (એડિટિંગ) →
+        </button>
+      </div>
+    </div>
+
     <!-- Top Header with Safe Top Padding for Mobile -->
     <div class="view-header" style="margin-bottom: 20px; padding-top: 4px;">
       <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
@@ -1449,4 +1464,9 @@ export async function renderMyVoice(container, navigateTo) {
 
   document.getElementById('btn-refresh-library').addEventListener('click', loadAudioLibrary);
   loadAudioLibrary();
+
+  // Navigation Banner Buttons
+  container.querySelector('#btn-back-to-projects-voice')?.addEventListener('click', () => navigateTo('projects'));
+  container.querySelector('#btn-prev-script-voice')?.addEventListener('click', () => navigateTo('scriptwriter'));
+  container.querySelector('#btn-next-to-editing-voice')?.addEventListener('click', () => navigateTo('editing'));
 }
