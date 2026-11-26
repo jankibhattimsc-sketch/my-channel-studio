@@ -1,7 +1,7 @@
 // Gyan Yatra Studio — Offline-First Progressive Web App Service Worker
 // Enables 100% offline functionality on mobile devices even without Wi-Fi or Mobile Data!
 
-const CACHE_NAME = 'gyan-yatra-v100.5';
+const CACHE_NAME = 'gyan-yatra-v101.0';
 
 // Essential App Shell resources required to boot and run offline
 const APP_SHELL = [
@@ -11,24 +11,25 @@ const APP_SHELL = [
   '/manifest.json',
   '/css/style.css',
   '/css/components.css',
-  '/js/app.js?v=100.2',
-  '/js/api.js?v=100.2',
+  '/js/app.js?v=101.0',
+  '/js/api.js?v=101.0',
   '/js/views/home.js?v=100.2',
   '/js/views/projects.js?v=99.0',
   '/js/views/topics.js?v=99.0',
   '/js/views/planner.js?v=99.0',
   '/js/views/scriptwriter.js?v=99.0',
   '/js/views/myvoice.js?v=99.0',
-  '/js/views/videoeditor.js?v=99.0',
+  '/js/views/videoeditor.js?v=101.0',
   '/js/views/savedhub.js?v=1.0',
   '/js/views/savedaudios.js?v=1.0',
+  '/js/views/smartask.js?v=101.0',
   '/js/views/workspace.js?v=99.0',
   '/js/views/thumbnails.js?v=99.0',
   '/js/views/seo.js?v=99.0',
   '/js/views/seodescription.js?v=99.0',
   '/js/views/analytics.js?v=99.0',
   '/js/views/research.js?v=99.0',
-  '/js/views/settings.js?v=99.0',
+  '/js/views/settings.js?v=101.0',
   '/js/views/chatgpt.js?v=99.0',
   '/js/views/slideprompts.js?v=99.0',
   '/js/views/slideeditor.js?v=99.0',

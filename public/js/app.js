@@ -1,4 +1,4 @@
-import { api } from './api.js?v=90.0';
+import { api } from './api.js?v=101.0';
 import { copyToClipboard } from './utils/clipboard.js?v=90.0';
 import { projectState } from './utils/projectState.js?v=90.0';
 import { renderProjects } from './views/projects.js?v=90.0';
@@ -14,18 +14,18 @@ import { renderScriptWriter } from './views/scriptwriter.js?v=90.0';
 import { renderChatGPT } from './views/chatgpt.js?v=90.0';
 import { renderSlidePrompts } from './views/slideprompts.js?v=90.0';
 import { renderResearch } from './views/research.js?v=90.0';
-import { renderSettings } from './views/settings.js?v=99.0';
+import { renderSettings } from './views/settings.js?v=101.0';
 import { renderMyVoice } from './views/myvoice.js?v=99.0';
 import { renderSlideEditor } from './views/slideeditor.js?v=99.0';
 import { renderWorkspace } from './views/workspace.js?v=99.9';
 import { renderSEODescription } from './views/seodescription.js?v=99.0';
 import { renderEditing } from './views/editing.js?v=99.0';
 import { renderCanva } from './views/canva.js?v=99.0';
-import { renderVideoEditor } from './views/videoeditor.js?v=99.9';
+import { renderVideoEditor } from './views/videoeditor.js?v=101.0';
 import { renderVideoEditDemo } from './views/videoEditDemo.js?v=99.0';
 import { renderSavedHub } from './views/savedhub.js?v=1.0';
 import { renderSavedAudios } from './views/savedaudios.js?v=1.0';
-import { renderSmartAsk } from './views/smartask.js?v=1.0';
+import { renderSmartAsk } from './views/smartask.js?v=101.0';
 import { initMobileLinkAndOfflineSystem } from './utils/mobileLinkModal.js?v=99.0';
 
 class App {
