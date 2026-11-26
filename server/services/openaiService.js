@@ -34,15 +34,14 @@ class OpenAIService {
     return raw;
   }
 
-  async callGemini({ systemInstruction = '', userText = '', imagesBase64 = [], audioBase64 = '', audioMimeType = 'audio/mpeg', temperature = 0.6, maxTokens = 2500, timeoutMs = 15000 } = {}) {
+  async callGemini({ systemInstruction = '', userText = '', imagesBase64 = [], audioBase64 = '', audioMimeType = 'audio/mpeg', temperature = 0.6, maxTokens = 2500, timeoutMs = 35000 } = {}) {
     const apiKey = this.getGeminiApiKey();
     if (!apiKey) return null;
     const primaryModel = this.getGeminiModel();
     const candidates = [...new Set([
       'gemini-flash-lite-latest',
       primaryModel,
-      'gemini-flash-latest',
-      'gemini-3.5-flash'
+      'gemini-flash-latest'
     ])];
 
     const parts = [];
@@ -75,26 +74,31 @@ class OpenAIService {
     }
 
     let lastErr = null;
-    for (const model of candidates) {
+    for (let idx = 0; idx < candidates.length; idx++) {
+      const model = candidates[idx];
+      const perAttemptMs = idx === 0 ? Math.max(timeoutMs, 35000) : 12000;
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
       try {
         const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
-          signal: AbortSignal.timeout(timeoutMs)
+          signal: AbortSignal.timeout(perAttemptMs)
         });
         const json = await res.json().catch(() => ({}));
         if (res.ok) {
           const text = (json?.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('').trim();
+          console.log(`[Gemini] Success via ${model} (${text.length} chars)`);
           return { text, model };
         }
         lastErr = new Error(json?.error?.message || `Gemini HTTP ${res.status}`);
+        console.warn(`[Gemini] ${model} failed:`, lastErr.message);
         if (res.status === 401 || res.status === 403 || /API_KEY_INVALID/i.test(lastErr.message)) {
           throw lastErr;
         }
       } catch (err) {
         lastErr = err;
+        console.warn(`[Gemini] ${model} error:`, err.message);
         if (err.status === 401 || err.status === 403 || /API_KEY_INVALID/i.test(err.message || '')) {
           throw err;
         }

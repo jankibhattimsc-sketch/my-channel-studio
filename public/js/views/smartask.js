@@ -129,7 +129,7 @@ export async function renderSmartAsk(container) {
       <div id="sa-prompt-card" class="card" style="padding: 20px; border: 1.5px solid rgba(251, 191, 36, 0.45); display: none;">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
           <div>
-            <span style="font-weight: 800; color: #fbbf24; font-size: 1rem;">🪄 ટૂલે બનાવેલો સ્માર્ટ Prompt</span>
+            <span id="sa-prompt-card-title" style="font-weight: 800; color: #fbbf24; font-size: 1rem;">🪄 AI દ્વારા બનાવેલો સ્માર્ટ Prompt</span>
             <span id="sa-intent-badge" style="margin-left: 8px; font-size: 0.78rem; background: rgba(251, 191, 36, 0.16); color: #fde68a; padding: 3px 10px; border-radius: 999px;"></span>
           </div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
@@ -336,6 +336,19 @@ export async function renderSmartAsk(container) {
     return '⚙️ Local Fallback';
   }
 
+  const promptCardTitleEl = container.querySelector('#sa-prompt-card-title');
+
+  function updatePromptTitleBySource(src, model) {
+    if (!promptCardTitleEl) return;
+    if (src === 'gemini') {
+      promptCardTitleEl.textContent = `✨ Google Gemini API (${model || 'gemini-flash-lite-latest'}) નો પરફેક્ટ Prompt`;
+    } else if (src === 'openai') {
+      promptCardTitleEl.textContent = `🤖 ChatGPT API (${model || 'gpt-4o'}) નો પરફેક્ટ Prompt`;
+    } else {
+      promptCardTitleEl.textContent = `⚠️ ટેમ્પરરી ફૉલબેક Prompt (Gemini ફરી પ્રયાસ કરો)`;
+    }
+  }
+
   btnBuildPrompt.addEventListener('click', async () => {
     const userInput = userInputEl.value.trim();
     if (!userInput && attachedImages.length === 0) {
@@ -344,7 +357,7 @@ export async function renderSmartAsk(container) {
     }
     setBusy(true);
     generatedPromptEl.value = '';
-    setStatus('🪄 તમારી ભાષા અને ફોટો સમજીને શુદ્ધ ગુજરાતી Prompt બની રહ્યો છે...');
+    setStatus('🪄 Google Gemini API તમારી ભાષા અને ફોટો સમજીને Master Prompt બનાવી રહ્યું છે...');
     try {
       const res = await api.buildSmartPrompt({
         userInput,
@@ -352,6 +365,7 @@ export async function renderSmartAsk(container) {
         answerLanguage: langSelectEl.value
       });
       generatedPromptEl.value = res.generatedPrompt || '';
+      updatePromptTitleBySource(res.source, res.model);
       intentBadgeEl.textContent = `${res.detectedIntent || 'Prompt તૈયાર છે'} • ${sourceLabel(res.source, res.model)}`;
       promptCardEl.style.display = 'block';
       setStatus(`✅ Master Prompt તૈયાર છે (${sourceLabel(res.source, res.model)})!`);
@@ -407,6 +421,7 @@ export async function renderSmartAsk(container) {
         answerLanguage: langSelectEl.value
       });
       generatedPromptEl.value = res.generatedPrompt || '';
+      updatePromptTitleBySource(res.source, res.model);
       intentBadgeEl.textContent = `${res.detectedIntent || 'Prompt તૈયાર છે'} • ${sourceLabel(res.source, res.model)}`;
       promptCardEl.style.display = 'block';
       answerBodyEl.textContent = res.answer || '';
