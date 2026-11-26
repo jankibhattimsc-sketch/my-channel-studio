@@ -162,10 +162,12 @@ class App {
     window.addEventListener('hashchange', () => {
       const hash = window.location.hash.replace('#', '').trim();
       const validViews = [
-        'home', 'dashboard', 'projects', 'ideas', 'topics', 'planner', 'productionplanner',
+        'home', 'dashboard', 'projects', 'pastetopics', 'customtopics', 'mytopics', 'savedtopics',
+        'ideas', 'topics', 'planner', 'productionplanner',
         'slideprompt', 'slideprompts', 'slides', 'slideeditor',
         'script', 'scriptwriter', 'scripteditor', 'voice', 'myvoice', 'videoeditor', 'editing',
         'videoeditdemo', 'workspace', 'thumbnails', 'thumbnail', 'seodescription', 'seo',
+        'savedhub', 'saved', 'savedaudios', 'audios', 'smartask', 'promptgpt', 'askgpt',
         'publish', 'publishing', 'chatgpt', 'analytics', 'research', 'settings'
       ];
       if (hash && validViews.includes(hash) && hash !== this.currentView) {
