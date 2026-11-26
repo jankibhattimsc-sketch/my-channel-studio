@@ -1,6 +1,6 @@
 const path = require('path');
 
-const FIRESTORE_CHUNK_SIZE = 750000; // Stay safely under Firestore's 1,048,487-byte property limit
+const FIRESTORE_CHUNK_SIZE = 250000; // 250k UTF-16 chars <= 750KB UTF-8 even for 3-byte Gujarati text
 
 /**
  * Lightweight Cloud Sync Service for Gyan Yatra Studio.
