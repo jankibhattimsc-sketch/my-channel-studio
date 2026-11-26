@@ -736,9 +736,14 @@ export async function renderVideoEditor(container, navigateTo) {
     }
   }
 
-  // Build authentic generated slide clips list
+  // Build authentic generated slide clips list (strictly sorted by numeric slideNumber)
   function buildGeneratedClips() {
-    return connectedSequence.slides.map((s, idx) => {
+    const sortedSlides = [...(connectedSequence.slides || [])].sort((a, b) => {
+      const na = Number(a.slideNumber || a.pageNumber || 9999);
+      const nb = Number(b.slideNumber || b.pageNumber || 9999);
+      return na - nb;
+    });
+    return sortedSlides.map((s, idx) => {
       const sNum = s.slideNumber || (idx + 1);
       const matched = storedSlideAudios.find(r =>
         (r.slideId && s.slideId && String(r.slideId) === String(s.slideId)) ||
@@ -821,6 +826,18 @@ export async function renderVideoEditor(container, navigateTo) {
   let generatedClips = (clipsMatchTopic)
     ? project.editing.generatedClips
     : buildGeneratedClips();
+
+  if (Array.isArray(generatedClips)) {
+    generatedClips.sort((a, b) => {
+      const na = Number(a.slideNumber || a.pageNumber || 9999);
+      const nb = Number(b.slideNumber || b.pageNumber || 9999);
+      return na - nb;
+    });
+    generatedClips.forEach((c, idx) => {
+      c.clipNumber = idx + 1;
+      c.slideIndex = idx;
+    });
+  }
 
   if (!isDefaultGsrtcProject && Array.isArray(generatedClips)) {
     generatedClips.forEach(c => {

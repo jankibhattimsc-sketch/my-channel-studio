@@ -21,10 +21,10 @@ import { renderWorkspace } from './views/workspace.js?v=99.9';
 import { renderSEODescription } from './views/seodescription.js?v=99.0';
 import { renderEditing } from './views/editing.js?v=99.0';
 import { renderCanva } from './views/canva.js?v=99.0';
-import { renderVideoEditor } from './views/videoeditor.js?v=101.2';
+import { renderVideoEditor } from './views/videoeditor.js?v=101.4';
 import { renderVideoEditDemo } from './views/videoEditDemo.js?v=99.0';
 import { renderSavedHub } from './views/savedhub.js?v=1.0';
-import { renderSavedAudios } from './views/savedaudios.js?v=1.0';
+import { renderSavedAudios } from './views/savedaudios.js?v=101.4';
 import { renderSmartAsk } from './views/smartask.js?v=101.1';
 import { initMobileLinkAndOfflineSystem } from './utils/mobileLinkModal.js?v=99.0';
 

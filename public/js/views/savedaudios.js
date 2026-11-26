@@ -121,8 +121,31 @@ export async function renderSavedAudios(container, navigateTo) {
     const loadingEl = container.querySelector('#sa-loading');
     if (loadingEl) loadingEl.style.display = 'block';
     try {
-      const res = await fetch('/api/voice/slide-audios').then(r => r.json());
-      allAudios = Array.isArray(res?.audios) ? res.audios : [];
+      const pid = encodeURIComponent(project?.id || '');
+      const res = await fetch(`/api/voice/slide-audios?projectId=${pid}`).then(r => r.json());
+      let list = [];
+      if (Array.isArray(res?.audios) && res.audios.length > 0) {
+        list = res.audios;
+      } else if (res?.slideAudios && typeof res.slideAudios === 'object') {
+        list = Object.values(res.slideAudios);
+      }
+      if (list.length === 0) {
+        const lib = await fetch('/api/voice/library').then(r => r.json()).catch(() => null);
+        if (Array.isArray(lib?.audios)) list = lib.audios;
+        else if (Array.isArray(lib?.library)) list = lib.library;
+      }
+      allAudios = list.map(a => {
+        if (!a.slideNumber && a.filename) {
+          const m = String(a.filename).match(/slide[_\s-]*(\d+)/i);
+          if (m) a.slideNumber = parseInt(m[1], 10);
+        }
+        return a;
+      }).sort((a, b) => {
+        const na = Number(a.slideNumber || 9999);
+        const nb = Number(b.slideNumber || 9999);
+        if (na !== nb) return na - nb;
+        return (b.mtime || 0) - (a.mtime || 0);
+      });
       if (loadingEl) loadingEl.style.display = 'none';
       renderGrid(container.querySelector('#sa-search-input')?.value || '');
     } catch (err) {
