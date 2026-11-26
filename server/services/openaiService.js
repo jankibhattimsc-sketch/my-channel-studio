@@ -37,11 +37,10 @@ class OpenAIService {
     if (!apiKey) return null;
     const primaryModel = this.getGeminiModel();
     const candidates = [...new Set([
-      primaryModel,
-      'gemini-3.5-flash',
-      'gemini-flash-latest',
       'gemini-2.5-flash-lite',
-      'gemini-3.8-flash',
+      'gemini-flash-latest',
+      'gemini-3.5-flash',
+      primaryModel,
       'gemini-flash-lite-latest'
     ])];
 
@@ -70,19 +69,27 @@ class OpenAIService {
     let lastErr = null;
     for (const model of candidates) {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      const json = await res.json().catch(() => ({}));
-      if (res.ok) {
-        const text = (json?.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('').trim();
-        return { text, model };
-      }
-      lastErr = new Error(json?.error?.message || `Gemini HTTP ${res.status}`);
-      if (res.status === 401 || res.status === 403 || /API_KEY_INVALID/i.test(lastErr.message)) {
-        throw lastErr;
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+          signal: AbortSignal.timeout(15000)
+        });
+        const json = await res.json().catch(() => ({}));
+        if (res.ok) {
+          const text = (json?.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('').trim();
+          return { text, model };
+        }
+        lastErr = new Error(json?.error?.message || `Gemini HTTP ${res.status}`);
+        if (res.status === 401 || res.status === 403 || /API_KEY_INVALID/i.test(lastErr.message)) {
+          throw lastErr;
+        }
+      } catch (err) {
+        lastErr = err;
+        if (err.status === 401 || err.status === 403 || /API_KEY_INVALID/i.test(err.message || '')) {
+          throw err;
+        }
       }
     }
     throw lastErr || new Error('Gemini request failed');
