@@ -1,11 +1,12 @@
-const fs = require('fs');
 const path = require('path');
+
+const FIRESTORE_CHUNK_SIZE = 750000; // Stay safely under Firestore's 1,048,487-byte property limit
 
 /**
  * Lightweight Cloud Sync Service for Gyan Yatra Studio.
  * Supports:
  * 1) CLOUD_DB_URL (e.g. Firebase Realtime DB https://<project>-default-rtdb.firebaseio.com/studio_db.json)
- * 2) Firebase Firestore REST API (FIREBASE_PROJECT_ID + FIREBASE_API_KEY)
+ * 2) Firebase Firestore REST API (FIREBASE_PROJECT_ID + FIREBASE_API_KEY) with automatic chunking
  * Non-blocking: local database.json always remains primary so offline/local mode never breaks.
  */
 class CloudSyncService {
@@ -42,6 +43,10 @@ class CloudSyncService {
     };
   }
 
+  firestoreDocUrl(projectId, apiKey, docId) {
+    return `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents/studio/${encodeURIComponent(docId)}?key=${encodeURIComponent(apiKey)}`;
+  }
+
   async pullDatabase() {
     const { cloudDbUrl, projectId, apiKey } = this.getConfig();
     if (!this.isConfigured()) return null;
@@ -60,8 +65,29 @@ class CloudSyncService {
         return null;
       }
 
-      const url = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents/studio/main?key=${encodeURIComponent(apiKey)}`;
-      const res = await fetch(url, { method: 'GET' });
+      // Check chunked manifest first
+      const manifestRes = await fetch(this.firestoreDocUrl(projectId, apiKey, 'manifest'), { method: 'GET' });
+      if (manifestRes.ok) {
+        const manifestDoc = await manifestRes.json();
+        const chunkCount = Number(manifestDoc?.fields?.chunkCount?.integerValue || 0);
+        if (chunkCount > 0) {
+          let assembled = '';
+          for (let i = 0; i < chunkCount; i++) {
+            const cRes = await fetch(this.firestoreDocUrl(projectId, apiKey, `chunk_${i}`), { method: 'GET' });
+            if (!cRes.ok) throw new Error(`Firestore chunk_${i} GET ${cRes.status}`);
+            const cDoc = await cRes.json();
+            assembled += (cDoc?.fields?.data?.stringValue || '');
+          }
+          const parsed = JSON.parse(assembled);
+          this.lastSyncAt = new Date().toISOString();
+          this.lastMode = 'firestore_pull';
+          this.lastError = null;
+          return parsed;
+        }
+      }
+
+      // Fallback to single legacy doc
+      const res = await fetch(this.firestoreDocUrl(projectId, apiKey, 'main'), { method: 'GET' });
       if (res.status === 404) return null;
       if (!res.ok) {
         const txt = await res.text().catch(() => '');
@@ -87,7 +113,6 @@ class CloudSyncService {
     if (!this.isConfigured() || !data) return false;
 
     try {
-      // Never sync raw API keys or OAuth tokens inside cloud JSON unless explicitly needed
       const safeClone = {
         ...data,
         updatedAt: new Date().toISOString()
@@ -106,24 +131,47 @@ class CloudSyncService {
         return true;
       }
 
-      const url = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents/studio/main?key=${encodeURIComponent(apiKey)}`;
-      const body = {
-        fields: {
-          updatedAt: { stringValue: safeClone.updatedAt },
-          payload: { stringValue: JSON.stringify(safeClone) }
+      const raw = JSON.stringify(safeClone);
+      const chunks = [];
+      for (let i = 0; i < raw.length; i += FIRESTORE_CHUNK_SIZE) {
+        chunks.push(raw.slice(i, i + FIRESTORE_CHUNK_SIZE));
+      }
+
+      for (let i = 0; i < chunks.length; i++) {
+        const chunkRes = await fetch(this.firestoreDocUrl(projectId, apiKey, `chunk_${i}`), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fields: {
+              index: { integerValue: String(i) },
+              data: { stringValue: chunks[i] }
+            }
+          })
+        });
+        if (!chunkRes.ok) {
+          const txt = await chunkRes.text().catch(() => '');
+          throw new Error(`Firestore chunk_${i} PATCH ${chunkRes.status}: ${txt.slice(0, 160)}`);
         }
-      };
-      const res = await fetch(url, {
+      }
+
+      const manifestRes = await fetch(this.firestoreDocUrl(projectId, apiKey, 'manifest'), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+        body: JSON.stringify({
+          fields: {
+            updatedAt: { stringValue: safeClone.updatedAt },
+            chunkCount: { integerValue: String(chunks.length) },
+            totalBytes: { integerValue: String(raw.length) }
+          }
+        })
       });
-      if (!res.ok) {
-        const txt = await res.text().catch(() => '');
-        throw new Error(`Firestore PATCH ${res.status}: ${txt.slice(0, 160)}`);
+      if (!manifestRes.ok) {
+        const txt = await manifestRes.text().catch(() => '');
+        throw new Error(`Firestore manifest PATCH ${manifestRes.status}: ${txt.slice(0, 160)}`);
       }
+
       this.lastSyncAt = new Date().toISOString();
-      this.lastMode = 'firestore_push';
+      this.lastMode = `firestore_push_${chunks.length}_chunks`;
       this.lastError = null;
       return true;
     } catch (err) {
