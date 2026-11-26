@@ -21,6 +21,8 @@ const defaultData = {
     googleApiKey: process.env.GOOGLE_API_KEY || '',
     openaiApiKey: process.env.OPENAI_API_KEY || '',
     openaiModel: process.env.OPENAI_MODEL || 'gpt-4o',
+    geminiApiKey: process.env.GEMINI_API_KEY || '',
+    geminiModel: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
     creatorEmail: process.env.CREATOR_EMAIL || '',
     demoMode: process.env.DEMO_MODE !== 'false',
     theme: 'dark'

@@ -28,6 +28,9 @@ router.get('/', (req, res) => {
         openaiApiKeyConfigured: Boolean(raw.openaiApiKey),
         openaiApiKeyMasked: maskKey(raw.openaiApiKey),
         openaiModel: raw.openaiModel || 'gpt-4o',
+        geminiApiKeyConfigured: Boolean(raw.geminiApiKey),
+        geminiApiKeyMasked: maskKey(raw.geminiApiKey),
+        geminiModel: raw.geminiModel || 'gemini-2.5-flash',
         creatorEmail: raw.creatorEmail || '',
         demoMode: raw.demoMode,
         theme: raw.theme || 'dark'
@@ -70,6 +73,8 @@ router.post('/', (req, res) => {
       googleApiKey,
       openaiApiKey,
       openaiModel,
+      geminiApiKey,
+      geminiModel,
       demoMode,
       theme
     } = req.body;
@@ -82,6 +87,8 @@ router.post('/', (req, res) => {
     if (googleApiKey !== undefined && googleApiKey.trim() !== '') updates.googleApiKey = googleApiKey.trim();
     if (openaiApiKey !== undefined && openaiApiKey.trim() !== '') updates.openaiApiKey = openaiApiKey.trim();
     if (openaiModel !== undefined) updates.openaiModel = openaiModel;
+    if (geminiApiKey !== undefined && geminiApiKey.trim() !== '') updates.geminiApiKey = geminiApiKey.trim();
+    if (geminiModel !== undefined) updates.geminiModel = geminiModel;
     if (demoMode !== undefined) updates.demoMode = Boolean(demoMode);
     if (theme !== undefined) updates.theme = theme;
 

@@ -20,6 +20,57 @@ class OpenAIService {
     return Boolean(settings.openaiApiKey || process.env.OPENAI_API_KEY);
   }
 
+  getGeminiApiKey() {
+    const settings = db.getSettings();
+    return (settings.geminiApiKey || process.env.GEMINI_API_KEY || '').trim();
+  }
+
+  getGeminiModel() {
+    const settings = db.getSettings();
+    return (settings.geminiModel || process.env.GEMINI_MODEL || 'gemini-2.5-flash').trim();
+  }
+
+  async callGemini({ systemInstruction = '', userText = '', imagesBase64 = [], temperature = 0.6, maxTokens = 2500 } = {}) {
+    const apiKey = this.getGeminiApiKey();
+    if (!apiKey) return null;
+    const model = this.getGeminiModel();
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+    const parts = [];
+    if (userText) parts.push({ text: userText });
+    for (const img of (Array.isArray(imagesBase64) ? imagesBase64 : [])) {
+      if (typeof img !== 'string' || !img.startsWith('data:image/')) continue;
+      const commaIdx = img.indexOf('base64,');
+      if (commaIdx === -1) continue;
+      const mimeType = img.slice(5, commaIdx).split(';')[0] || 'image/jpeg';
+      const data = img.slice(commaIdx + 7).replace(/\s/g, '');
+      parts.push({ inline_data: { mime_type: mimeType, data } });
+    }
+
+    const body = {
+      contents: [{ role: 'user', parts }],
+      generationConfig: {
+        temperature,
+        maxOutputTokens: maxTokens
+      }
+    };
+    if (systemInstruction) {
+      body.system_instruction = { parts: [{ text: systemInstruction }] };
+    }
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(json?.error?.message || `Gemini HTTP ${res.status}`);
+    }
+    const text = (json?.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('').trim();
+    return { text, model };
+  }
+
   // --- 1. ChatGPT Creator Assistant ---
   async chat({ conversationId, userMessage, channelContext = null }) {
     const openai = this.getOpenAIClient();
@@ -1780,10 +1831,7 @@ ${hashtags.join(' ')}`;
     ).slice(0, 4);
 
     const langLabel = answerLanguage === 'en' ? 'English' : (answerLanguage === 'hi' ? 'Hindi' : 'Gujarati');
-
-    if (openai) {
-      try {
-        const instruction = `You are a world-class Prompt Engineer who deeply understands Gujarati, Roman Gujarati (Gujlish like "mare aa photo ma su che te jankari joie", "aa topic par video banavo che"), Hindi, and English.
+    const promptInstruction = `You are a world-class Prompt Engineer who deeply understands Gujarati, Roman Gujarati (Gujlish like "mare aa photo ma su che te jankari joie", "aa topic par video banavo che"), Hindi, and English.
 The user will give you:
 1) Their casual/rough words or question from their mind, and/or
 2) One or more uploaded photos/screenshots.
@@ -1799,23 +1847,61 @@ CRITICAL RULES:
   - "detectedIntent": short 1-line summary in Gujarati of what the user wants
   - "generatedPrompt": the complete, ready-to-use professional prompt`;
 
+    const promptUserText = cleanInput
+      ? `User's message in their own words:\n"${cleanInput}"\n\nUploaded photos count: ${validImages.length}`
+      : `No text typed. Analyze the ${validImages.length} uploaded photo(s) and create the best prompt to explain/help the user with what is shown in the photo(s).`;
+
+    const parsePromptRaw = (raw, usedModel, source) => {
+      const jsonMatch = (raw || '').match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (parsed.generatedPrompt) {
+            return {
+              generatedPrompt: String(parsed.generatedPrompt).trim(),
+              detectedIntent: String(parsed.detectedIntent || 'તમારા પ્રશ્ન મુજબ સ્માર્ટ પ્રોમ્પ્ટ તૈયાર છે').trim(),
+              model: usedModel,
+              source
+            };
+          }
+        } catch (_) {}
+      }
+      return {
+        generatedPrompt: String(raw || '').trim(),
+        detectedIntent: 'તમારા પ્રશ્ન મુજબ સ્માર્ટ પ્રોમ્પ્ટ તૈયાર છે',
+        model: usedModel,
+        source
+      };
+    };
+
+    if (this.getGeminiApiKey()) {
+      try {
+        const gem = await this.callGemini({
+          systemInstruction: promptInstruction,
+          userText: promptUserText,
+          imagesBase64: validImages,
+          temperature: 0.5,
+          maxTokens: 1400
+        });
+        if (gem && gem.text) {
+          return parsePromptRaw(gem.text, gem.model, 'gemini');
+        }
+      } catch (err) {
+        console.warn('[SmartPrompt] Gemini fallback triggered:', err.message);
+      }
+    }
+
+    if (openai) {
+      try {
         const userContent = [
-          {
-            type: 'text',
-            text: cleanInput
-              ? `User's message in their own words:\n"${cleanInput}"\n\nUploaded photos count: ${validImages.length}`
-              : `No text typed. Analyze the ${validImages.length} uploaded photo(s) and create the best prompt to explain/help the user with what is shown in the photo(s).`
-          },
-          ...validImages.map(img => ({
-            type: 'image_url',
-            image_url: { url: img }
-          }))
+          { type: 'text', text: promptUserText },
+          ...validImages.map(img => ({ type: 'image_url', image_url: { url: img } }))
         ];
 
         const response = await openai.chat.completions.create({
           model,
           messages: [
-            { role: 'system', content: instruction },
+            { role: 'system', content: promptInstruction },
             { role: 'user', content: userContent }
           ],
           temperature: 0.5,
@@ -1823,24 +1909,7 @@ CRITICAL RULES:
         });
 
         const raw = (response.choices[0].message.content || '').trim();
-        const jsonMatch = raw.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          if (parsed.generatedPrompt) {
-            return {
-              generatedPrompt: String(parsed.generatedPrompt).trim(),
-              detectedIntent: String(parsed.detectedIntent || 'તમારા પ્રશ્ન મુજબ સ્માર્ટ પ્રોમ્પ્ટ તૈયાર છે').trim(),
-              model,
-              source: 'openai'
-            };
-          }
-        }
-        return {
-          generatedPrompt: raw,
-          detectedIntent: 'તમારા પ્રશ્ન મુજબ સ્માર્ટ પ્રોમ્પ્ટ તૈયાર છે',
-          model,
-          source: 'openai'
-        };
+        return parsePromptRaw(raw, model, 'openai');
       } catch (err) {
         console.warn('[SmartPrompt] OpenAI fallback triggered:', err.message);
       }
@@ -1906,22 +1975,44 @@ CRITICAL RULES:
     ).slice(0, 4);
 
     const langLabel = answerLanguage === 'en' ? 'English' : (answerLanguage === 'hi' ? 'Hindi' : 'Gujarati');
+    const systemMsg = `You are a helpful, accurate AI Assistant.
+The user may ask any question from their mind (personal, daily life, education, business, YouTube, tech, or based on uploaded photos).
+Always inspect any attached photos carefully and answer in clear, natural, easy-to-read ${langLabel}.`;
+    const answerText = cleanPrompt || `Please examine the attached photo(s) and explain everything clearly in ${langLabel}.`;
+
+    if (this.getGeminiApiKey()) {
+      try {
+        const gem = await this.callGemini({
+          systemInstruction: systemMsg,
+          userText: answerText,
+          imagesBase64: validImages,
+          temperature: 0.7,
+          maxTokens: 2500
+        });
+        if (gem && gem.text) {
+          return {
+            answer: gem.text,
+            model: gem.model,
+            source: 'gemini'
+          };
+        }
+      } catch (err) {
+        console.warn('[SmartAnswer] Gemini error:', err.message);
+        if (!openai) {
+          return {
+            answer: `⚠️ Gemini API એરર: ${err.message}`,
+            model: this.getGeminiModel(),
+            source: 'error'
+          };
+        }
+      }
+    }
 
     if (openai) {
       try {
-        const systemMsg = `You are a helpful, accurate ChatGPT AI Assistant.
-The user may ask any question from their mind (personal, daily life, education, business, YouTube, tech, or based on uploaded photos).
-Always inspect any attached photos carefully and answer in clear, natural, easy-to-read ${langLabel}.`;
-
         const userContent = [
-          {
-            type: 'text',
-            text: cleanPrompt || `Please examine the attached photo(s) and explain everything clearly in ${langLabel}.`
-          },
-          ...validImages.map(img => ({
-            type: 'image_url',
-            image_url: { url: img }
-          }))
+          { type: 'text', text: answerText },
+          ...validImages.map(img => ({ type: 'image_url', image_url: { url: img } }))
         ];
 
         const response = await openai.chat.completions.create({
@@ -1950,7 +2041,7 @@ Always inspect any attached photos carefully and answer in clear, natural, easy-
     }
 
     return {
-      answer: `⚠️ OpenAI API Key સેટ નથી. સેટિંગ્સમાં અથવા .env માં OPENAI_API_KEY મૂકો એટલે ChatGPT આ પ્રોમ્પ્ટ${validImages.length > 0 ? ' અને ફોટા' : ''} પરથી તરત જ લાઈવ જવાબ આપશે.\n\nતમારો તૈયાર પ્રોમ્પ્ટ:\n${cleanPrompt}`,
+      answer: `⚠️ ફ્રી Gemini Key અથવા OpenAI Key સેટ નથી. સેટિંગ્સ (#settings) માં ફ્રી Google Gemini API Key મૂકો એટલે તરત જ લાઈવ જવાબ મળશે.\n\nતમારો તૈયાર પ્રોમ્પ્ટ:\n${cleanPrompt}`,
       model: 'demo-fallback',
       source: 'demo'
     };

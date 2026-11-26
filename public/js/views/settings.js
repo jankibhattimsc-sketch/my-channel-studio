@@ -95,6 +95,26 @@ export async function renderSettings(container, navigateTo) {
             </span>
           </div>
 
+          <!-- Google Gemini API Key (FREE AI) -->
+          <div class="form-group" style="margin-bottom: 0; padding: 14px; border-radius: 10px; border: 1.5px solid rgba(16, 185, 129, 0.45); background: rgba(16, 185, 129, 0.06);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 6px;">
+              <label class="form-label" style="margin: 0; color: #34d399; font-weight: 800;">
+                🆓 Google Gemini API Key (બિલકુલ ફ્રી AI & ફોટા વાંચવા માટે):
+              </label>
+              <a href="https://aistudio.google.com/app/apikey" target="_blank" style="font-size: 0.78rem; color: #38bdf8; font-weight: 800; text-decoration: underline;">
+                🔗 અહીંથી ફ્રી Key બનાવો (Google AI Studio)
+              </a>
+            </div>
+            <input type="password" id="setting-gemini-key" class="form-input font-en" placeholder="${s.geminiApiKeyConfigured ? `${s.geminiApiKeyMasked} (ફ્રી Gemini Key સેટ છે ✓)` : 'AIzaSyxxxxxxxxxxxxxxxxxxxxxxxxx'}">
+            <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span style="font-size: 0.76rem; color: var(--text-muted);">Gemini મોડેલ:</span>
+              <select id="setting-gemini-model" class="form-select" style="max-width: 260px;">
+                <option value="gemini-2.5-flash" ${(!s.geminiModel || s.geminiModel === 'gemini-2.5-flash') ? 'selected' : ''}>Gemini 2.5 Flash (ફ્રી & અતિ ઝડપી)</option>
+                <option value="gemini-2.0-flash" ${s.geminiModel === 'gemini-2.0-flash' ? 'selected' : ''}>Gemini 2.0 Flash (ફ્રી)</option>
+              </select>
+            </div>
+          </div>
+
           <!-- OpenAI API Key -->
           <div class="form-group" style="margin-bottom: 0;">
             <label class="form-label">OpenAI API Key (sk-...):</label>
@@ -168,17 +188,21 @@ export async function renderSettings(container, navigateTo) {
       const gRedirect = container.querySelector('#setting-google-redirect').value;
       const oKey = container.querySelector('#setting-openai-key').value;
       const oModel = container.querySelector('#setting-openai-model').value;
+      const gemKey = container.querySelector('#setting-gemini-key')?.value || '';
+      const gemModel = container.querySelector('#setting-gemini-model')?.value || 'gemini-2.5-flash';
       const demoM = container.querySelector('#setting-demo-mode').checked;
 
       const payload = {
         googleClientId: gId,
         googleRedirectUri: gRedirect,
         openaiModel: oModel,
+        geminiModel: gemModel,
         demoMode: demoM
       };
 
       if (gSecret.trim()) payload.googleClientSecret = gSecret;
       if (oKey.trim()) payload.openaiApiKey = oKey;
+      if (gemKey.trim()) payload.geminiApiKey = gemKey;
 
       try {
         await api.saveSettings(payload);
