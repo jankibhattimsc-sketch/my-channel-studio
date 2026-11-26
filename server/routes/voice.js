@@ -1273,4 +1273,197 @@ router.post('/isolate-speech', async (req, res) => {
   }
 });
 
+// List all saved videos in public/videos for Facebook Tool & Vault
+router.get('/saved-videos', (req, res) => {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const outDir = path.join(__dirname, '..', '..', 'public', 'videos');
+    if (!fs.existsSync(outDir)) return res.json({ success: true, videos: [] });
+    const videos = fs.readdirSync(outDir)
+      .filter(f => /\.(mp4|webm|mov)$/i.test(f))
+      .map(f => {
+        const st = fs.statSync(path.join(outDir, f));
+        return {
+          filename: f,
+          url: `/videos/${f}`,
+          sizeBytes: st.size,
+          createdAt: st.mtime.toISOString(),
+          mtimeMs: st.mtimeMs
+        };
+      })
+      .sort((a, b) => b.mtimeMs - a.mtimeMs);
+    res.json({ success: true, videos });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Facebook Tool: Extract Audio from Video -> AI Listens to Speech -> Strips YouTube Intro & Generates Facebook Title/Description/Tags
+router.post('/facebook-analyze', async (req, res) => {
+  const fs = require('fs');
+  const path = require('path');
+  const os = require('os');
+  const { spawnSync } = require('child_process');
+  let workDir = '';
+
+  try {
+    const { videoFilename = '', videoBase64 = '' } = req.body || {};
+    const outDir = path.join(__dirname, '..', '..', 'public', 'videos');
+    if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+
+    workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gyan-fb-'));
+    let sourceVideoPath = '';
+    let activeFilename = videoFilename ? path.basename(videoFilename) : '';
+
+    if (activeFilename && fs.existsSync(path.join(outDir, activeFilename))) {
+      sourceVideoPath = path.join(outDir, activeFilename);
+    } else if (videoBase64 && typeof videoBase64 === 'string' && videoBase64.length > 100) {
+      const comma = videoBase64.indexOf('base64,');
+      const rawB64 = (comma !== -1 ? videoBase64.slice(comma + 7) : videoBase64).replace(/\s/g, '');
+      activeFilename = `fb_upload_${Date.now()}.mp4`;
+      sourceVideoPath = path.join(outDir, activeFilename);
+      fs.writeFileSync(sourceVideoPath, Buffer.from(rawB64, 'base64'));
+    } else {
+      return res.status(400).json({ success: false, error: 'કૃપા કરીને વિડીયો સિલેક્ટ કરો અથવા અપલોડ કરો.' });
+    }
+
+    const ffmpeg = require('ffmpeg-static');
+    let audioBase64 = '';
+    let videoDuration = 0;
+
+    if (ffmpeg && fs.existsSync(ffmpeg)) {
+      const probe = spawnSync(ffmpeg, ['-i', sourceVideoPath], { timeout: 20000 });
+      const stderrTxt = (probe.stderr || '').toString();
+      const durMatch = stderrTxt.match(/Duration:\s*(\d+):(\d+):([\d.]+)/);
+      if (durMatch) {
+        videoDuration = Number(durMatch[1]) * 3600 + Number(durMatch[2]) * 60 + Number(durMatch[3]);
+      }
+
+      const audioMp3Path = path.join(workDir, 'speech.mp3');
+      const ex = spawnSync(ffmpeg, [
+        '-y',
+        '-i', sourceVideoPath,
+        '-vn',
+        '-ac', '1',
+        '-ar', '16000',
+        '-b:a', '32k',
+        audioMp3Path
+      ], { timeout: 60000 });
+
+      if (ex.status === 0 && fs.existsSync(audioMp3Path) && fs.statSync(audioMp3Path).size > 200) {
+        audioBase64 = fs.readFileSync(audioMp3Path).toString('base64');
+      }
+    }
+
+    const openaiService = require('../services/openaiService');
+    const analysis = await openaiService.analyzeVideoSpeechForFacebook({
+      audioBase64,
+      audioMimeType: 'audio/mpeg',
+      videoDuration,
+      fallbackTitle: activeFilename.replace(/^video_\d+_/, '').replace(/\.(mp4|webm|mov)$/i, '')
+    });
+
+    try { fs.rmSync(workDir, { recursive: true, force: true }); } catch (_) { }
+    res.json({
+      success: true,
+      videoFilename: activeFilename,
+      videoUrl: `/videos/${activeFilename}`,
+      videoDuration: Number(videoDuration.toFixed(2)),
+      ...analysis
+    });
+  } catch (err) {
+    if (workDir) {
+      try { fs.rmSync(workDir, { recursive: true, force: true }); } catch (_) { }
+    }
+    console.error('[FacebookAnalyze Error]:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Facebook Tool: Cut YouTube Intro Segment from Video to Produce Clean Facebook-Ready MP4
+router.post('/facebook-trim-video', async (req, res) => {
+  const fs = require('fs');
+  const path = require('path');
+  const { spawnSync } = require('child_process');
+
+  try {
+    const { videoFilename = '', cutStartSec = 0, cutEndSec = 0 } = req.body || {};
+    const outDir = path.join(__dirname, '..', '..', 'public', 'videos');
+    const cleanName = path.basename(String(videoFilename || ''));
+    const sourcePath = path.join(outDir, cleanName);
+
+    if (!cleanName || !fs.existsSync(sourcePath)) {
+      return res.status(404).json({ success: false, error: 'મૂળ વિડીયો મળ્યો નથી.' });
+    }
+
+    const startCut = Math.max(0, Number(cutStartSec) || 0);
+    const endCut = Math.max(startCut, Number(cutEndSec) || 0);
+    if (endCut <= startCut) {
+      return res.status(400).json({ success: false, error: 'કાપવાનો સમય (End > Start) સાચો રાખો.' });
+    }
+
+    const ffmpeg = require('ffmpeg-static');
+    if (!ffmpeg || !fs.existsSync(ffmpeg)) {
+      return res.status(503).json({ success: false, error: 'FFmpeg not available' });
+    }
+
+    const base = cleanName.replace(/^(fb_clean_\d+_|video_\d+_)/, '').replace(/\.(mp4|webm|mov)$/i, '');
+    const outName = `fb_clean_${Date.now()}_${base}.mp4`;
+    const outPath = path.join(outDir, outName);
+
+    let ffArgs;
+    if (startCut <= 0.15) {
+      // Trim intro from start (0..endCut) cleanly with re-encode on ultrafast so keyframes align accurately
+      ffArgs = [
+        '-y',
+        '-ss', String(endCut),
+        '-i', sourcePath,
+        '-c:v', 'libx264',
+        '-preset', 'ultrafast',
+        '-crf', '22',
+        '-c:a', 'aac',
+        '-b:a', '192k',
+        '-movflags', '+faststart',
+        outPath
+      ];
+    } else {
+      // Remove middle segment [startCut..endCut] and join before + after
+      ffArgs = [
+        '-y',
+        '-i', sourcePath,
+        '-filter_complex',
+        `[0:v]trim=0:${startCut},setpts=PTS-STARTPTS[v0];[0:v]trim=start=${endCut},setpts=PTS-STARTPTS[v1];[0:a]atrim=0:${startCut},asetpts=PTS-STARTPTS[a0];[0:a]atrim=start=${endCut},asetpts=PTS-STARTPTS[a1];[v0][a0][v1][a1]concat=n=2:v=1:a=1[v][a]`,
+        '-map', '[v]',
+        '-map', '[a]',
+        '-c:v', 'libx264',
+        '-preset', 'ultrafast',
+        '-crf', '22',
+        '-c:a', 'aac',
+        '-b:a', '192k',
+        '-movflags', '+faststart',
+        outPath
+      ];
+    }
+
+    const r = spawnSync(ffmpeg, ffArgs, { timeout: 120000 });
+    if (r.status !== 0 || !fs.existsSync(outPath)) {
+      throw new Error((r.stderr || '').toString().slice(-300) || 'FFmpeg trim failed');
+    }
+
+    const sizeBytes = fs.statSync(outPath).size;
+    res.json({
+      success: true,
+      filename: outName,
+      videoUrl: `/videos/${outName}`,
+      sizeBytes,
+      cutStartSec: startCut,
+      cutEndSec: endCut
+    });
+  } catch (err) {
+    console.error('[FacebookTrim Error]:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 module.exports = router;

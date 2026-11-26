@@ -26,6 +26,7 @@ import { renderVideoEditDemo } from './views/videoEditDemo.js?v=99.0';
 import { renderSavedHub } from './views/savedhub.js?v=1.0';
 import { renderSavedAudios } from './views/savedaudios.js?v=101.4';
 import { renderSmartAsk } from './views/smartask.js?v=101.1';
+import { renderFacebookTool } from './views/facebook.js?v=101.5';
 import { initMobileLinkAndOfflineSystem } from './utils/mobileLinkModal.js?v=99.0';
 
 class App {
@@ -167,7 +168,7 @@ class App {
         'slideprompt', 'slideprompts', 'slides', 'slideeditor',
         'script', 'scriptwriter', 'scripteditor', 'voice', 'myvoice', 'videoeditor', 'editing',
         'videoeditdemo', 'workspace', 'thumbnails', 'thumbnail', 'seodescription', 'seo',
-        'savedhub', 'saved', 'savedaudios', 'audios', 'smartask', 'promptgpt', 'askgpt',
+        'savedhub', 'saved', 'savedaudios', 'audios', 'smartask', 'promptgpt', 'askgpt', 'facebook', 'fb',
         'publish', 'publishing', 'chatgpt', 'analytics', 'research', 'settings'
       ];
       if (hash && validViews.includes(hash) && hash !== this.currentView) {
@@ -322,6 +323,8 @@ class App {
       smartask: '✨ ૧૨. મારો પ્રશ્ન & ફોટો AI (Prompt → ChatGPT)',
       promptgpt: '✨ ૧૨. મારો પ્રશ્ન & ફોટો AI (Prompt → ChatGPT)',
       askgpt: '✨ ૧૨. મારો પ્રશ્ન & ફોટો AI (Prompt → ChatGPT)',
+      facebook: '📘 ૧૩. Facebook Video & SEO Tool',
+      fb: '📘 ૧૩. Facebook Video & SEO Tool',
       home: '📊 ૧. 48h YouTube AI Studio',
       dashboard: '📊 ૧. 48h YouTube AI Studio',
       pastetopics: '📝 ૨. Paste Topics (મારા વિષયો પેસ્ટ કરો)',
@@ -431,6 +434,10 @@ class App {
         case 'promptgpt':
         case 'askgpt':
           await renderSmartAsk(this.container, navCallback);
+          break;
+        case 'facebook':
+        case 'fb':
+          await renderFacebookTool(this.container, navCallback);
           break;
         case 'analytics':
           await renderAnalytics(this.container, navCallback);

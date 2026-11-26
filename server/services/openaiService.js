@@ -32,7 +32,7 @@ class OpenAIService {
     return raw;
   }
 
-  async callGemini({ systemInstruction = '', userText = '', imagesBase64 = [], temperature = 0.6, maxTokens = 2500 } = {}) {
+  async callGemini({ systemInstruction = '', userText = '', imagesBase64 = [], audioBase64 = '', audioMimeType = 'audio/mpeg', temperature = 0.6, maxTokens = 2500, timeoutMs = 30000 } = {}) {
     const apiKey = this.getGeminiApiKey();
     if (!apiKey) return null;
     const primaryModel = this.getGeminiModel();
@@ -46,6 +46,13 @@ class OpenAIService {
 
     const parts = [];
     if (userText) parts.push({ text: userText });
+    if (audioBase64 && typeof audioBase64 === 'string') {
+      const aComma = audioBase64.indexOf('base64,');
+      const aData = (aComma !== -1 ? audioBase64.slice(aComma + 7) : audioBase64).replace(/\s/g, '');
+      if (aData.length > 50) {
+        parts.push({ inline_data: { mime_type: audioMimeType || 'audio/mpeg', data: aData } });
+      }
+    }
     for (const img of (Array.isArray(imagesBase64) ? imagesBase64 : [])) {
       if (typeof img !== 'string' || !img.startsWith('data:image/')) continue;
       const commaIdx = img.indexOf('base64,');
@@ -74,7 +81,7 @@ class OpenAIService {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
-          signal: AbortSignal.timeout(15000)
+          signal: AbortSignal.timeout(timeoutMs)
         });
         const json = await res.json().catch(() => ({}));
         if (res.ok) {
@@ -2068,6 +2075,77 @@ Always inspect any attached photos carefully and answer in clear, natural, easy-
       answer: `⚠️ ફ્રી Gemini Key અથવા OpenAI Key સેટ નથી. સેટિંગ્સ (#settings) માં ફ્રી Google Gemini API Key મૂકો એટલે તરત જ લાઈવ જવાબ મળશે.\n\nતમારો તૈયાર પ્રોમ્પ્ટ:\n${cleanPrompt}`,
       model: 'demo-fallback',
       source: 'demo'
+    };
+  }
+
+  // --- Facebook Tool: Listen to Video Speech, Strip YouTube Intro ("નમસ્કાર મિત્રો સ્વાગત છે તમારી જ્ઞાન યાત્રા યુટ્યુબ ચેનલમાં"), & Generate Facebook Title/Description/Tags ---
+  async analyzeVideoSpeechForFacebook({ audioBase64 = '', audioMimeType = 'audio/mpeg', videoDuration = 0, fallbackTitle = '' } = {}) {
+    const systemInstruction = `You are an expert Gujarati Audio Transcriber and Facebook Page Video Strategist.
+Listen carefully to the attached audio from the user's video.
+
+Your tasks:
+1. Transcribe the spoken Gujarati speech accurately.
+2. Detect the YouTube channel intro/outro/words such as:
+   "નમસ્કાર મિત્રો સ્વાગત છે તમારી જ્ઞાન યાત્રા યુટ્યુબ ચેનલમાં" (or any variation mentioning "જ્ઞાન યાત્રા યુટ્યુબ ચેનલ", "YouTube ચેનલ", "સબ્સ્ક્રાઇબ કરો", etc.).
+   - Report the exact timestamp range in seconds ("introStartSec" and "introEndSec") where that YouTube intro is spoken (usually at the start, e.g., 0 to 4.5 seconds; if not spoken, set both to 0).
+   - Provide "cleanTranscript" where ALL YouTube-specific intro/words ("નમસ્કાર મિત્રો સ્વાગત છે તમારી જ્ઞાન યાત્રા યુટ્યુબ ચેનલમાં", "YouTube", "સબ્સ્ક્રાઇબ") are completely removed so the text is 100% Facebook-ready.
+3. Based on the actual spoken content in the video, generate:
+   - "fbTitle": Viral, high-click Gujarati Facebook Video Title (engaging hook, clear topic)
+   - "fbDescription": Compelling Facebook post description in Gujarati (summary + key points + "ફોલો અને શેર કરો" Facebook CTA, NO YouTube mention)
+   - "fbTags": Array of 12-16 relevant Gujarati & English Facebook hashtags/tags (without duplicates, starting with #).
+
+Output strictly valid JSON with keys:
+"detectedIntroText", "introStartSec", "introEndSec", "rawTranscript", "cleanTranscript", "fbTitle", "fbDescription", "fbTags".`;
+
+    const userText = `Listen to this video audio (duration ~${Math.round(videoDuration || 0)}s${fallbackTitle ? `, filename/topic hint: ${fallbackTitle}` : ''}), remove the YouTube channel intro ("નમસ્કાર મિત્રો સ્વાગત છે તમારી જ્ઞાન યાત્રા યુટ્યુબ ચેનલમાં"), and return the Facebook Title, Description, Tags, and clean transcript in JSON.`;
+
+    if (this.getGeminiApiKey() && audioBase64) {
+      try {
+        const gem = await this.callGemini({
+          systemInstruction,
+          userText,
+          audioBase64,
+          audioMimeType,
+          temperature: 0.4,
+          maxTokens: 3000,
+          timeoutMs: 45000
+        });
+        if (gem && gem.text) {
+          const match = gem.text.match(/\{[\s\S]*\}/);
+          if (match) {
+            const parsed = JSON.parse(match[0]);
+            return {
+              detectedIntroText: parsed.detectedIntroText || '',
+              introStartSec: Math.max(0, Number(parsed.introStartSec) || 0),
+              introEndSec: Math.max(0, Number(parsed.introEndSec) || 0),
+              rawTranscript: parsed.rawTranscript || '',
+              cleanTranscript: parsed.cleanTranscript || '',
+              fbTitle: parsed.fbTitle || '',
+              fbDescription: parsed.fbDescription || '',
+              fbTags: Array.isArray(parsed.fbTags) ? parsed.fbTags : [],
+              model: gem.model,
+              source: 'gemini'
+            };
+          }
+        }
+      } catch (err) {
+        console.warn('[FacebookAnalyze] Gemini error:', err.message);
+      }
+    }
+
+    // Fallback when Gemini is unavailable
+    const cleanHint = (fallbackTitle || 'ગુજરાતી માહિતી વિડીયો').replace(/[_-]+/g, ' ').trim();
+    return {
+      detectedIntroText: 'નમસ્કાર મિત્રો સ્વાગત છે તમારી જ્ઞાન યાત્રા યુટ્યુબ ચેનલમાં',
+      introStartSec: 0,
+      introEndSec: 4.5,
+      rawTranscript: '',
+      cleanTranscript: `${cleanHint} — સંપૂર્ણ માહિતી અને ઉપયોગી વિગતો (YouTube શબ્દો દૂર કરેલ).`,
+      fbTitle: `🔥 ${cleanHint} | સંપૂર્ણ માહિતી ખાસ જુઓ!`,
+      fbDescription: `📌 ${cleanHint} વિશે સંપૂર્ણ અને સાચી માહિતી આ વિડીયોમાં સરળ ગુજરાતીમાં સમજાવી છે.\n\n👍 વિડીયો ગમે તો Like કરો, તમારા મિત્રો સાથે Share કરો અને અમારા Facebook પેજને Follow કરવાનું ભૂલશો નહીં!`,
+      fbTags: ['#GyanYatra', '#Gujarat', '#GujaratiNews', '#Information', '#ViralVideo', '#GujaratUpdates', '#FacebookReels', '#Education', '#Yojana', '#UsefulInfo'],
+      model: 'fallback',
+      source: 'fallback'
     };
   }
 }
