@@ -25,6 +25,7 @@ import { renderVideoEditor } from './views/videoeditor.js?v=99.9';
 import { renderVideoEditDemo } from './views/videoEditDemo.js?v=99.0';
 import { renderSavedHub } from './views/savedhub.js?v=1.0';
 import { renderSavedAudios } from './views/savedaudios.js?v=1.0';
+import { renderSmartAsk } from './views/smartask.js?v=1.0';
 import { initMobileLinkAndOfflineSystem } from './utils/mobileLinkModal.js?v=99.0';
 
 class App {
@@ -316,6 +317,9 @@ class App {
       seodescription: '🏷️ SEO & Publishing (ટાઇટલ, ડિસ્ક્રિપ્શન & Tags)',
       seo: '🏷️ SEO & Publishing (ટાઇટલ, ડિસ્ક્રિપ્શન & Tags)',
       chatgpt: '✨ ChatGPT Assistant',
+      smartask: '✨ ૧૨. મારો પ્રશ્ન & ફોટો AI (Prompt → ChatGPT)',
+      promptgpt: '✨ ૧૨. મારો પ્રશ્ન & ફોટો AI (Prompt → ChatGPT)',
+      askgpt: '✨ ૧૨. મારો પ્રશ્ન & ફોટો AI (Prompt → ChatGPT)',
       home: '📊 ૧. 48h YouTube AI Studio',
       dashboard: '📊 ૧. 48h YouTube AI Studio',
       pastetopics: '📝 ૨. Paste Topics (મારા વિષયો પેસ્ટ કરો)',
@@ -420,6 +424,11 @@ class App {
           break;
         case 'chatgpt':
           await renderChatGPT(this.container, navCallback);
+          break;
+        case 'smartask':
+        case 'promptgpt':
+        case 'askgpt':
+          await renderSmartAsk(this.container, navCallback);
           break;
         case 'analytics':
           await renderAnalytics(this.container, navCallback);

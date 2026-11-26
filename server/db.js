@@ -61,7 +61,8 @@ const defaultData = {
   topicVoices: {},
   topicVideos: {},
   topicThumbnails: {},
-  topicSEO: {}
+  topicSEO: {},
+  smartAskHistory: []
 };
 
 class Database {
@@ -182,6 +183,36 @@ class Database {
   }
 
   // --- Topics ---
+  getSmartAskHistory() {
+    return Array.isArray(this.data.smartAskHistory) ? this.data.smartAskHistory : [];
+  }
+
+  addSmartAskEntry(entry) {
+    if (!Array.isArray(this.data.smartAskHistory)) this.data.smartAskHistory = [];
+    const item = {
+      id: entry.id || `ask-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      userInput: entry.userInput || '',
+      generatedPrompt: entry.generatedPrompt || '',
+      answer: entry.answer || '',
+      answerLanguage: entry.answerLanguage || 'gu',
+      imageCount: Number(entry.imageCount || 0),
+      model: entry.model || 'gpt-4o',
+      createdAt: entry.createdAt || new Date().toISOString()
+    };
+    this.data.smartAskHistory.unshift(item);
+    if (this.data.smartAskHistory.length > 50) {
+      this.data.smartAskHistory = this.data.smartAskHistory.slice(0, 50);
+    }
+    this.save();
+    return item;
+  }
+
+  deleteSmartAskEntry(id) {
+    if (!Array.isArray(this.data.smartAskHistory)) return;
+    this.data.smartAskHistory = this.data.smartAskHistory.filter(item => item.id !== id);
+    this.save();
+  }
+
   getTopics() {
     return this.data.topics || [];
   }

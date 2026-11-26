@@ -137,5 +137,10 @@ export const api = {
   pdfToAudio: (data) => api.post('/api/voice/pdf-to-audio', data),
   uploadAudio: (data) => api.post('/api/voice/upload-audio', data),
   getActorScript: (params) => api.post('/api/voice/actor-script', params),
-  getAudioLibrary: () => api.get('/api/voice/library')
+  getAudioLibrary: () => api.get('/api/voice/library'),
+  buildSmartPrompt: (payload) => api.post('/api/chat/smart-prompt', payload),
+  answerSmartPrompt: (payload) => api.post('/api/chat/smart-answer', payload),
+  smartAskAll: (payload) => api.post('/api/chat/smart-ask-all', payload),
+  getSmartAskHistory: () => api.get('/api/chat/smart-ask/history'),
+  deleteSmartAskEntry: (id) => api.delete(`/api/chat/smart-ask/${encodeURIComponent(id)}`)
 };

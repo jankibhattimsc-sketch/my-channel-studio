@@ -1769,6 +1769,155 @@ ${hashtags.join(' ')}`;
     ];
     return list.slice(0, targetCount);
   }
+
+  // --- Smart Prompt Builder (Understands User's Natural Language + Photos -> Generates Clear Prompt) ---
+  async buildSmartPrompt({ userInput = '', imagesBase64 = [], answerLanguage = 'gu' } = {}) {
+    const openai = this.getOpenAIClient();
+    const model = this.getModel();
+    const cleanInput = String(userInput || '').trim();
+    const validImages = (Array.isArray(imagesBase64) ? imagesBase64 : []).filter(
+      img => typeof img === 'string' && img.startsWith('data:image/')
+    ).slice(0, 4);
+
+    const langLabel = answerLanguage === 'en' ? 'English' : (answerLanguage === 'hi' ? 'Hindi' : 'Gujarati');
+
+    if (openai) {
+      try {
+        const instruction = `You are an expert Prompt Engineer who deeply understands Gujarati, Roman Gujarati (Gujlish like "mare aa photo ma su che te jankari joie"), Hindi, and English.
+The user will give you:
+1) Their own natural words/question (maybe rough, short, or in Roman Gujarati/Gujarati/Hindi/English), and/or
+2) One or more uploaded photos/screenshots.
+
+Your job:
+1. Understand what the user truly wants (and carefully read/inspect every uploaded photo if photos are attached).
+2. Write ONE super clear, detailed, well-structured Prompt that ChatGPT can answer accurately.
+   - If photos are attached, explicitly describe what is in the photo(s) and what to analyze/explain/create from them inside the prompt.
+   - Specify in the prompt that the final answer should be in clear, easy-to-understand ${langLabel}.
+3. Output strictly valid JSON with keys:
+   - "detectedIntent": short 1-line summary in Gujarati of what the user is asking
+   - "generatedPrompt": the full ready-to-use prompt`;
+
+        const userContent = [
+          {
+            type: 'text',
+            text: cleanInput
+              ? `User's message in their own words:\n"${cleanInput}"\n\nUploaded photos count: ${validImages.length}`
+              : `No text typed. Analyze the ${validImages.length} uploaded photo(s) and create the best prompt to explain/help the user with what is shown in the photo(s).`
+          },
+          ...validImages.map(img => ({
+            type: 'image_url',
+            image_url: { url: img }
+          }))
+        ];
+
+        const response = await openai.chat.completions.create({
+          model,
+          messages: [
+            { role: 'system', content: instruction },
+            { role: 'user', content: userContent }
+          ],
+          temperature: 0.5,
+          max_tokens: 1200
+        });
+
+        const raw = (response.choices[0].message.content || '').trim();
+        const jsonMatch = raw.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (parsed.generatedPrompt) {
+            return {
+              generatedPrompt: String(parsed.generatedPrompt).trim(),
+              detectedIntent: String(parsed.detectedIntent || 'તમારા પ્રશ્ન મુજબ સ્માર્ટ પ્રોમ્પ્ટ તૈયાર છે').trim(),
+              model,
+              source: 'openai'
+            };
+          }
+        }
+        return {
+          generatedPrompt: raw,
+          detectedIntent: 'તમારા પ્રશ્ન મુજબ સ્માર્ટ પ્રોમ્પ્ટ તૈયાર છે',
+          model,
+          source: 'openai'
+        };
+      } catch (err) {
+        console.warn('[SmartPrompt] OpenAI fallback triggered:', err.message);
+      }
+    }
+
+    const photoNote = validImages.length > 0
+      ? `\n\n[સાથે જોડેલા ${validImages.length} ફોટાનું વિશ્લેષણ કરીને તેમાં દેખાતી માહિતી/લખાણ/વિગતને આધારે જવાબ આપો.]`
+      : '';
+    const fallbackPrompt = cleanInput
+      ? `નીચે મુજબના મારા પ્રશ્નને સમજીને ${langLabel} ભાષામાં સ્પષ્ટ, સચોટ અને મુદ્દાસર જવાબ આપો:\n\n"${cleanInput}"${photoNote}`
+      : `સાથે જોડેલા ફોટા/સ્ક્રીનશોટને ધ્યાનથી તપાસીને તેમાં શું છે, તેનો મુખ્ય અર્થ અને ઉપયોગી માર્ગદર્શન ${langLabel} ભાષામાં સ્પષ્ટ રીતે સમજાવો.`;
+
+    return {
+      generatedPrompt: fallbackPrompt,
+      detectedIntent: validImages.length > 0 ? 'ફોટા અને પ્રશ્ન મુજબ પ્રોમ્પ્ટ (Demo/Fallback)' : 'તમારા પ્રશ્ન મુજબ પ્રોમ્પ્ટ (Demo/Fallback)',
+      model: 'fallback',
+      source: 'fallback'
+    };
+  }
+
+  // --- Smart Answer via ChatGPT (Supports Prompt + Uploaded Photos) ---
+  async answerSmartPrompt({ prompt = '', userInput = '', imagesBase64 = [], answerLanguage = 'gu' } = {}) {
+    const openai = this.getOpenAIClient();
+    const model = this.getModel();
+    const cleanPrompt = String(prompt || userInput || '').trim();
+    const validImages = (Array.isArray(imagesBase64) ? imagesBase64 : []).filter(
+      img => typeof img === 'string' && img.startsWith('data:image/')
+    ).slice(0, 4);
+
+    const langLabel = answerLanguage === 'en' ? 'English' : (answerLanguage === 'hi' ? 'Hindi' : 'Gujarati');
+
+    if (openai) {
+      try {
+        const systemMsg = `You are a helpful, accurate ChatGPT AI Assistant.
+The user may ask any question from their mind (personal, daily life, education, business, YouTube, tech, or based on uploaded photos).
+Always inspect any attached photos carefully and answer in clear, natural, easy-to-read ${langLabel}.`;
+
+        const userContent = [
+          {
+            type: 'text',
+            text: cleanPrompt || `Please examine the attached photo(s) and explain everything clearly in ${langLabel}.`
+          },
+          ...validImages.map(img => ({
+            type: 'image_url',
+            image_url: { url: img }
+          }))
+        ];
+
+        const response = await openai.chat.completions.create({
+          model,
+          messages: [
+            { role: 'system', content: systemMsg },
+            { role: 'user', content: userContent }
+          ],
+          temperature: 0.7,
+          max_tokens: 2500
+        });
+
+        return {
+          answer: (response.choices[0].message.content || '').trim(),
+          model,
+          source: 'openai'
+        };
+      } catch (err) {
+        console.warn('[SmartAnswer] OpenAI error:', err.message);
+        return {
+          answer: `⚠️ ChatGPT API એરર: ${err.message}`,
+          model,
+          source: 'error'
+        };
+      }
+    }
+
+    return {
+      answer: `⚠️ OpenAI API Key સેટ નથી. સેટિંગ્સમાં અથવા .env માં OPENAI_API_KEY મૂકો એટલે ChatGPT આ પ્રોમ્પ્ટ${validImages.length > 0 ? ' અને ફોટા' : ''} પરથી તરત જ લાઈવ જવાબ આપશે.\n\nતમારો તૈયાર પ્રોમ્પ્ટ:\n${cleanPrompt}`,
+      model: 'demo-fallback',
+      source: 'demo'
+    };
+  }
 }
 
 module.exports = new OpenAIService();
