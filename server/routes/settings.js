@@ -30,7 +30,7 @@ router.get('/', (req, res) => {
         openaiModel: raw.openaiModel || 'gpt-4o',
         geminiApiKeyConfigured: Boolean(raw.geminiApiKey),
         geminiApiKeyMasked: maskKey(raw.geminiApiKey),
-        geminiModel: raw.geminiModel || 'gemini-2.5-flash',
+        geminiModel: raw.geminiModel && raw.geminiModel !== 'gemini-2.5-flash' ? raw.geminiModel : 'gemini-3.8-flash',
         creatorEmail: raw.creatorEmail || '',
         demoMode: raw.demoMode,
         theme: raw.theme || 'dark'

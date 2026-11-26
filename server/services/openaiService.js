@@ -27,14 +27,16 @@ class OpenAIService {
 
   getGeminiModel() {
     const settings = db.getSettings();
-    return (settings.geminiModel || process.env.GEMINI_MODEL || 'gemini-2.5-flash').trim();
+    const raw = (settings.geminiModel || process.env.GEMINI_MODEL || 'gemini-3.8-flash').trim();
+    if (raw === 'gemini-2.5-flash' || raw === 'gemini-2.0-flash') return 'gemini-3.8-flash';
+    return raw;
   }
 
   async callGemini({ systemInstruction = '', userText = '', imagesBase64 = [], temperature = 0.6, maxTokens = 2500 } = {}) {
     const apiKey = this.getGeminiApiKey();
     if (!apiKey) return null;
-    const model = this.getGeminiModel();
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const primaryModel = this.getGeminiModel();
+    const candidates = [...new Set([primaryModel, 'gemini-3.8-flash', 'gemini-2.5-flash'])];
 
     const parts = [];
     if (userText) parts.push({ text: userText });
@@ -58,17 +60,25 @@ class OpenAIService {
       body.system_instruction = { parts: [{ text: systemInstruction }] };
     }
 
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      throw new Error(json?.error?.message || `Gemini HTTP ${res.status}`);
+    let lastErr = null;
+    for (const model of candidates) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok) {
+        const text = (json?.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('').trim();
+        return { text, model };
+      }
+      lastErr = new Error(json?.error?.message || `Gemini HTTP ${res.status}`);
+      if (!/no longer available|not found|not supported/i.test(lastErr.message)) {
+        throw lastErr;
+      }
     }
-    const text = (json?.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('').trim();
-    return { text, model };
+    throw lastErr || new Error('Gemini request failed');
   }
 
   // --- 1. ChatGPT Creator Assistant ---
