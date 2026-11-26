@@ -1,4 +1,4 @@
-import { api } from './api.js?v=101.0';
+import { api } from './api.js?v=101.6';
 import { copyToClipboard } from './utils/clipboard.js?v=90.0';
 import { projectState } from './utils/projectState.js?v=90.0';
 import { renderProjects } from './views/projects.js?v=90.0';
@@ -10,7 +10,7 @@ import { renderTopics } from './views/topics.js?v=90.0';
 import { renderTopicProductionPlanner } from './views/planner.js?v=90.0';
 import { renderSEO } from './views/seo.js?v=90.0';
 import { renderThumbnails } from './views/thumbnails.js?v=90.0';
-import { renderScriptWriter } from './views/scriptwriter.js?v=90.0';
+import { renderScriptWriter } from './views/scriptwriter.js?v=101.6';
 import { renderChatGPT } from './views/chatgpt.js?v=90.0';
 import { renderSlidePrompts } from './views/slideprompts.js?v=90.0';
 import { renderResearch } from './views/research.js?v=90.0';

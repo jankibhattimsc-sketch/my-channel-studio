@@ -1102,6 +1102,7 @@ ${slidesBlock}
 
           if (res && res.success && Array.isArray(res.slides) && res.slides.length > 0) {
             const sizeFormatted = `${Math.round(file.size / 1024)} KB`;
+            const safeDataUrl = (res?.fileUrl && base64Data && base64Data.length > 4 * 1024 * 1024) ? '' : base64Data;
             const fileRecord = {
               id: `pres_${project.id}_${Date.now()}`,
               projectId: project.id,
@@ -1113,12 +1114,16 @@ ${slidesBlock}
               uploadedAt: new Date().toISOString(),
               slidesCount: res.slides.length,
               slides: res.slides,
-              dataUrl: base64Data
+              dataUrl: safeDataUrl
             };
 
-            await saveProjectPresentation(project.id, fileRecord);
-            if (project.topicId && project.topicId !== project.id) {
-              await saveProjectPresentation(project.topicId, fileRecord);
+            try {
+              await saveProjectPresentation(project.id, fileRecord);
+              if (project.topicId && project.topicId !== project.id) {
+                await saveProjectPresentation(project.topicId, fileRecord);
+              }
+            } catch (idbErr) {
+              console.warn('[ScriptWriter] Presentation local cache notice:', idbErr?.message);
             }
 
             project.slide = project.slide || {};
@@ -1186,6 +1191,7 @@ ${slidesBlock}
       container.querySelector(sel)?.addEventListener('change', (e) => {
         const file = e.target.files?.[0];
         if (file) handlePdfUploadInScript(file);
+        e.target.value = '';
       });
     });
 

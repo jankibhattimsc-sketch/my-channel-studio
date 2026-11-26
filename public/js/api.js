@@ -14,8 +14,14 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Request failed');
+    const rawText = await res.text();
+    let data = {};
+    try {
+      data = rawText ? JSON.parse(rawText) : {};
+    } catch (_) {
+      throw new Error(`સર્વર પ્રતિસાદ ભૂલ (${res.status}): ${rawText.slice(0, 120)}`);
+    }
+    if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
     return data;
   },
 
