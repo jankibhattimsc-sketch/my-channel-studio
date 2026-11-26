@@ -109,8 +109,8 @@ export async function renderSettings(container, navigateTo) {
             <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
               <span style="font-size: 0.76rem; color: var(--text-muted);">Gemini મોડેલ:</span>
               <select id="setting-gemini-model" class="form-select" style="max-width: 260px;">
-                <option value="gemini-3.8-flash" ${(!s.geminiModel || s.geminiModel === 'gemini-3.8-flash') ? 'selected' : ''}>Gemini 3.8 Flash (ફ્રી & અતિ ઝડપી)</option>
-                <option value="gemini-2.5-flash" ${s.geminiModel === 'gemini-2.5-flash' ? 'selected' : ''}>Gemini 2.5 Flash (Legacy)</option>
+                <option value="gemini-flash-lite-latest" ${(!s.geminiModel || s.geminiModel === 'gemini-flash-lite-latest') ? 'selected' : ''}>Gemini Flash Lite Latest (૧.૪ સેકન્ડ • સૌથી ઝડપી)</option>
+                <option value="gemini-flash-latest" ${s.geminiModel === 'gemini-flash-latest' ? 'selected' : ''}>Gemini Flash Latest</option>
               </select>
             </div>
           </div>

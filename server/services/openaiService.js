@@ -27,22 +27,22 @@ class OpenAIService {
 
   getGeminiModel() {
     const settings = db.getSettings();
-    const raw = (settings.geminiModel || process.env.GEMINI_MODEL || 'gemini-3.8-flash').trim();
-    if (raw === 'gemini-2.5-flash' || raw === 'gemini-2.0-flash') return 'gemini-3.8-flash';
+    const raw = (settings.geminiModel || process.env.GEMINI_MODEL || 'gemini-flash-lite-latest').trim();
+    if (['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite', 'gemini-3.8-flash'].includes(raw)) {
+      return 'gemini-flash-lite-latest';
+    }
     return raw;
   }
 
-  async callGemini({ systemInstruction = '', userText = '', imagesBase64 = [], audioBase64 = '', audioMimeType = 'audio/mpeg', temperature = 0.6, maxTokens = 2500, timeoutMs = 30000 } = {}) {
+  async callGemini({ systemInstruction = '', userText = '', imagesBase64 = [], audioBase64 = '', audioMimeType = 'audio/mpeg', temperature = 0.6, maxTokens = 2500, timeoutMs = 15000 } = {}) {
     const apiKey = this.getGeminiApiKey();
     if (!apiKey) return null;
     const primaryModel = this.getGeminiModel();
     const candidates = [...new Set([
-      'gemini-3.5-flash',
-      'gemini-flash-latest',
-      'gemini-2.5-flash',
-      'gemini-2.5-flash-lite',
+      'gemini-flash-lite-latest',
       primaryModel,
-      'gemini-flash-lite-latest'
+      'gemini-flash-latest',
+      'gemini-3.5-flash'
     ])];
 
     const parts = [];

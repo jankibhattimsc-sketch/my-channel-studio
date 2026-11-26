@@ -22,7 +22,7 @@ const defaultData = {
     openaiApiKey: process.env.OPENAI_API_KEY || '',
     openaiModel: process.env.OPENAI_MODEL || 'gpt-4o',
     geminiApiKey: process.env.GEMINI_API_KEY || '',
-    geminiModel: process.env.GEMINI_MODEL || 'gemini-3.8-flash',
+    geminiModel: process.env.GEMINI_MODEL || 'gemini-flash-lite-latest',
     creatorEmail: process.env.CREATOR_EMAIL || '',
     demoMode: process.env.DEMO_MODE !== 'false',
     theme: 'dark'
