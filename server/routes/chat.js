@@ -131,16 +131,36 @@ router.delete('/smart-ask/:id', (req, res) => {
   }
 });
 
-router.post('/smart-prompt', async (req, res) => {
+router.post('/smart-clarify', async (req, res) => {
   try {
     const { userInput = '', images = [], answerLanguage = 'gu' } = req.body || {};
+    if (!String(userInput).trim() && (!Array.isArray(images) || images.length === 0)) {
+      return res.status(400).json({ success: false, error: 'કૃપા કરીને તમારો પ્રશ્ન લખો અથવા ફોટો ઉમેરો.' });
+    }
+    const result = await openaiService.clarifySmartPrompt({
+      userInput,
+      imagesBase64: images,
+      answerLanguage
+    });
+    res.json({ success: true, ...result });
+  } catch (err) {
+    console.error('[Smart Clarify Route Error]:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.post('/smart-prompt', async (req, res) => {
+  try {
+    const { userInput = '', images = [], answerLanguage = 'gu', clarifications = [], extraNotes = '' } = req.body || {};
     if (!String(userInput).trim() && (!Array.isArray(images) || images.length === 0)) {
       return res.status(400).json({ success: false, error: 'કૃપા કરીને તમારો પ્રશ્ન લખો અથવા ફોટો ઉમેરો.' });
     }
     const result = await openaiService.buildSmartPrompt({
       userInput,
       imagesBase64: images,
-      answerLanguage
+      answerLanguage,
+      clarifications,
+      extraNotes
     });
     res.json({ success: true, ...result });
   } catch (err) {
@@ -205,6 +225,8 @@ router.post('/smart-ask-all', async (req, res) => {
       success: true,
       generatedPrompt: promptRes.generatedPrompt,
       detectedIntent: promptRes.detectedIntent,
+      promptModel: promptRes.model,
+      promptSource: promptRes.source,
       answer: answerRes.answer,
       model: answerRes.model,
       source: answerRes.source,

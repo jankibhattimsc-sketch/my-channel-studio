@@ -1857,8 +1857,8 @@ ${hashtags.join(' ')}`;
     return list.slice(0, targetCount);
   }
 
-  // --- Smart Prompt Builder (Understands User's Natural Language + Photos -> Generates Clear Prompt) ---
-  async buildSmartPrompt({ userInput = '', imagesBase64 = [], answerLanguage = 'gu' } = {}) {
+  // --- Smart Prompt Clarifier (Step 1: Inspect User Idea/Photos & Ask Fine-Grained Clarifying Questions First) ---
+  async clarifySmartPrompt({ userInput = '', imagesBase64 = [], answerLanguage = 'gu' } = {}) {
     const openai = this.getOpenAIClient();
     const model = this.getModel();
     const cleanInput = String(userInput || '').trim();
@@ -1868,48 +1868,265 @@ ${hashtags.join(' ')}`;
 
     const langLabel = answerLanguage === 'en' ? 'English' : (answerLanguage === 'hi' ? 'Hindi' : 'ગુજરાતી (Gujarati)');
     const isGu = answerLanguage === 'gu' || !answerLanguage;
-    const promptInstruction = isGu
-      ? `તમે વિશ્વસ્તરીય Gujarati Prompt Architect છો. તમે રોમન ગુજરાતી (જેમ કે "tet 2 na 5 topic aapo", "aa photo samjavo", "mare video banavo che"), શુદ્ધ ગુજરાતી, હિન્દી અને ઇંગ્લિશ ઊંડાણથી સમજો છો.
 
-વપરાશકર્તા તમને તેમના પોતાના શબ્દોમાં સવાલ/વિચાર અને/અથવા ૧ થી ૪ ફોટા આપશે.
-તમારું કામ ChatGPT કે Gemini પાસેથી **૧૦/૧૦ સૌથી શ્રેષ્ઠ, ઊંડો અને સંપૂર્ણ જવાબ કઢાવવા માટેનો MASTER-LEVEL ગુજરાતી Prompt** બનાવવાનું છે (નાનો ૨-લાઈનનો પ્રોમ્પ્ટ નહીં, પરંતુ એકદમ પાવરફુલ, વિગતવાર, ૧૨૦ થી ૨૫૦ શબ્દોનો પ્રોફેશનલ માસ્ટર Prompt!).
+    const clarifyInstruction = isGu
+      ? `તમે વિશ્વસ્તરીય Prompt Strategist અને Deep Requirements Analyst છો. તમે રોમન ગુજરાતી (Gujlish), શુદ્ધ ગુજરાતી, હિન્દી અને ઇંગ્લિશ ઊંડાણથી સમજો છો.
 
-કડક નિયમો:
-1. વપરાશકર્તાના **મૂળ વિષય બિલકુલ બદલશો નહીં** (દા.ત. TET-2 હોય તો ૧૦૦% TET-2 પર જ Prompt રાખો).
-2. અધૂરા રોમન-ગુજરાતી શબ્દો બેઠા કોપી ન કરશો — તેને સચોટ, સ્પષ્ટ ગુજરાતીમાં રૂપાંતરિત કરો.
-3. જો ફોટા જોડેલા હોય, તો **પહેલાં ફોટાની અંદર શું લખેલું/દેખાયેલું છે તે ધ્યાનથી વાંચો** અને ફોટાની અસલ વિગતો (લખાણ, આંકડા, તારીખ, દ્રશ્ય) Prompt ની અંદર ચોક્કસ લખો.
-4. "generatedPrompt" માં નીચેના ભાગો ૧૦૦% શુદ્ધ ગુજરાતીમાં સુંદર રીતે વણી લો:
-   - 👤 નિષ્ણાત ભૂમિકા (AI કયા એક્સપર્ટ તરીકે જવાબ આપશે)
-   - 🎯 મુખ્ય લક્ષ્ય અને સંપૂર્ણ સંદર્ભ
-   - 📋 AI એ જવાબમાં કયા ૫ થી ૬ મહત્વના મુદ્દા ઊંડાણથી કવર કરવા (ચોક્કસ સ્ટેપ્સ, ઉદાહરણ, સરખામણી/ડેટા)
-   - ✅ જવાબનું આદર્શ ફોર્મેટ (મુદ્દાસર, સરળ ગુજરાતી, ચેકલિસ્ટ/ટિપ્સ)
+વપરાશકર્તા તમને કોઈ પણ વિષય પર પોતાનો વિચાર/પ્રશ્ન અને/અથવા ૧ થી ૪ ફોટા આપશે.
+તમારું પ્રથમ કામ: તરત અંદાજ લગાવીને અધૂરો Prompt ન બનાવવો — પહેલા **એકદમ બારીકાઈથી સમજવું** કે વપરાશકર્તાને ખરેખર શું જોઈએ છે, અને જે બાબતો સ્પષ્ટ નથી તેના માટે **૩ થી ૫ અત્યંત મહત્વના, ચોક્કસ સ્પષ્ટીકરણ પ્રશ્નો (Clarifying Questions)** પૂછવા.
+
+નિયમો:
+1. વપરાશકર્તાનો મૂળ વિષય બિલકુલ બદલવો નહીં.
+2. જો ફોટા જોડેલા હોય તો ફોટામાં શું દેખાય છે/લખ્યું છે તે બરાબર વાંચીને તે મુજબના પ્રશ્નો પૂછો.
+3. પ્રશ્નો એવા હોવા જોઈએ જેના જવાબ મળ્યા પછી તમે **World-Best, High-Level, અત્યંત વિગતવાર Master Prompt** બનાવી શકો (જેમ કે: મુખ્ય હેતુ/ઉપયોગ, ટાર્ગેટ ઓડિયન્સ/લેવલ, જવાબની ઊંડાઈ & ફોર્મેટ, ખાસ ફોકસ/અપવાદ/ઉદાહરણ, ભાષા/ટોન).
+4. દરેક પ્રશ્ન સાથે 3 થી 4 ટૂંકા, સરળ ક્લિક કરી શકાય તેવા વિકલ્પો ("options") આપો, જેથી યુઝર ફક્ત ક્લિક કરીને પણ જવાબ આપી શકે.
+5. ફક્ત ત્યારે જ "needsClarification": false આપો જ્યારે યુઝરે પહેલેથી જ ૧૦૦% બધી વિગતો (હેતુ, ઓડિયન્સ, ફોર્મેટ, ઊંડાઈ, મર્યાદા) લખી દીધી હોય. મોટાભાગના ટૂંકા/સામાન્ય પ્રશ્નો માટે "needsClarification": true રાખીને ૩-૫ શ્રેષ્ઠ પ્રશ્નો પૂછો.
 
 ફક્ત માન્ય JSON આપો:
 {
-  "detectedIntent": "વપરાશકર્તા શું પૂછવા માંગે છે તેનો ૧ ટૂંકો ગુજરાતી સારાંશ",
-  "generatedPrompt": "પૂરો ૧૨૦-૨૫૦ શબ્દોનો પાવરફુલ, માસ્ટર-લેવલ શુદ્ધ ગુજરાતી Prompt"
+  "needsClarification": true,
+  "understoodSummary": "તમે અત્યાર સુધી શું સમજ્યા તેનો ૨-૩ વાક્યનો સચોટ ગુજરાતી સારાંશ",
+  "questions": [
+    {
+      "id": "q1",
+      "question": "સ્પષ્ટ, સરળ ગુજરાતી પ્રશ્ન?",
+      "why": "આ જાણવાથી Prompt કેવી રીતે વધુ પાવરફુલ બનશે તેનું ૧ લાઈનનું કારણ",
+      "options": ["વિકલ્પ ૧", "વિકલ્પ ૨", "વિકલ્પ ૩"]
+    }
+  ]
 }`
-      : `You are a world-class Prompt Engineer who deeply understands Gujarati, Roman Gujarati (Gujlish), Hindi, and English.
-Transform the user's rough words and/or attached photos into ONE super clear, accurate, complete Prompt written strictly in ${langLabel}.
-CRITICAL RULES:
-- Keep the exact topic and intent from the user (never change their topic).
-- Never echo raw broken words back verbatim; rewrite into polished, actionable ${langLabel}.
-- If photos are attached, inspect the photos first and include concrete details/text visible in the photos inside the prompt.
-Output strictly valid JSON with keys: "detectedIntent" and "generatedPrompt".`;
+      : `You are a world-class Prompt Strategist and Deep Requirements Analyst.
+Inspect the user's request (in any language, including Gujarati/Gujlish/Hindi/English) and any attached photos.
+Before generating a World-Best High-Level Master Prompt, ask 3 to 5 sharp, high-impact clarifying questions ONLY about missing/ambiguous specifics (exact end goal, target audience/skill level, desired depth & format, key constraints, tone, photo focus) so the final prompt is extraordinarily accurate and detailed.
+Provide 3-4 quick clickable options per question strictly in ${langLabel}.
+Output strictly valid JSON:
+{
+  "needsClarification": true,
+  "understoodSummary": "Short clear summary in ${langLabel}",
+  "questions": [
+    {
+      "id": "q1",
+      "question": "Question text in ${langLabel}?",
+      "why": "Brief reason why this matters in ${langLabel}",
+      "options": ["Option 1", "Option 2", "Option 3"]
+    }
+  ]
+}`;
+
+    const userText = cleanInput
+      ? `User's message:\n"${cleanInput}"\nAttached photos: ${validImages.length}`
+      : `The user uploaded ${validImages.length} photo(s) without text. Inspect the photo(s) carefully and ask 3-5 clarifying questions to understand exactly what output they want from the photo(s).`;
+
+    const normalizeClarify = (parsed, usedModel, source) => {
+      const qs = Array.isArray(parsed?.questions)
+        ? parsed.questions
+            .filter(q => q && String(q.question || '').trim())
+            .slice(0, 5)
+            .map((q, idx) => ({
+              id: String(q.id || `q${idx + 1}`),
+              question: String(q.question).trim(),
+              why: String(q.why || '').trim(),
+              options: Array.isArray(q.options)
+                ? q.options.map(o => String(o || '').trim()).filter(Boolean).slice(0, 5)
+                : []
+            }))
+        : [];
+      return {
+        needsClarification: parsed?.needsClarification !== false && qs.length > 0,
+        understoodSummary: String(parsed?.understoodSummary || 'તમારો વિષય સમજાયો છે. World-Best Prompt બનાવવા નીચેના મુદ્દા સ્પષ્ટ કરો:').trim(),
+        questions: qs,
+        model: usedModel,
+        source
+      };
+    };
+
+    const parseClarifyRaw = (raw, usedModel, source) => {
+      const cleaned = String(raw || '').replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+      const match = cleaned.match(/\{[\s\S]*\}/);
+      if (match) {
+        try {
+          const parsed = JSON.parse(match[0]);
+          const res = normalizeClarify(parsed, usedModel, source);
+          if (res.questions.length > 0 || res.needsClarification === false) {
+            return res;
+          }
+        } catch (_) {}
+      }
+      return null;
+    };
+
+    if (this.getGeminiApiKey()) {
+      try {
+        const gem = await this.callGemini({
+          systemInstruction: clarifyInstruction,
+          userText,
+          imagesBase64: validImages,
+          temperature: 0.4,
+          maxTokens: 1600,
+          timeoutMs: 35000
+        });
+        if (gem && gem.text) {
+          const parsed = parseClarifyRaw(gem.text, gem.model, 'gemini');
+          if (parsed) return parsed;
+        }
+      } catch (err) {
+        console.warn('[SmartClarify] Gemini fallback triggered:', err.message);
+      }
+    }
+
+    if (openai) {
+      try {
+        const userContent = [
+          { type: 'text', text: userText },
+          ...validImages.map(img => ({ type: 'image_url', image_url: { url: img } }))
+        ];
+        const response = await openai.chat.completions.create({
+          model,
+          messages: [
+            { role: 'system', content: clarifyInstruction },
+            { role: 'user', content: userContent }
+          ],
+          temperature: 0.4,
+          max_tokens: 1400
+        });
+        const raw = (response.choices[0].message.content || '').trim();
+        const parsed = parseClarifyRaw(raw, model, 'openai');
+        if (parsed) return parsed;
+      } catch (err) {
+        console.warn('[SmartClarify] OpenAI fallback triggered:', err.message);
+      }
+    }
+
+    return {
+      needsClarification: true,
+      understoodSummary: cleanInput
+        ? `તમારો વિષય "${cleanInput}" સમજાયો છે. એકદમ High-Level અને સચોટ Prompt બનાવવા માટે આ ૪ નાના મુદ્દા સ્પષ્ટ કરો:`
+        : `તમે ${validImages.length} ફોટો ઉમેર્યો છે. ફોટામાંથી તમને કઈ પ્રકારની માહિતી જોઈએ છે તે નીચે પસંદ કરો:`,
+      questions: [
+        {
+          id: 'q1',
+          question: 'આ Prompt નો મુખ્ય હેતુ / ઉપયોગ શું છે?',
+          why: 'હેતુ મુજબ AI ની ભૂમિકા અને સ્ટાઇલ ૧૦૦% બદલાય છે',
+          options: ['અભ્યાસ / પરીક્ષાની તૈયારી', 'YouTube / સોશિયલ મીડિયા કન્ટેન્ટ', 'બિઝનેસ / કામકાજ / પ્રોફેશનલ', 'વ્યક્તિગત સમજણ & ગાઈડ']
+        },
+        {
+          id: 'q2',
+          question: 'આ જવાબ કોના માટે છે અને લેવલ કેવું રાખવું?',
+          why: 'શરૂઆતથી લઈને એક્સપર્ટ લેવલ સુધી ઊંડાઈ નક્કી કરવા',
+          options: ['એકદમ સરળ (શરૂઆત કરનાર માટે)', 'મધ્યમ + વ્યવહારુ ઉદાહરણ સાથે', 'એકદમ Deep / નિષ્ણાત / પ્રો-લેવલ']
+        },
+        {
+          id: 'q3',
+          question: 'જવાબ કયા ફોર્મેટ અને વિગતમાં જોઈએ છે?',
+          why: 'માળખું નક્કી કરવાથી Prompt ૧૦ ગણો વધુ અસરકારક બને છે',
+          options: ['સ્ટેપ-બાય-સ્ટેપ પૂરી ગાઈડ + ટેબલ', 'મુદ્દાસર સારાંશ + ટિપ્સ + ચેકલિસ્ટ', 'કોડ / સ્ક્રિપ્ટ / ટેમ્પલેટ સહિત']
+        },
+        {
+          id: 'q4',
+          question: 'કોઈ ખાસ વિભાગ, ટોપિક કે ઉદાહરણ પર વધુ ભાર મૂકવો છે?',
+          why: 'તમારી ખાસ જરૂરિયાત Prompt માં સીધી ઉમેરવા માટે',
+          options: ['પાછલા વર્ષો / રિયલ-લાઈફ ઉદાહરણો', 'શોર્ટકટ ટ્રિક્સ અને ટાળવા જેવી ભૂલો', 'સંપૂર્ણ A-to-Z બધું જ વિગતવાર']
+        }
+      ],
+      model: 'smart-clarifier-fallback',
+      source: 'fallback'
+    };
+  }
+
+  // --- Smart Prompt Builder (Generates World-Best, High-Level, Fine-Grained Master Prompt) ---
+  async buildSmartPrompt({ userInput = '', imagesBase64 = [], answerLanguage = 'gu', clarifications = [], extraNotes = '' } = {}) {
+    const openai = this.getOpenAIClient();
+    const model = this.getModel();
+    const cleanInput = String(userInput || '').trim();
+    const cleanExtra = String(extraNotes || '').trim();
+    const validImages = (Array.isArray(imagesBase64) ? imagesBase64 : []).filter(
+      img => typeof img === 'string' && img.startsWith('data:image/')
+    ).slice(0, 4);
+    const validClarifications = (Array.isArray(clarifications) ? clarifications : [])
+      .map(c => ({
+        question: String(c?.question || '').trim(),
+        answer: String(c?.answer || '').trim()
+      }))
+      .filter(c => c.question && c.answer);
+
+    const langLabel = answerLanguage === 'en' ? 'English' : (answerLanguage === 'hi' ? 'Hindi' : 'ગુજરાતી (Gujarati)');
+    const isGu = answerLanguage === 'gu' || !answerLanguage;
+    const promptInstruction = isGu
+      ? `તમે વિશ્વના ટોચના ૧% Prompt Engineering Architect છો. તમે રોમન ગુજરાતી (Gujlish), શુદ્ધ ગુજરાતી, હિન્દી અને ઇંગ્લિશ ઊંડાણથી સમજો છો.
+
+વપરાશકર્તા તમને પોતાનો વિષય, જરૂર પડ્યે ફોટા (૧ થી ૪), અને તેમના દ્વારા અપાયેલા સ્પષ્ટીકરણ પ્રશ્નોના જવાબ (Clarifications) આપશે.
+તમારું કામ ChatGPT, Google Gemini કે Claude જેવા કોઈ પણ AI પાસેથી **દુનિયાનો સર્વશ્રેષ્ઠ, અત્યંત ઊંડો, High-Level અને બારીકાઈભર્યો MASTER PROMPT (૩૫૦ થી ૭૦૦ શબ્દો)** તૈયાર કરવાનું છે — કોઈ પણ વિષય (અભ્યાસ, પરીક્ષા, YouTube, બિઝનેસ, કોડિંગ, સરકારી યોજના, ફોટો વિશ્લેષણ, આરોગ્ય, ક્રિએટિવ રાઇટિંગ વગેરે) માટે ૧૦/૧૦ World-Best ગુણવત્તાનો Prompt!
+
+કડક નિયમો:
+1. વપરાશકર્તાનો **મૂળ વિષય ૧૦૦% અકબંધ રાખો** — વિષય બિલકુલ બદલશો નહીં.
+2. વપરાશકર્તાએ આપેલા **દરેક સ્પષ્ટીકરણ જવાબ (Clarifications) અને વધારાની સૂચના** ને Prompt ની અંદર અત્યંત બારીકાઈથી વણી લો.
+3. રોમન-ગુજરાતી કે અધૂરા શબ્દો બેઠા ન રાખો — ૧૦૦% સચોટ, પાવરફુલ, પ્રોફેશનલ ગુજરાતી ભાષા વાપરો.
+4. જો ફોટા જોડેલા હોય, તો **ફોટાની દરેક મહત્વની વિગત (લખાણ, આંકડા, તારીખ, ચાર્ટ, UI, વસ્તુ)** વાંચીને Prompt માં ચોક્કસ ઉલ્લેખ કરો.
+5. Master Prompt માં નીચેના **૬ અત્યંત વિગતવાર અને હાઈ-લેવલ વિભાગો** સ્પષ્ટ હેડિંગ સાથે ફરજિયાત રાખો:
+   - **🎭 ૧. નિષ્ણાત ભૂમિકા (World-Class Expert Persona):** વિષયને અનુરૂપ ટોચના ૧% વિશ્વસ્તરીય નિષ્ણાતની ભૂમિકા, અનુભવ અને વિચારશૈલી.
+   - **🎯 ૨. મુખ્ય ઉદ્દેશ્ય, ટાર્ગેટ ઓડિયન્સ & સંપૂર્ણ સંદર્ભ:** વપરાશકર્તાનો અસલ હેતુ, કોના માટે જવાબ છે, ફોટા/પ્રશ્નનો સંપૂર્ણ બેકગ્રાઉન્ડ અને અપેક્ષિત પરિણામ.
+   - **🧠 ૩. તબક્કાવાર ઊંડું વિશ્લેષણ & બારીકાઈભરી વિગતો (Deep Step-by-Step Deliverables):** AI એ કયા કયા મુખ્ય અને પેટા-મુદ્દા, ટેકનિકલ/વ્યવહારુ ખ્યાલો, સરખામણી કોષ્ટક (Table), ગણતરી/ઉદાહરણ, અપવાદ કે રિયલ-લાઈફ કેસ સ્ટડી કવર કરવા તેની એકદમ સ્પષ્ટ અને ઊંડી યાદી.
+   - **⚠️ ૪. કડક ગુણવત્તા નિયમો & ટાળવા જેવી ભૂલો (Guardrails & Constraints):** ઉપરછલ્લો/સામાન્ય જવાબ ન આપવો, ૧૦૦% સચોટ & તથ્યપૂર્ણ રહેવું, કઈ ભૂલો ટાળવી, જો કોઈ માહિતી બદલાય તેવી હોય તો તેની સાવચેતી.
+   - **📐 ૫. જવાબનું આદર્શ માળખું & રજૂઆત શૈલી (Formatting & Tone):** હેડિંગ્સ, નંબરવાળા મુદ્દા, કોષ્ટક, સરળ અને અસરકારક ગુજરાતી ભાષા, એક્શન-પ્લાન / ચેકલિસ્ટ.
+   - **💎 ૬. સ્વ-ચકાસણી અને બોનસ પ્રો-ટિપ્સ (Self-Verification & High-Value Extras):** જવાબ આપતા પહેલા ગુણવત્તા ચકાસવાની સૂચના અને ૨-૩ અત્યંત ઉપયોગી એડવાન્સ ટિપ્સ.
+
+ફોર્મેટ નિયમ (ખૂબ મહત્વનું — JSON ભૂલો ટાળવા ફક્ત નીચેના બે ટૅગ્સ જ વાપરો):
+===INTENT===
+(અહીં ૧ ટૂંકી લાઈનમાં વિષય & લક્ષ્યનો સારાંશ લખો)
+===MASTER_PROMPT===
+(અહીં ઉપરના ૬ વિભાગો સાથેનો પૂરો, અત્યંત વિગતવાર ૩૫૦-૭૦૦ શબ્દોનો World-Best ગુજરાતી Master Prompt લખો — બીજું કોઈ વધારાનું લખાણ નહીં)`
+      : `You are in the top 1% of World-Class Prompt Engineering Architects across all domains (education, business, tech/coding, YouTube/media, research, photo analysis, personal planning).
+Transform the user's request, any attached photos, AND every single clarifying Q&A answer into an exhaustive, high-level, ultra-detailed MASTER PROMPT (350-700 words) written in ${langLabel}.
+
+STRICT RULES:
+1. Keep 100% fidelity to the user's exact topic (never drift).
+2. Weave EVERY clarifying answer and extra constraint seamlessly into the prompt.
+3. Inspect any attached photos deeply and cite specific text, figures, elements, and context found in them.
+4. Structure the prompt cleanly into 6 detailed sections:
+   - [1. World-Class Expert Persona]
+   - [2. Mission, Audience & Exact Context]
+   - [3. Fine-Grained Step-by-Step Deliverables & Deep Coverage]
+   - [4. Strict Quality Guardrails, Constraints & Anti-Fluff Rules]
+   - [5. Exact Output Format, Tables, Examples & Checklists]
+   - [6. Self-Verification & Bonus Pro Insights]
+
+Use ONLY these two delimiters (no extra wrapper text):
+===INTENT===
+(One concise summary line in ${langLabel})
+===MASTER_PROMPT===
+(The complete 350-700 word World-Best Master Prompt in ${langLabel})`;
+
+    const clarText = validClarifications.length > 0
+      ? `\n\nUser's Clarifying Answers (MUST weave every single answer into the Master Prompt in high detail):\n` +
+        validClarifications.map((c, i) => `Q${i + 1}: ${c.question}\nA${i + 1}: ${c.answer}`).join('\n\n')
+      : '';
+    const extraSection = cleanExtra ? `\n\nAdditional Notes / Special Requirements:\n${cleanExtra}` : '';
 
     const promptUserText = cleanInput
-      ? `User's message in their own words:\n"${cleanInput}"\n\nUploaded photos count: ${validImages.length}`
-      : `No text typed. Analyze the ${validImages.length} uploaded photo(s) and create the best prompt to explain/help the user with what is shown in the photo(s).`;
+      ? `Original User Request:\n"${cleanInput}"\nUploaded photos count: ${validImages.length}${clarText}${extraSection}`
+      : `No text typed. Analyze the ${validImages.length} uploaded photo(s) deeply${clarText}${extraSection} and craft the World-Best Master Prompt.`;
 
     const parsePromptRaw = (raw, usedModel, source) => {
-      const jsonMatch = (raw || '').match(/\{[\s\S]*\}/);
+      const text = String(raw || '').trim();
+      const intentMatch = text.match(/===INTENT===\s*([\s\S]*?)\s*===MASTER_PROMPT===/i);
+      const promptMatch = text.match(/===MASTER_PROMPT===\s*([\s\S]*)$/i);
+      if (promptMatch && promptMatch[1].trim()) {
+        return {
+          generatedPrompt: promptMatch[1].trim(),
+          detectedIntent: (intentMatch?.[1] || 'World-Best High-Level Master Prompt તૈયાર છે').trim(),
+          model: usedModel,
+          source
+        };
+      }
+      const cleaned = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         try {
           const parsed = JSON.parse(jsonMatch[0]);
           if (parsed.generatedPrompt) {
             return {
               generatedPrompt: String(parsed.generatedPrompt).trim(),
-              detectedIntent: String(parsed.detectedIntent || 'તમારા પ્રશ્ન મુજબ સ્માર્ટ પ્રોમ્પ્ટ તૈયાર છે').trim(),
+              detectedIntent: String(parsed.detectedIntent || 'World-Best Master Prompt તૈયાર છે').trim(),
               model: usedModel,
               source
             };
@@ -1917,8 +2134,8 @@ Output strictly valid JSON with keys: "detectedIntent" and "generatedPrompt".`;
         } catch (_) {}
       }
       return {
-        generatedPrompt: String(raw || '').trim(),
-        detectedIntent: 'તમારા પ્રશ્ન મુજબ સ્માર્ટ પ્રોમ્પ્ટ તૈયાર છે',
+        generatedPrompt: cleaned,
+        detectedIntent: 'World-Best High-Level Master Prompt તૈયાર છે',
         model: usedModel,
         source
       };
@@ -1930,8 +2147,9 @@ Output strictly valid JSON with keys: "detectedIntent" and "generatedPrompt".`;
           systemInstruction: promptInstruction,
           userText: promptUserText,
           imagesBase64: validImages,
-          temperature: 0.5,
-          maxTokens: 1400
+          temperature: 0.55,
+          maxTokens: 3400,
+          timeoutMs: 42000
         });
         if (gem && gem.text) {
           return parsePromptRaw(gem.text, gem.model, 'gemini');
@@ -1954,8 +2172,8 @@ Output strictly valid JSON with keys: "detectedIntent" and "generatedPrompt".`;
             { role: 'system', content: promptInstruction },
             { role: 'user', content: userContent }
           ],
-          temperature: 0.5,
-          max_tokens: 1200
+          temperature: 0.55,
+          max_tokens: 3000
         });
 
         const raw = (response.choices[0].message.content || '').trim();
@@ -1965,47 +2183,52 @@ Output strictly valid JSON with keys: "detectedIntent" and "generatedPrompt".`;
       }
     }
 
-    // Smart Local Prompt Engineer Fallback (structured Role + Objective + Photo Analysis + Output Format)
+    // Smart Local Prompt Engineer Fallback (World-Best 6-section structure)
     const lower = cleanInput.toLowerCase();
     const isVideoOrScript = /video|script|youtube|channel|સ્ક્રિપ્ટ|વિડિયો|વિડીયો|ચેનલ|ટાઇટલ|title|hook|હૂક|thumbnail|થંબનેલ/i.test(lower);
     const isYojanaOrNews = /yojana|યોજના|ભરતી|bharti|પગાર|pagar|gr|પરિપત્ર|સરકાર|sarkar|khedut|ખેડૂત|sahay|સહાય|pension|પેન્શન|aanganwadi|આંગણવાડી/i.test(lower);
     const hasPhotos = validImages.length > 0;
 
-    let roleLine = 'તમે એક નિષ્ણાત, અનુભવી અને વ્યવહારુ AI સલાહકાર (Expert Assistant) તરીકે જવાબ આપો.';
-    let intentLabel = 'તમારા પ્રશ્ન મુજબ પ્રોફેશનલ સ્માર્ટ પ્રોમ્પ્ટ';
+    let roleLine = 'તમે વિષયના ટોચના ૧% વિશ્વસ્તરીય નિષ્ણાત, વ્યૂહરચનાકાર (Master Strategist) અને અનુભવી શિક્ષક તરીકે જવાબ આપો.';
+    let intentLabel = 'World-Best High-Level સ્માર્ટ પ્રોમ્પ્ટ';
     let focusLines = [
-      '1. મુખ્ય વિષય અને પ્રશ્નનો સચોટ, સરળ અને મુદ્દાસર સારાંશ આપો.',
-      '2. દરેક મહત્વનો મુદ્દો સ્ટેપ-બાય-સ્ટેપ અને ઉદાહરણ સાથે સમજાવો.',
-      '3. અંતે વ્યવહારુ સલાહ, સાવચેતી અને આગળ શું કરવું તેની ટૂંકી ચેકલિસ્ટ આપો.'
+      '1. મુખ્ય વિષયનું ઊંડું અને મૂળભૂત વિશ્લેષણ + દરેક પેટા-વિભાગની બારીકાઈથી સમજૂતી આપો.',
+      '2. મુદ્દાસર સરખામણી કોષ્ટક (Comparison Table), રિયલ-લાઈફ ઉદાહરણો અને સ્ટેપ-બાય-સ્ટેપ અમલીકરણ યોજના રજૂ કરો.',
+      '3. સામાન્ય લોકો/વપરાશકર્તા કઈ ભૂલો કરે છે તે સ્પષ્ટ લખો અને અંતે ૧૦૦% વ્યવહારુ એક્શન-ચેકલિસ્ટ + બોનસ પ્રો-ટિપ્સ આપો.'
     ];
 
     if (isVideoOrScript) {
-      roleLine = 'તમે એક અનુભવી YouTube Content Strategist, Viral Script Writer અને Audience Retention નિષ્ણાત તરીકે જવાબ આપો.';
-      intentLabel = 'YouTube વિડિયો / સ્ક્રિપ્ટ માટે સ્માર્ટ પ્રોમ્પ્ટ';
+      roleLine = 'તમે એક વર્લ્ડ-ક્લાસ YouTube Content Strategist, Viral Script Architect અને Audience Retention નિષ્ણાત તરીકે જવાબ આપો.';
+      intentLabel = 'YouTube વિડિયો / સ્ક્રિપ્ટ માટે High-Level પ્રોમ્પ્ટ';
       focusLines = [
-        '1. દર્શકોનું ધ્યાન ખેંચે તેવો દમદાર 30-45 સેકન્ડનો હૂક (Hook) અને ક્લિકેબલ ટાઇટલ આઈડિયા આપો.',
-        '2. વિડિયોનું આખું માળખું (શરૂઆત, મુખ્ય મુદ્દાઓ, સરખામણી/ઉદાહરણ, અંત/CTA) સ્પષ્ટ રીતે ગોઠવીને આપો.',
-        '3. ગુજરાતી દર્શકોને સરળતાથી સમજાય તેવી જીવંત અને બોલચાલની શૈલી વાપરો.'
+        '1. દર્શકોનું ધ્યાન પ્રથમ ૩૦ સેકન્ડમાં જકડી રાખે તેવો દમદાર હૂક (Hook) અને ૩ હાઈ-CTR ટાઇટલ આપો.',
+        '2. વિડિયોનું મિનિટ-બાય-મિનિટ સ્ટ્રક્ચર, મુખ્ય મુદ્દાઓ, ઉદાહરણ, સરખામણી અને પાવરફુલ Call-To-Action લખો.',
+        '3. સરળ, જીવંત અને બોલચાલની ગુજરાતી શૈલીમાં સ્ક્રિપ્ટ ફ્લો અને વિઝ્યુઅલ/B-roll સૂચનો આપો.'
       ];
     } else if (isYojanaOrNews) {
-      roleLine = 'તમે સરકારી યોજનાઓ, પરિપત્રો, ભરતી નિયમો અને જાહેર માહિતીના નિષ્ણાત વિશ્લેષક તરીકે જવાબ આપો.';
-      intentLabel = 'યોજના / ભરતી / પરિપત્ર વિશ્લેષણ પ્રોમ્પ્ટ';
+      roleLine = 'તમે સરકારી યોજનાઓ, પરિપત્રો, ભરતી નિયમો અને કાયદેસરની જાહેર માહિતીના ટોચના વિશ્લેષક તરીકે જવાબ આપો.';
+      intentLabel = 'યોજના / ભરતી / પરિપત્ર વિશ્લેષણ High-Level પ્રોમ્પ્ટ';
       focusLines = [
-        '1. સત્તાવાર નિયમ/ઘોષણાનો સાચો અને સરળ સારાંશ આપો (અફવા વગર માત્ર હકીકત).',
-        '2. પાત્રતા (કોને લાભ મળશે), રકમ/પગાર, જરૂરી ડોક્યુમેન્ટ્સ અને અરજી પ્રક્રિયા અલગ-અલગ મુદ્દામાં સમજાવો.',
-        '3. મહત્વની તારીખો અને સામાન્ય લોકોને મૂંઝવતા પ્રશ્નો (FAQs) ના જવાબ આપો.'
+        '1. સત્તાવાર નિયમ/જાહેરાતનો ૧૦૦% સાચો અને અફવા-મુક્ત સારાંશ આપો.',
+        '2. પાત્રતા, વય/આવક મર્યાદા, પગાર/સહાયની રકમ, ડોક્યુમેન્ટ ચેકલિસ્ટ અને ઓનલાઇન અરજીના દરેક સ્ટેપ વિગતવાર સમજાવો.',
+        '3. મહત્વની તારીખો, અપવાદ શરતો અને સામાન્ય પૂછાતા પ્રશ્નો (FAQs) કોષ્ટક સહિત આપો.'
       ];
     }
 
     const photoSection = hasPhotos
-      ? `\n\n[ફોટા વિશ્લેષણ સૂચના (${validImages.length} ફોટા)]:\n- સાથે જોડેલા દરેક ફોટા/સ્ક્રીનશોટને ધ્યાનથી વાંચો અને તેમાં રહેલું લખાણ, આંકડા, તારીખ, કોષ્ટક (Table) અથવા દ્રશ્ય વિગત ઓળખો.\n- ફોટામાંથી મળેલી સાચી માહિતીને આધારે જ મુખ્ય જવાબ અને નિષ્કર્ષ તૈયાર કરો.`
+      ? `\n\n[📷 ફોટા વિશ્લેષણ સૂચના (${validImages.length} ફોટા)]:\n- સાથે જોડેલા દરેક ફોટા/સ્ક્રીનશોટને બારીકાઈથી વાંચી તેમાં રહેલું લખાણ, આંકડા, તારીખ, કોષ્ટક અને દ્રશ્ય વિગતો ઓળખીને મુખ્ય જવાબમાં ઉપયોગ કરો.`
       : '';
 
-    const topicContext = cleanInput
-      ? `\n\n[વિષય / પૂછપરછનો સંદર્ભ]:\nવપરાશકર્તાની જરૂરિયાત: ${cleanInput}`
-      : `\n\n[વિષય / પૂછપરછનો સંદર્ભ]:\nસાથે જોડેલા ફોટામાં જે માહિતી, દસ્તાવેજ કે દ્રશ્ય દેખાય છે તેનું સંપૂર્ણ વિશ્લેષણ કરી ઉપયોગી માર્ગદર્શન આપો.`;
+    const clarBlock = validClarifications.length > 0
+      ? `\n\n[🎯 વપરાશકર્તાના સ્પષ્ટીકરણો]:\n` + validClarifications.map((c, i) => `${i + 1}. ${c.question} → ${c.answer}`).join('\n')
+      : '';
+    const extraBlock = cleanExtra ? `\n\n[📌 ખાસ વધારાની સૂચના]:\n${cleanExtra}` : '';
 
-    const fallbackPrompt = `${roleLine}${topicContext}${photoSection}\n\n[જવાબનું જરૂરી માળખું (${langLabel} ભાષામાં)]:\n${focusLines.join('\n')}\n\nભાષા અને શૈલી: જવાબ સંપૂર્ણપણે સ્પષ્ટ, શુદ્ધ અને સરળતાથી સમજાય તેવી ${langLabel} ભાષામાં આપો.`;
+    const topicContext = cleanInput
+      ? `\n\n[🎯 મુખ્ય વિષય અને લક્ષ્ય]:\nવપરાશકર્તાની અસલ જરૂરિયાત: ${cleanInput}`
+      : `\n\n[🎯 મુખ્ય વિષય અને લક્ષ્ય]:\nસાથે જોડેલા ફોટાનું સંપૂર્ણ, બારીકાઈભર્યું વિશ્લેષણ કરીને ઉચ્ચ સ્તરનું માર્ગદર્શન આપો.`;
+
+    const fallbackPrompt = `🎭 [૧. નિષ્ણાત ભૂમિકા]:\n${roleLine}${topicContext}${clarBlock}${extraBlock}${photoSection}\n\n🧠 [૨. તબક્કાવાર ઊંડા વિષયો (${langLabel} માં)]:\n${focusLines.join('\n')}\n\n⚠️ [૩. કડક ગુણવત્તા નિયમો]:\n- ઉપરછલ્લી વાતો કે ભટકાવ વગર ૧૦૦% સચોટ, તથ્યપૂર્ણ અને મુદ્દાસર લખો.\n- અંતે સ્વ-ચકાસણી કરીને ૨-૩ વ્યવહારુ બોનસ ટિપ્સ ઉમેરો.`;
 
     return {
       generatedPrompt: fallbackPrompt,

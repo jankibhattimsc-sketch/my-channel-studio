@@ -144,6 +144,7 @@ export const api = {
   uploadAudio: (data) => api.post('/api/voice/upload-audio', data),
   getActorScript: (params) => api.post('/api/voice/actor-script', params),
   getAudioLibrary: () => api.get('/api/voice/library'),
+  clarifySmartPrompt: (payload) => api.post('/api/chat/smart-clarify', payload),
   buildSmartPrompt: (payload) => api.post('/api/chat/smart-prompt', payload),
   answerSmartPrompt: (payload) => api.post('/api/chat/smart-answer', payload),
   smartAskAll: (payload) => api.post('/api/chat/smart-ask-all', payload),

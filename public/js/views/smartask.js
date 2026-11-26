@@ -1,4 +1,4 @@
-import { api } from '../api.js?v=90.0';
+import { api } from '../api.js?v=102.1';
 import { copyToClipboard } from '../utils/clipboard.js?v=90.0';
 
 function escapeHtml(str) {
@@ -43,6 +43,7 @@ function compressImageFile(file, maxDim = 1400, quality = 0.84) {
 export async function renderSmartAsk(container) {
   let attachedImages = [];
   let historyItems = [];
+  let currentQuestions = [];
 
   container.innerHTML = `
     <div style="max-width: 960px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; padding-bottom: 40px;">
@@ -51,10 +52,10 @@ export async function renderSmartAsk(container) {
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
           <div>
             <h2 style="margin: 0 0 6px 0; font-size: 1.35rem; color: #f8fafc;">
-              ✨ મારો પ્રશ્ન & ફોટો AI (Prompt → ChatGPT જવાબ)
+              ✨ મારો પ્રશ્ન & ફોટો AI (પ્રશ્ન પૂછીને → World-Best Prompt → જવાબ)
             </h2>
             <p style="margin: 0; color: var(--text-muted); font-size: 0.92rem; line-height: 1.5;">
-              તમારા મનનો કોઈ પણ પ્રશ્ન તમારી પોતાની ભાષામાં લખો અથવા ફોટો ઉમેરો — ટૂલ જાતે સમજીને સ્માર્ટ <b>Prompt</b> બનાવશે અને <b>ChatGPT</b> તેનો સ્પષ્ટ જવાબ આપશે.
+              કોઈ પણ વિષય લખો અથવા ફોટો ઉમેરો — Google Gemini પહેલા બારીકાઈથી સમજવા <b>૩–૫ પ્રશ્નો</b> પૂછશે અને પછી એકદમ <b>World-Best High-Level Prompt</b> બનાવશે.
             </p>
           </div>
           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
@@ -77,20 +78,20 @@ export async function renderSmartAsk(container) {
         </div>
       </div>
 
-      <!-- Step 1 & 2: User Input + Photo Upload -->
+      <!-- Step 1: User Input + Photo Upload -->
       <div class="card" style="padding: 20px; border: 1.5px solid rgba(56, 189, 248, 0.35);">
         <div style="font-weight: 800; color: #38bdf8; margin-bottom: 8px; font-size: 1rem;">
-          ૧. તમારા મનનો પ્રશ્ન લખો (ગુજરાતી, ઇંગ્લિશ કે Roman Gujarati માં ગમે તે રીતે):
+          ૧. તમારો વિષય / પ્રશ્ન લખો (ગુજરાતી, ઇંગ્લિશ કે Roman Gujarati માં ગમે તે રીતે):
         </div>
         <textarea id="sa-user-input" class="input" rows="4"
-          placeholder="ઉદાહરણ: 'આ ફોટામાં જે લખ્યું છે એ સરળ ગુજરાતીમાં સમજાવો' અથવા 'મારે આ વિષય પર 5 મિનિટનો વિડિયો બનાવવો છે, સારા મુદ્દા આપો' અથવા મનનો કોઈ પણ પ્રશ્ન..."
+          placeholder="ઉદાહરણ: 'tet 2 na 5 topic aapo', 'નવો ધંધો શરૂ કરવો છે', 'આ ફોટાનું બારીકાઈથી વિશ્લેષણ કરો', અથવા કોઈ પણ વિષય..."
           style="width: 100%; resize: vertical; font-size: 0.98rem; line-height: 1.55; padding: 12px; border-radius: 12px;"></textarea>
 
         <!-- Photo Upload Area -->
         <div style="margin-top: 16px;">
           <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 8px;">
             <span style="font-weight: 800; color: #a78bfa; font-size: 0.96rem;">
-              ૨. ફોટો ઉમેરો (વૈકલ્પિક — 1 થી 4 ફોટા, ટૂલ ફોટાને આધારે પ્રોમ્પ્ટ લખશે):
+              ૨. ફોટો ઉમેરો (વૈકલ્પિક — 1 થી 4 ફોટા, Gemini ફોટા વાંચીને પ્રશ્નો &amp; Prompt બનાવશે):
             </span>
             <span id="sa-photo-count" style="font-size: 0.82rem; color: var(--text-muted);">૦ ફોટા ઉમેરેલા</span>
           </div>
@@ -102,7 +103,7 @@ export async function renderSmartAsk(container) {
               અહીં ક્લિક કરીને ફોટો ઉમેરો (અથવા ફોટો અહીં Drag / Paste કરો)
             </div>
             <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
-              ફોનની ગેલેરી, કેમેરા અથવા સ્ક્રીનશોટ — ટૂલ ફોટો વાંચીને પ્રોમ્પ્ટ બનાવશે
+              ફોનની ગેલેરી, કેમેરા અથવા સ્ક્રીનશોટ — Gemini ફોટો વાંચીને Prompt બનાવશે
             </div>
           </div>
 
@@ -111,11 +112,14 @@ export async function renderSmartAsk(container) {
 
         <!-- Action Buttons -->
         <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px;">
-          <button id="sa-btn-ask-all" class="btn btn-primary" style="flex: 2; min-width: 220px; padding: 12px 18px; font-weight: 800; font-size: 0.98rem; background: linear-gradient(135deg, #8b5cf6, #10b981); border: none;">
-            🚀 Prompt બનાવો & ChatGPT જવાબ આપો
+          <button id="sa-btn-clarify" class="btn btn-primary" style="flex: 2; min-width: 240px; padding: 12px 18px; font-weight: 800; font-size: 0.98rem; background: linear-gradient(135deg, #8b5cf6, #10b981); border: none;">
+            🧠 સ્ટેપ ૧: Gemini પ્રશ્નો પૂછે → World-Best Prompt
           </button>
-          <button id="sa-btn-build-prompt" class="btn btn-outline" style="flex: 1; min-width: 190px; padding: 12px 16px; font-weight: 800; border-color: #38bdf8; color: #38bdf8;">
-            🪄 પહેલા ફક્ત Prompt બનાવો
+          <button id="sa-btn-build-prompt" class="btn btn-outline" style="flex: 1; min-width: 190px; padding: 12px 14px; font-weight: 800; border-color: #38bdf8; color: #38bdf8;">
+            ⚡ સીધો High-Level Prompt
+          </button>
+          <button id="sa-btn-ask-all" class="btn btn-outline" style="flex: 1; min-width: 175px; padding: 12px 14px; font-weight: 800; border-color: #34d399; color: #34d399;">
+            🚀 Prompt + AI જવાબ
           </button>
           <button id="sa-btn-clear" class="btn btn-outline" style="padding: 12px 14px; font-weight: 700;">
             🧹 સાફ કરો
@@ -125,12 +129,45 @@ export async function renderSmartAsk(container) {
         <div id="sa-status-msg" style="margin-top: 10px; font-size: 0.88rem; color: #34d399; display: none;"></div>
       </div>
 
-      <!-- Step 3: Generated Prompt Card -->
+      <!-- Step 2: Gemini Clarifying Questions Card -->
+      <div id="sa-clarify-card" class="card" style="padding: 20px; border: 1.5px solid rgba(56, 189, 248, 0.55); background: rgba(56, 189, 248, 0.06); display: none;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+          <div style="font-weight: 800; color: #38bdf8; font-size: 1.04rem;">
+            🤔 પરફેક્ટ &amp; World-Best Prompt બનાવતા પહેલા Gemini આટલું જાણવા માંગે છે:
+          </div>
+          <span id="sa-clarify-source" style="font-size: 0.78rem; background: rgba(56, 189, 248, 0.16); color: #bae6fd; padding: 3px 10px; border-radius: 999px;"></span>
+        </div>
+
+        <div id="sa-clarify-summary" style="font-size: 0.9rem; color: #e2e8f0; background: rgba(15, 23, 42, 0.55); padding: 10px 14px; border-radius: 10px; border-left: 3px solid #38bdf8; margin-bottom: 14px; line-height: 1.5;"></div>
+
+        <div id="sa-clarify-questions" style="display: flex; flex-direction: column; gap: 14px;"></div>
+
+        <div style="margin-top: 14px;">
+          <label for="sa-clarify-extra" style="display: block; font-size: 0.84rem; font-weight: 700; color: #cbd5e1; margin-bottom: 6px;">
+            📌 વધારાની કોઈ ખાસ સૂચના / શરત / ઉદાહરણ ઉમેરવું હોય તો લખો (વૈકલ્પિક):
+          </label>
+          <input id="sa-clarify-extra" type="text" class="input"
+            placeholder="દા.ત. '૨૦૨૬ ના નવા નિયમો મુજબ રાખો' અથવા '૧૦ મિનિટના વિડિયો મુજબ ઊંડું આપો'..."
+            style="width: 100%; padding: 10px 12px; border-radius: 10px; font-size: 0.9rem;" />
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px;">
+          <button id="sa-btn-generate-from-answers" class="btn btn-primary" style="flex: 2; min-width: 240px; padding: 12px 18px; font-weight: 800; font-size: 0.98rem; background: linear-gradient(135deg, #0ea5e9, #10b981); border: none;">
+            ✨ જવાબો પરથી World-Best High-Level Prompt બનાવો
+          </button>
+          <button id="sa-btn-skip-clarify" class="btn btn-outline" style="flex: 1; min-width: 185px; padding: 12px 14px; font-weight: 700; border-color: #94a3b8; color: #cbd5e1;">
+            ⏭️ પ્રશ્નો છોડી સીધો Prompt બનાવો
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 3: Generated Master Prompt Card -->
       <div id="sa-prompt-card" class="card" style="padding: 20px; border: 1.5px solid rgba(251, 191, 36, 0.45); display: none;">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
-          <div>
-            <span id="sa-prompt-card-title" style="font-weight: 800; color: #fbbf24; font-size: 1rem;">🪄 AI દ્વારા બનાવેલો સ્માર્ટ Prompt</span>
-            <span id="sa-intent-badge" style="margin-left: 8px; font-size: 0.78rem; background: rgba(251, 191, 36, 0.16); color: #fde68a; padding: 3px 10px; border-radius: 999px;"></span>
+          <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <span id="sa-prompt-card-title" style="font-weight: 800; color: #fbbf24; font-size: 1rem;">✨ Google Gemini API નો World-Best Master Prompt</span>
+            <span id="sa-intent-badge" style="font-size: 0.78rem; background: rgba(251, 191, 36, 0.16); color: #fde68a; padding: 3px 10px; border-radius: 999px;"></span>
+            <span id="sa-prompt-stats" style="font-size: 0.76rem; background: rgba(16, 185, 129, 0.16); color: #6ee7b7; padding: 3px 10px; border-radius: 999px;"></span>
           </div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button id="sa-btn-copy-prompt" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.82rem; font-weight: 700;">
@@ -147,16 +184,16 @@ export async function renderSmartAsk(container) {
             </button>
           </div>
         </div>
-        <textarea id="sa-generated-prompt" class="input" rows="5" style="width: 100%; font-size: 0.94rem; line-height: 1.55; padding: 12px; border-radius: 12px; background: rgba(15, 23, 42, 0.7);"></textarea>
+        <textarea id="sa-generated-prompt" class="input" rows="12" style="width: 100%; resize: vertical; font-size: 0.94rem; line-height: 1.65; padding: 14px; border-radius: 12px; background: rgba(15, 23, 42, 0.75);"></textarea>
         <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 6px;">
-          ટીપ: તમે અહીં Prompt માં ફેરફાર કરીને ફરી "ChatGPT જવાબ આપો" પર ક્લિક કરી શકો છો.
+          ટીપ: આ <b>World-Best Master Prompt</b> કોપી કરીને ChatGPT / Gemini માં Paste કરી શકો છો અથવા અહીં જ "🤖 આ Prompt પરથી AI જવાબ આપો" પર ક્લિક કરો.
         </div>
       </div>
 
-      <!-- Step 4: ChatGPT Answer Card -->
+      <!-- Step 4: AI Answer Card -->
       <div id="sa-answer-card" class="card" style="padding: 20px; border: 1.5px solid rgba(16, 185, 129, 0.5); background: rgba(16, 185, 129, 0.06); display: none;">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
-          <span style="font-weight: 800; color: #34d399; font-size: 1.05rem;">🤖 ChatGPT નો જવાબ</span>
+          <span id="sa-answer-card-title" style="font-weight: 800; color: #34d399; font-size: 1.05rem;">🤖 AI નો વિગતવાર જવાબ</span>
           <button id="sa-btn-copy-answer" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.82rem; font-weight: 700; border-color: #34d399; color: #34d399;">
             📋 જવાબ કોપી કરો
           </button>
@@ -167,7 +204,7 @@ export async function renderSmartAsk(container) {
       <!-- Saved History -->
       <div class="card" style="padding: 20px;">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-          <h3 style="margin: 0; font-size: 1.02rem; color: #e2e8f0;">📚 અગાઉ પૂછેલા પ્રશ્નો & જવાબો</h3>
+          <h3 style="margin: 0; font-size: 1.02rem; color: #e2e8f0;">📚 અગાઉ પૂછેલા પ્રશ્નો &amp; જવાબો</h3>
           <button id="sa-btn-refresh-history" class="btn btn-outline" style="padding: 5px 10px; font-size: 0.8rem;">🔄 રીફ્રેશ</button>
         </div>
         <div id="sa-history-list" style="display: flex; flex-direction: column; gap: 10px;">
@@ -184,12 +221,30 @@ export async function renderSmartAsk(container) {
   const previewGridEl = container.querySelector('#sa-photo-preview-grid');
   const photoCountEl = container.querySelector('#sa-photo-count');
   const statusEl = container.querySelector('#sa-status-msg');
+
+  const clarifyCardEl = container.querySelector('#sa-clarify-card');
+  const clarifySourceEl = container.querySelector('#sa-clarify-source');
+  const clarifySummaryEl = container.querySelector('#sa-clarify-summary');
+  const clarifyQuestionsEl = container.querySelector('#sa-clarify-questions');
+  const clarifyExtraEl = container.querySelector('#sa-clarify-extra');
+
   const promptCardEl = container.querySelector('#sa-prompt-card');
+  const promptCardTitleEl = container.querySelector('#sa-prompt-card-title');
   const intentBadgeEl = container.querySelector('#sa-intent-badge');
+  const promptStatsEl = container.querySelector('#sa-prompt-stats');
   const generatedPromptEl = container.querySelector('#sa-generated-prompt');
+
   const answerCardEl = container.querySelector('#sa-answer-card');
+  const answerCardTitleEl = container.querySelector('#sa-answer-card-title');
   const answerBodyEl = container.querySelector('#sa-answer-body');
   const historyListEl = container.querySelector('#sa-history-list');
+
+  const btnClarify = container.querySelector('#sa-btn-clarify');
+  const btnBuildPrompt = container.querySelector('#sa-btn-build-prompt');
+  const btnAskAll = container.querySelector('#sa-btn-ask-all');
+  const btnSendPrompt = container.querySelector('#sa-btn-send-prompt');
+  const btnGenerateFromAnswers = container.querySelector('#sa-btn-generate-from-answers');
+  const btnSkipClarify = container.querySelector('#sa-btn-skip-clarify');
 
   function setStatus(msg, isError = false) {
     if (!msg) {
@@ -200,6 +255,41 @@ export async function renderSmartAsk(container) {
     statusEl.style.color = isError ? '#f87171' : '#34d399';
     statusEl.textContent = msg;
   }
+
+  function setBusy(busy) {
+    [btnClarify, btnBuildPrompt, btnAskAll, btnSendPrompt, btnGenerateFromAnswers, btnSkipClarify].forEach(b => {
+      if (b) {
+        b.disabled = busy;
+        b.style.opacity = busy ? '0.6' : '1';
+      }
+    });
+  }
+
+  function sourceLabel(src, model = '') {
+    if (src === 'gemini') return `✨ Gemini API Live${model ? ' (' + model + ')' : ''}`;
+    if (src === 'openai') return `🤖 ChatGPT API Live${model ? ' (' + model + ')' : ''}`;
+    return '⚙️ Local Fallback';
+  }
+
+  function updatePromptTitleBySource(src, model) {
+    if (!promptCardTitleEl) return;
+    if (src === 'gemini') {
+      promptCardTitleEl.textContent = `✨ Google Gemini API (${model || 'gemini-flash-lite-latest'}) નો World-Best Master Prompt`;
+    } else if (src === 'openai') {
+      promptCardTitleEl.textContent = `🤖 ChatGPT API (${model || 'gpt-4o'}) નો World-Best Master Prompt`;
+    } else {
+      promptCardTitleEl.textContent = `⚠️ ટેમ્પરરી ફૉલબેક Prompt (Gemini ફરી પ્રયાસ કરો)`;
+    }
+  }
+
+  function updatePromptStats(text) {
+    if (!promptStatsEl) return;
+    const clean = String(text || '').trim();
+    const words = clean ? clean.split(/\s+/).length : 0;
+    promptStatsEl.textContent = `📊 ${words} શબ્દો • ${clean.length} અક્ષરો`;
+  }
+
+  generatedPromptEl.addEventListener('input', () => updatePromptStats(generatedPromptEl.value));
 
   function renderPhotoPreviews() {
     photoCountEl.textContent = `${attachedImages.length} ફોટા ઉમેરેલા (મહત્તમ 4)`;
@@ -262,6 +352,211 @@ export async function renderSmartAsk(container) {
     if (imgFiles.length) addFiles(imgFiles);
   });
 
+  function renderClarifyQuestions(questions) {
+    currentQuestions = Array.isArray(questions) ? questions : [];
+    clarifyQuestionsEl.innerHTML = currentQuestions.map((q, idx) => `
+      <div style="padding: 14px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.35); background: rgba(15, 23, 42, 0.55);">
+        <div style="font-weight: 800; color: #f8fafc; font-size: 0.96rem; margin-bottom: 4px;">
+          ${idx + 1}. ${escapeHtml(q.question)}
+        </div>
+        ${q.why ? `<div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 10px;">💡 ${escapeHtml(q.why)}</div>` : ''}
+        ${Array.isArray(q.options) && q.options.length ? `
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+            ${q.options.map(opt => `
+              <button type="button" class="btn btn-outline sa-clarify-chip"
+                data-q-idx="${idx}" data-opt="${escapeHtml(opt)}"
+                style="padding: 5px 11px; font-size: 0.82rem; font-weight: 700; border-radius: 999px; border-color: rgba(56, 189, 248, 0.5); color: #bae6fd; background: rgba(56, 189, 248, 0.08);">
+                + ${escapeHtml(opt)}
+              </button>
+            `).join('')}
+          </div>
+        ` : ''}
+        <input type="text" id="sa-clarify-ans-${idx}" class="input sa-clarify-input"
+          data-q-idx="${idx}"
+          placeholder="ઉપરનો વિકલ્પ ક્લિક કરો અથવા અહીં તમારો જવાબ લખો (ખાલી રાખવું હોય તો છોડી દો)..."
+          style="width: 100%; padding: 9px 12px; border-radius: 10px; font-size: 0.9rem;" />
+      </div>
+    `).join('');
+
+    clarifyQuestionsEl.querySelectorAll('.sa-clarify-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const idx = Number(chip.getAttribute('data-q-idx'));
+        const opt = chip.getAttribute('data-opt') || '';
+        const inputEl = clarifyQuestionsEl.querySelector(`#sa-clarify-ans-${idx}`);
+        if (!inputEl) return;
+
+        const existingParts = inputEl.value.split(',').map(s => s.trim()).filter(Boolean);
+        const already = existingParts.includes(opt);
+        if (already) {
+          inputEl.value = existingParts.filter(s => s !== opt).join(', ');
+          chip.style.background = 'rgba(56, 189, 248, 0.08)';
+          chip.style.borderColor = 'rgba(56, 189, 248, 0.5)';
+          chip.style.color = '#bae6fd';
+        } else {
+          existingParts.push(opt);
+          inputEl.value = existingParts.join(', ');
+          chip.style.background = 'rgba(16, 185, 129, 0.25)';
+          chip.style.borderColor = '#10b981';
+          chip.style.color = '#6ee7b7';
+        }
+      });
+    });
+  }
+
+  function collectClarificationAnswers() {
+    return currentQuestions.map((q, idx) => {
+      const inputEl = clarifyQuestionsEl.querySelector(`#sa-clarify-ans-${idx}`);
+      return {
+        question: q.question,
+        answer: (inputEl?.value || '').trim()
+      };
+    }).filter(item => item.answer);
+  }
+
+  async function runBuildMasterPrompt({ useClarifications = false } = {}) {
+    const userInput = userInputEl.value.trim();
+    if (!userInput && attachedImages.length === 0) {
+      setStatus('કૃપા કરીને તમારો પ્રશ્ન લખો અથવા ફોટો ઉમેરો.', true);
+      return;
+    }
+    const clarifications = useClarifications ? collectClarificationAnswers() : [];
+    const extraNotes = useClarifications ? (clarifyExtraEl?.value || '').trim() : '';
+
+    setBusy(true);
+    generatedPromptEl.value = '';
+    setStatus('✨ Google Gemini API તમારા જવાબો અને વિગતો પરથી World-Best High-Level Prompt બનાવી રહ્યું છે (આમાં 8–20 સેકન્ડ લાગી શકે છે)...');
+    try {
+      const res = await api.buildSmartPrompt({
+        userInput,
+        images: attachedImages,
+        answerLanguage: langSelectEl.value,
+        clarifications,
+        extraNotes
+      });
+      generatedPromptEl.value = res.generatedPrompt || '';
+      updatePromptTitleBySource(res.source, res.model);
+      updatePromptStats(res.generatedPrompt || '');
+      intentBadgeEl.textContent = `${res.detectedIntent || 'Prompt તૈયાર છે'} • ${sourceLabel(res.source, res.model)}`;
+      promptCardEl.style.display = 'block';
+      promptCardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      setStatus(`✅ World-Best High-Level Prompt તૈયાર છે (${sourceLabel(res.source, res.model)})!`);
+    } catch (err) {
+      setStatus(`ભૂલ: ${err.message}`, true);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Step 1: Gemini inspects topic + photos and asks clarifying questions first
+  btnClarify.addEventListener('click', async () => {
+    const userInput = userInputEl.value.trim();
+    if (!userInput && attachedImages.length === 0) {
+      setStatus('કૃપા કરીને તમારો વિષય લખો અથવા ફોટો ઉમેરો.', true);
+      return;
+    }
+    setBusy(true);
+    setStatus('🧠 Google Gemini તમારો વિષય & ફોટો બારીકાઈથી સમજી રહ્યું છે અને જરૂરી પ્રશ્નો તૈયાર કરી રહ્યું છે...');
+    try {
+      const res = await api.clarifySmartPrompt({
+        userInput,
+        images: attachedImages,
+        answerLanguage: langSelectEl.value
+      });
+
+      if (!res.needsClarification || !Array.isArray(res.questions) || res.questions.length === 0) {
+        setStatus('✅ તમારી વિગતો ૧૦૦% સ્પષ્ટ છે! સીધો World-Best Prompt બની રહ્યો છે...');
+        clarifyCardEl.style.display = 'none';
+        setBusy(false);
+        await runBuildMasterPrompt({ useClarifications: false });
+        return;
+      }
+
+      clarifySourceEl.textContent = sourceLabel(res.source, res.model);
+      clarifySummaryEl.textContent = res.understoodSummary || 'તમારો વિષય સમજાયો છે.';
+      renderClarifyQuestions(res.questions);
+      clarifyExtraEl.value = '';
+      clarifyCardEl.style.display = 'block';
+      clarifyCardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      setStatus(`🤔 Gemini એ ${res.questions.length} મહત્વના પ્રશ્નો પૂછ્યા છે — નીચે પસંદ કરીને "✨ World-Best Prompt બનાવો" દબાવો!`);
+    } catch (err) {
+      setStatus(`ભૂલ: ${err.message}`, true);
+    } finally {
+      setBusy(false);
+    }
+  });
+
+  btnGenerateFromAnswers.addEventListener('click', () => runBuildMasterPrompt({ useClarifications: true }));
+  btnSkipClarify.addEventListener('click', () => runBuildMasterPrompt({ useClarifications: false }));
+  btnBuildPrompt.addEventListener('click', () => runBuildMasterPrompt({ useClarifications: false }));
+
+  btnSendPrompt.addEventListener('click', async () => {
+    const prompt = generatedPromptEl.value.trim();
+    const userInput = userInputEl.value.trim();
+    if (!prompt && !userInput && attachedImages.length === 0) {
+      setStatus('પહેલા Prompt બનાવો અથવા પ્રશ્ન લખો.', true);
+      return;
+    }
+    setBusy(true);
+    answerBodyEl.textContent = '';
+    setStatus('🤖 AI તમારા World-Best Prompt અને ફોટા પરથી ઊંડો જવાબ તૈયાર કરી રહ્યું છે...');
+    try {
+      const res = await api.answerSmartPrompt({
+        prompt,
+        userInput,
+        images: attachedImages,
+        answerLanguage: langSelectEl.value
+      });
+      answerBodyEl.textContent = res.answer || '';
+      if (answerCardTitleEl) {
+        answerCardTitleEl.textContent = `🤖 AI નો વિગતવાર જવાબ (${sourceLabel(res.source, res.model)})`;
+      }
+      answerCardEl.style.display = 'block';
+      answerCardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      setStatus(`✅ જવાબ તૈયાર છે (${sourceLabel(res.source, res.model)})!`);
+      loadHistory();
+    } catch (err) {
+      setStatus(`ભૂલ: ${err.message}`, true);
+    } finally {
+      setBusy(false);
+    }
+  });
+
+  btnAskAll.addEventListener('click', async () => {
+    const userInput = userInputEl.value.trim();
+    if (!userInput && attachedImages.length === 0) {
+      setStatus('કૃપા કરીને તમારો પ્રશ્ન લખો અથવા ફોટો ઉમેરો.', true);
+      return;
+    }
+    setBusy(true);
+    clarifyCardEl.style.display = 'none';
+    generatedPromptEl.value = '';
+    answerBodyEl.textContent = '';
+    setStatus('🚀 ટૂલ World-Best High-Level Prompt અને AI જવાબ બંને તૈયાર કરી રહ્યું છે...');
+    try {
+      const res = await api.smartAskAll({
+        userInput,
+        images: attachedImages,
+        answerLanguage: langSelectEl.value
+      });
+      generatedPromptEl.value = res.generatedPrompt || '';
+      updatePromptTitleBySource(res.promptSource || res.source, res.promptModel || res.model);
+      updatePromptStats(res.generatedPrompt || '');
+      intentBadgeEl.textContent = `${res.detectedIntent || 'Prompt તૈયાર છે'} • ${sourceLabel(res.promptSource || res.source, res.promptModel || res.model)}`;
+      promptCardEl.style.display = 'block';
+      answerBodyEl.textContent = res.answer || '';
+      if (answerCardTitleEl) {
+        answerCardTitleEl.textContent = `🤖 AI નો વિગતવાર જવાબ (${sourceLabel(res.source, res.model)})`;
+      }
+      answerCardEl.style.display = 'block';
+      setStatus(`✅ World-Best Prompt અને જવાબ બંને તૈયાર છે (${sourceLabel(res.source, res.model)})!`);
+      loadHistory();
+    } catch (err) {
+      setStatus(`ભૂલ: ${err.message}`, true);
+    } finally {
+      setBusy(false);
+    }
+  });
+
   function renderHistory() {
     if (!historyItems.length) {
       historyListEl.innerHTML = `<div style="color: var(--text-muted); font-size: 0.88rem;">હજી સુધી કોઈ પ્રશ્ન સેવ થયેલો નથી.</div>`;
@@ -286,8 +581,11 @@ export async function renderSmartAsk(container) {
       btn.addEventListener('click', () => {
         const found = historyItems.find(x => x.id === btn.getAttribute('data-load-id'));
         if (!found) return;
+        clarifyCardEl.style.display = 'none';
         userInputEl.value = found.userInput || '';
         generatedPromptEl.value = found.generatedPrompt || '';
+        updatePromptStats(found.generatedPrompt || '');
+        updatePromptTitleBySource(found.model && found.model.includes('gemini') ? 'gemini' : 'openai', found.model);
         promptCardEl.style.display = found.generatedPrompt ? 'block' : 'none';
         answerBodyEl.textContent = found.answer || '';
         answerCardEl.style.display = found.answer ? 'block' : 'none';
@@ -317,129 +615,16 @@ export async function renderSmartAsk(container) {
     }
   }
 
-  const btnAskAll = container.querySelector('#sa-btn-ask-all');
-  const btnBuildPrompt = container.querySelector('#sa-btn-build-prompt');
-  const btnSendPrompt = container.querySelector('#sa-btn-send-prompt');
-
-  function setBusy(busy) {
-    [btnAskAll, btnBuildPrompt, btnSendPrompt].forEach(b => {
-      if (b) {
-        b.disabled = busy;
-        b.style.opacity = busy ? '0.6' : '1';
-      }
-    });
-  }
-
-  function sourceLabel(src, model = '') {
-    if (src === 'gemini') return `✨ Gemini API Live${model ? ' (' + model + ')' : ''}`;
-    if (src === 'openai') return `🤖 ChatGPT API Live${model ? ' (' + model + ')' : ''}`;
-    return '⚙️ Local Fallback';
-  }
-
-  const promptCardTitleEl = container.querySelector('#sa-prompt-card-title');
-
-  function updatePromptTitleBySource(src, model) {
-    if (!promptCardTitleEl) return;
-    if (src === 'gemini') {
-      promptCardTitleEl.textContent = `✨ Google Gemini API (${model || 'gemini-flash-lite-latest'}) નો પરફેક્ટ Prompt`;
-    } else if (src === 'openai') {
-      promptCardTitleEl.textContent = `🤖 ChatGPT API (${model || 'gpt-4o'}) નો પરફેક્ટ Prompt`;
-    } else {
-      promptCardTitleEl.textContent = `⚠️ ટેમ્પરરી ફૉલબેક Prompt (Gemini ફરી પ્રયાસ કરો)`;
-    }
-  }
-
-  btnBuildPrompt.addEventListener('click', async () => {
-    const userInput = userInputEl.value.trim();
-    if (!userInput && attachedImages.length === 0) {
-      setStatus('કૃપા કરીને તમારો પ્રશ્ન લખો અથવા ફોટો ઉમેરો.', true);
-      return;
-    }
-    setBusy(true);
-    generatedPromptEl.value = '';
-    setStatus('🪄 Google Gemini API તમારી ભાષા અને ફોટો સમજીને Master Prompt બનાવી રહ્યું છે...');
-    try {
-      const res = await api.buildSmartPrompt({
-        userInput,
-        images: attachedImages,
-        answerLanguage: langSelectEl.value
-      });
-      generatedPromptEl.value = res.generatedPrompt || '';
-      updatePromptTitleBySource(res.source, res.model);
-      intentBadgeEl.textContent = `${res.detectedIntent || 'Prompt તૈયાર છે'} • ${sourceLabel(res.source, res.model)}`;
-      promptCardEl.style.display = 'block';
-      setStatus(`✅ Master Prompt તૈયાર છે (${sourceLabel(res.source, res.model)})!`);
-    } catch (err) {
-      setStatus(`ભૂલ: ${err.message}`, true);
-    } finally {
-      setBusy(false);
-    }
-  });
-
-  btnSendPrompt.addEventListener('click', async () => {
-    const prompt = generatedPromptEl.value.trim();
-    const userInput = userInputEl.value.trim();
-    if (!prompt && !userInput && attachedImages.length === 0) {
-      setStatus('પહેલા Prompt બનાવો અથવા પ્રશ્ન લખો.', true);
-      return;
-    }
-    setBusy(true);
-    answerBodyEl.textContent = '';
-    setStatus('🤖 AI તમારા Prompt અને ફોટા પરથી જવાબ તૈયાર કરી રહ્યું છે...');
-    try {
-      const res = await api.answerSmartPrompt({
-        prompt,
-        userInput,
-        images: attachedImages,
-        answerLanguage: langSelectEl.value
-      });
-      answerBodyEl.textContent = res.answer || '';
-      answerCardEl.style.display = 'block';
-      setStatus(`✅ જવાબ તૈયાર છે (${sourceLabel(res.source)})!`);
-      loadHistory();
-    } catch (err) {
-      setStatus(`ભૂલ: ${err.message}`, true);
-    } finally {
-      setBusy(false);
-    }
-  });
-
-  btnAskAll.addEventListener('click', async () => {
-    const userInput = userInputEl.value.trim();
-    if (!userInput && attachedImages.length === 0) {
-      setStatus('કૃપા કરીને તમારો પ્રશ્ન લખો અથવા ફોટો ઉમેરો.', true);
-      return;
-    }
-    setBusy(true);
-    generatedPromptEl.value = '';
-    answerBodyEl.textContent = '';
-    setStatus('🚀 ટૂલ તમારી ભાષા & ફોટો સમજીને સચોટ Prompt અને AI જવાબ તૈયાર કરી રહ્યું છે...');
-    try {
-      const res = await api.smartAskAll({
-        userInput,
-        images: attachedImages,
-        answerLanguage: langSelectEl.value
-      });
-      generatedPromptEl.value = res.generatedPrompt || '';
-      updatePromptTitleBySource(res.source, res.model);
-      intentBadgeEl.textContent = `${res.detectedIntent || 'Prompt તૈયાર છે'} • ${sourceLabel(res.source, res.model)}`;
-      promptCardEl.style.display = 'block';
-      answerBodyEl.textContent = res.answer || '';
-      answerCardEl.style.display = 'block';
-      setStatus(`✅ Prompt અને જવાબ બંને તૈયાર છે (${sourceLabel(res.source, res.model)})!`);
-      loadHistory();
-    } catch (err) {
-      setStatus(`ભૂલ: ${err.message}`, true);
-    } finally {
-      setBusy(false);
-    }
-  });
-
   container.querySelector('#sa-btn-clear').addEventListener('click', () => {
     userInputEl.value = '';
     attachedImages = [];
+    currentQuestions = [];
     renderPhotoPreviews();
+    clarifyCardEl.style.display = 'none';
+    clarifyQuestionsEl.innerHTML = '';
+    if (clarifyExtraEl) clarifyExtraEl.value = '';
     generatedPromptEl.value = '';
+    updatePromptStats('');
     promptCardEl.style.display = 'none';
     answerBodyEl.textContent = '';
     answerCardEl.style.display = 'none';
@@ -447,7 +632,7 @@ export async function renderSmartAsk(container) {
   });
 
   container.querySelector('#sa-btn-copy-prompt').addEventListener('click', () => {
-    copyToClipboard(generatedPromptEl.value, 'Prompt કોપી થયો! ✓');
+    copyToClipboard(generatedPromptEl.value, 'World-Best Prompt કોપી થયો! ✓');
   });
 
   container.querySelector('#sa-btn-copy-answer').addEventListener('click', () => {
@@ -460,10 +645,10 @@ export async function renderSmartAsk(container) {
     btn.addEventListener('click', () => {
       const text = (generatedPromptEl.value || userInputEl.value || '').trim();
       if (text) {
-        try { copyToClipboard(text, 'Prompt કોપી થયો — ChatGPT ખૂલી રહ્યું છે ✓'); } catch (_) {}
+        try { copyToClipboard(text, 'પૂરો Prompt કોપી થયો — ChatGPT માં Paste કરો ✓'); } catch (_) {}
       }
-      const url = text
-        ? `https://chatgpt.com/?q=${encodeURIComponent(text.slice(0, 1500))}`
+      const url = text && text.length <= 1500
+        ? `https://chatgpt.com/?q=${encodeURIComponent(text)}`
         : 'https://chatgpt.com/';
       window.open(url, '_blank', 'noopener');
     });
@@ -473,7 +658,7 @@ export async function renderSmartAsk(container) {
     btn.addEventListener('click', () => {
       const text = (generatedPromptEl.value || userInputEl.value || '').trim();
       if (text) {
-        try { copyToClipboard(text, 'Prompt કોપી થયો — Gemini માં Paste કરો ✓'); } catch (_) {}
+        try { copyToClipboard(text, 'પૂરો Prompt કોપી થયો — Gemini માં Paste કરો ✓'); } catch (_) {}
       }
       window.open('https://gemini.google.com/app', '_blank', 'noopener');
     });
