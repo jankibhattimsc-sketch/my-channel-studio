@@ -1,775 +1,1221 @@
+/**
+ * ChatGPT Script Prompt Generator (Stage 4: Script)
+ * Gyan Yatra AI Studio — Master Connected Video Production Workflow
+ * 
+ * Connected Workflow:
+ * 1. Automatically connects to the presentation imported in Stage 3 (Slides).
+ * 2. Extracts and displays presentation info, slide count, and content summary.
+ * 3. Generates a detailed, ready-to-use Gujarati ChatGPT Script Writing Prompt containing
+ *    all slide titles, bullet points, numbers, and dates.
+ * 4. User copies prompt with 1-click and opens ChatGPT.
+ * 5. User pastes ChatGPT-generated script into the Import box.
+ * 6. System parses the script into slide-wise sections and saves persistently inside active project.
+ * 7. Passes cleanly to Stage 5: Script Editor.
+ */
+
 import { api } from '../api.js';
-import { copyToClipboard, showNoticeToast, animateCopyButton } from '../utils/clipboard.js';
-import { projectState } from '../utils/projectState.js';
-import { generateFullPdfMasterPrompt, renderFormattedScript, extractSpokenScript } from '../utils/slideVoiceoverGenerator.js';
-import { mountTeleprompterStudio } from '../components/teleprompterStudio.js';
+import { projectState, isContentMatchingTopic, buildTopicProjectKit } from '../utils/projectState.js';
+import { copyToClipboard, showNoticeToast } from '../utils/clipboard.js';
+import { formatIndianDateTimeDisplay } from '../utils/dateTimeIntelligence.js';
+import { parseChatGptScriptText, validateScriptFidelity, validateSlideWiseScriptFidelity } from '../utils/externalSlideParser.js';
+import { saveScriptToDatabase, syncProjectScriptWithDatabase, restoreScriptVersionFromDb } from '../utils/scriptDbSync.js';
+import { saveProjectPresentation, getProjectPresentation } from '../utils/presentationStorage.js';
+import { openFolderNotebookModal } from '../utils/folderNotebookModal.js';
 
 export async function renderScriptWriter(container, navigateTo) {
-  const currentProject = projectState.getProject();
-  let activeTopic = (currentProject && currentProject.topic && currentProject.topic.trim().length > 0)
-    ? currentProject.topic.trim()
-    : 'ગુજરાત કર્મચારી પગાર અને ૫૦% DA વધારો નિયમો ૨૦૨૬';
-
-  let currentFilename = '';
-  let fullPdfText = '';
-  let lastPdfResult = null;
-  let currentAudioUrl = (currentProject && currentProject.voiceAudio && currentProject.voiceAudio.audioUrl) ? currentProject.voiceAudio.audioUrl : '';
-  let currentNarrationText = '';
-
-  // Initial generated prompt
-  let currentMasterPrompt = generateFullPdfMasterPrompt({
-    topic: activeTopic,
-    filename: currentFilename,
-    fullPdfText: fullPdfText,
-    slides: []
-  });
-
-  container.innerHTML = `
-    <!-- Project Context Header -->
-    <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-lg); padding: 14px 20px; margin-bottom: 18px; box-shadow: 0 8px 25px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-        <button id="btn-back-to-projects-script" class="btn btn-outline btn-sm" style="font-weight: 700;">← બધા પ્રોજેક્ટ્સ</button>
-        <button id="btn-prev-slide-script" class="btn btn-secondary btn-sm" style="font-weight: 700;">← ૨. Slide</button>
-        <span style="font-size: 0.85rem; color: #38bdf8; font-weight: 800;">📁 પ્રોજેક્ટ: ${activeTopic}</span>
+  let project = projectState.getActiveProject();
+  const storedTopic = (typeof localStorage !== 'undefined' ? (localStorage.getItem('gyan_active_topic_name') || '') : '').trim();
+  if (project && storedTopic && (!project.topic || project.topic === 'મારો નવો વિડીયો પ્રોજેક્ટ' || project.topic === 'Untitled Project' || (project.topic !== storedTopic && !project.slide?.importedPresentation))) {
+    project.topic = storedTopic;
+    project.name = storedTopic;
+    project.recommendedTitle = storedTopic;
+  }
+  if (!project) {
+    container.innerHTML = `
+      <div class="card" style="padding: 40px; text-align: center;">
+        <span style="font-size: 3rem;">📁</span>
+        <h2>કોઈ સક્રિય પ્રોજેક્ટ પસંદ કરેલ નથી</h2>
+        <button id="btn-goto-projects" class="btn btn-primary" style="margin-top: 16px; font-weight: 800;">← પ્રોજેક્ટ્સ પર જાઓ</button>
       </div>
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span class="badge badge-green" style="font-size: 0.72rem; font-weight: 800;">✓ Auto-Saved</span>
-        <button id="btn-next-to-voice-script" class="btn btn-primary btn-sm" style="font-weight: 800; background: #ec4899; border: none; padding: 6px 14px;">
-          ૪. Voice (અવાજ) →
-        </button>
-      </div>
-    </div>
+    `;
+    container.querySelector('#btn-goto-projects')?.addEventListener('click', () => navigateTo('projects'));
+    return;
+  }
 
-    <!-- 1. Header Hero Card -->
-    <div class="card" style="margin-bottom: 20px; padding: 20px 24px; background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%); border: 1.5px solid #8b5cf6; border-radius: 14px; box-shadow: 0 8px 30px rgba(139, 92, 246, 0.2);">
-      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-        <div style="display: flex; align-items: center; gap: 14px;">
-          <div style="width: 52px; height: 52px; border-radius: 12px; background: rgba(139, 92, 246, 0.25); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; border: 1px solid rgba(139, 92, 246, 0.4);">
-            📝
-          </div>
-          <div>
-            <h2 style="font-size: 1.45rem; font-weight: 800; color: #ffffff; margin: 0 0 4px 0; display: flex; align-items: center; gap: 10px;">
-              <span>૩. સ્ક્રિપ્ટ રાઇટર (Script Writer)</span>
-              <span class="badge" style="background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid #10b981; font-size: 0.72rem; font-weight: 800; padding: 4px 10px; border-radius: 6px;">PDF MASTER</span>
-            </h2>
-            <p style="color: #c4b5fd; font-size: 0.88rem; margin: 0;">
-              ૧. વિષય નક્કી કરો ➔ ૨. PDF અપલોડ કરો ➔ ૩. AI આખી PDF વાંચીને શ્રેષ્ઠ સ્ક્રિપ્ટ પ્રોમ્પ્ટ બનાવશે ⭐
-            </p>
-          </div>
-        </div>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-          <a href="https://chatgpt.com" target="_blank" rel="noopener noreferrer" id="btn-header-goto-chatgpt" class="btn btn-outline btn-sm" style="border: 1.5px solid #10b981; color: #6ee7b7; font-weight: 700; padding: 8px 14px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; background: rgba(16,185,129,0.12);" title="ChatGPT (chatgpt.com) સીધું નવી ટેબમાં ખોલો">
-            <span>⚡</span> ChatGPT ખોલો ↗
-          </a>
-          <button id="btn-header-goto-editor" type="button" class="btn btn-primary btn-sm" style="background: linear-gradient(135deg, #ec4899, #db2777); border: none; font-weight: 800; padding: 8px 16px; border-radius: 8px;">
-            <span>🎙️</span> ૪. મારો અવાજ ➔
-          </button>
-        </div>
-      </div>
-    </div>
+  // Ensure presentation is loaded from persistent storage if missing in current memory
+  if (!project.slide?.importedPresentation || !Array.isArray(project.slide?.slides) || project.slide.slides.length === 0) {
+    try {
+      const pres = await getProjectPresentation(project.id);
+      if (pres) {
+        const curTopicClean = (project.topic || project.name || '').trim();
+        const presFile = (pres.filename || '').toLowerCase();
+        const isProjectMatch = Boolean(
+          (pres.projectId && (pres.projectId === project.id || pres.projectId === project.topicId)) ||
+          pres.id
+        );
+        const contentToCheck = (pres.slides && pres.slides.length > 0) ? pres.slides : presFile;
+        const isMismatch = !isProjectMatch && !isContentMatchingTopic(contentToCheck, curTopicClean);
+        if (!isMismatch) {
+          project.slide = project.slide || {};
+          project.slide.importedPresentation = { ...pres, projectId: project.id };
+          if (Array.isArray(pres.slides) && pres.slides.length > 0) {
+            project.slide.slides = pres.slides;
+          }
+          projectState.updateTool('slide', project.slide);
+        }
+      }
+    } catch (_) {}
+  }
 
-    <!-- Hidden file input for PDF -->
-    <input type="file" id="pdf-file-input" accept="application/pdf,.pdf" style="display: none;">
+  // Ensure script state structure exists
+  if (!project.script) project.script = {};
+  if (!Array.isArray(project.script.sections)) project.script.sections = [];
 
-    <!-- 2. STEP 1: Topic Input & Popular Presets -->
-    <div class="card" style="margin-bottom: 20px; padding: 20px; border: 1px solid #1e293b; background: #0b1120; border-radius: 12px;">
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 1.25rem;">📌</span>
-          <h3 style="font-size: 1.1rem; font-weight: 800; color: #ffffff; margin: 0;">
-            પગલું ૧: વિષય / ટોપિક (Topic)
-          </h3>
-        </div>
-        <span class="badge" style="background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); font-size: 0.72rem; font-weight: 800; padding: 3px 8px; border-radius: 6px;">
-          STEP 1
-        </span>
-      </div>
+  // Sync with Database (Single Source of Truth)
+  try {
+    await syncProjectScriptWithDatabase(project.id);
+    project = projectState.getActiveProject() || project;
+  } catch (_) {}
 
-      <div class="form-group" style="margin-bottom: 12px;">
-        <div style="display: flex; gap: 8px;">
-          <input type="text" id="script-topic-input" class="form-input font-gu" style="font-size: 1rem; font-weight: 700; color: #ffffff; background: #07090e; border: 1.5px solid #334155; padding: 12px 14px; border-radius: 8px; flex: 1;" placeholder="જે વિષય પર વિડીયો બનાવવો હોય તે અહીં લખો..." value="${activeTopic}">
-          <button id="btn-clear-topic" type="button" class="btn btn-secondary" style="padding: 0 16px; font-weight: 700; border-radius: 8px;" title="લખાણ સાફ કરો">
-            ✕
-          </button>
-        </div>
-      </div>
-
-      <!-- Quick preset topic chips -->
-      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-        <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">ઝડપી વિષય:</span>
-        <button type="button" class="btn-preset-topic" data-topic="ગુજરાત કર્મચારી પગાર અને ૫૦% DA વધારો નિયમો ૨૦૨૬" style="background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.3); color: #7dd3fc; font-size: 0.78rem; font-weight: 700; padding: 5px 12px; border-radius: 20px; cursor: pointer; transition: all 0.2s;">
-          🏛️ DA & પગાર વધારો
-        </button>
-        <button type="button" class="btn-preset-topic" data-topic="ગુજરાત આંગણવાડી કાર્યકર તેડાગર માનદવેતન વધારો અને ભરતી ૨૦૨૬" style="background: rgba(236,72,153,0.1); border: 1px solid rgba(236,72,153,0.3); color: #f472b6; font-size: 0.78rem; font-weight: 700; padding: 5px 12px; border-radius: 20px; cursor: pointer; transition: all 0.2s;">
-          👩‍🏫 આંગણવાડી માનદવેતન
-        </button>
-        <button type="button" class="btn-preset-topic" data-topic="ગુજરાત પોલીસ કોન્સ્ટેબલ અને PSI સત્તાવાર ભરતી નોટિફિકેશન ૨૦૨૬" style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: #34d399; font-size: 0.78rem; font-weight: 700; padding: 5px 12px; border-radius: 20px; cursor: pointer; transition: all 0.2s;">
-          👮‍♂️ પોલીસ & LRD ભરતી
-        </button>
-        <button type="button" class="btn-preset-topic" data-topic="ગુજરાત કિસાન સહાય યોજના અને ખાતામાં સહાય જમા પરિપત્ર" style="background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); color: #fbbf24; font-size: 0.78rem; font-weight: 700; padding: 5px 12px; border-radius: 20px; cursor: pointer; transition: all 0.2s;">
-          🌾 કિસાન સહાય યોજના
-        </button>
-        <button type="button" class="btn-preset-topic" data-topic="ગુજરાત પ્રાથમિક અને માધ્યમિક શિક્ષક ભરતી કટઓફ અને જાહેરાત" style="background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.3); color: #c084fc; font-size: 0.78rem; font-weight: 700; padding: 5px 12px; border-radius: 20px; cursor: pointer; transition: all 0.2s;">
-          🎓 TET / TAT શિક્ષક ભરતી
-        </button>
-      </div>
-    </div>
-
-    <!-- 3. STEP 2: Read PDF (Upload Official Circular / PPT PDF) -->
-    <div class="card" id="pdf-dropzone" style="margin-bottom: 20px; padding: 26px 20px; border: 2px dashed #38bdf8; background: rgba(56, 189, 248, 0.04); border-radius: 14px; text-align: center; cursor: pointer; transition: all 0.25s ease;">
-      <!-- Empty State -->
-      <div id="pdf-upload-empty-state">
-        <div style="font-size: 2.8rem; margin-bottom: 8px; filter: drop-shadow(0 4px 10px rgba(56,189,248,0.3));">📄</div>
-        <h3 style="font-size: 1.15rem; font-weight: 800; color: #ffffff; margin: 0 0 6px 0;">
-          પગલું ૨: સત્તાવાર PDF વાંચો (Read PDF)
-        </h3>
-        <p style="color: #94a3b8; font-size: 0.85rem; max-width: 520px; margin: 0 auto 16px auto;">
-          સરકારી પરિપત્ર, જીઆર (GR) કે સ્લાઇડ્સની PDF અપલોડ કરો. AI આખી PDF વાંચીને જ સૌથી સચોટ સ્ક્રિપ્ટ પ્રોમ્પ્ટ બનાવશે.
-        </p>
-        <button id="btn-select-pdf" type="button" class="btn btn-primary" style="font-weight: 800; font-size: 0.95rem; padding: 10px 26px; background: linear-gradient(135deg, #38bdf8, #2563eb); border: none; border-radius: 10px; box-shadow: 0 4px 16px rgba(56,189,248,0.35); cursor: pointer;">
-          <span>📂</span> PDF ફાઇલ પસંદ કરો (File Picker)
-        </button>
-      </div>
-
-      <!-- Loading State -->
-      <div id="pdf-upload-loading-state" style="display: none; padding: 16px 0;">
-        <div style="font-size: 2.8rem; margin-bottom: 10px; animation: pulse 1.5s infinite;">⏳</div>
-        <h4 style="font-size: 1.12rem; font-weight: 800; color: #38bdf8; margin: 0 0 6px 0;">
-          PDF સંપૂર્ણ વાંચીને શ્રેષ્ઠ સ્ક્રિપ્ટ અને ઓડિયો તૈયાર થઈ રહ્યો છે...
-        </h4>
-        <p style="color: #94a3b8; font-size: 0.84rem; margin: 0;">
-          કૃપા કરીને થોડી સેકન્ડ રાહ જુઓ (સત્તાવાર નિયમો, ઠરાવ ક્રમાંક અને સ્ક્રિપ્ટ પ્રોમ્પ્ટ જનરેટ થઈ રહ્યા છે)
-        </p>
-      </div>
-
-      <!-- Success State -->
-      <div id="pdf-upload-success-state" style="display: none; padding: 8px 0;">
-        <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 6px;">
-          <span style="font-size: 1.8rem; color: #10b981;">✓</span>
-          <strong id="pdf-uploaded-filename" style="color: #ffffff; font-size: 1.1rem;">document.pdf</strong>
-        </div>
-        <p style="color: #34d399; font-size: 0.86rem; margin: 0 0 14px 0;">
-          ✓ આખી PDF સફળતાપૂર્વક વાંચી લેવામાં આવી છે! નીચે સ્ક્રિપ્ટ પ્રોમ્પ્ટ અને ઓડિયો તૈયાર છે.
-        </p>
-        <button id="btn-change-pdf" type="button" class="btn btn-outline btn-sm" style="border-color: #38bdf8; color: #38bdf8; font-weight: 700; border-radius: 6px; padding: 6px 16px;">
-          <span>🔄</span> બીજી નવી PDF પસંદ કરો
-        </button>
-      </div>
-    </div>
-
-    <!-- 4. STEP 3: Supreme 7-Section Master Script Prompt Card -->
-    <div class="card" style="margin-bottom: 20px; padding: 22px; background: linear-gradient(135deg, #064e3b 0%, #0f172a 100%); border: 2px solid #10b981; border-radius: 14px; box-shadow: 0 8px 30px rgba(16,185,129,0.2);">
-      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 1.5rem;">⭐</span>
-          <div>
-            <h3 style="font-size: 1.15rem; font-weight: 800; color: #6ee7b7; margin: 0;">
-              આખી PDF વાંચીને શ્રેષ્ઠ સ્ક્રિપ્ટ પ્રોમ્પ્ટ (Supreme Script Prompt)
-            </h3>
-            <span style="font-size: 0.8rem; color: #a7f3d0;">
-              ૭ પ્રકરણોમાં શુદ્ધ ગુજરાતી માસ્ટર સ્ક્રિપ્ટ • શબ્દશઃ બોલચાલ ભાષા (Word-for-Word)
-            </span>
-          </div>
-        </div>
-        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-          <button id="btn-copy-master-prompt" type="button" class="btn btn-success" style="background: #10b981; border: none; font-weight: 800; font-size: 0.88rem; padding: 9px 18px; border-radius: 8px; box-shadow: 0 4px 14px rgba(16,185,129,0.35); cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-            <span>📋</span> ૧-ક્લિક કોપી પ્રોમ્પ્ટ
-          </button>
-          <a href="https://chatgpt.com" target="_blank" rel="noopener noreferrer" id="btn-open-chatgpt-with-prompt" class="btn btn-outline" style="border: 1.5px solid #38bdf8; color: #38bdf8; font-weight: 700; font-size: 0.88rem; padding: 8px 16px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; background: rgba(56,189,248,0.1);" title="પ્રોમ્પ્ટ કોપી કરી સીધું ChatGPT ખોલો">
-            <span>⚡</span> ChatGPT ખોલો ↗
-          </a>
-          <button id="btn-refresh-prompt" type="button" class="btn btn-secondary" style="font-weight: 700; font-size: 0.85rem; padding: 8px 12px; border-radius: 8px;" title="પ્રોમ્પ્ટ ફરી રિફ્રેશ કરો">
-            <span>🔄</span> રિફ્રેશ
-          </button>
-        </div>
-      </div>
-
-      <p style="color: #cbd5e1; font-size: 0.84rem; line-height: 1.4; margin: 0 0 12px 0;">
-        આ પ્રોમ્પ્ટ ChatGPT કે NotebookLM ને આદેશ આપે છે કે સૌથી પહેલા અપલોડ કરેલી આખી PDF સંપૂર્ણ વાંચો અને પછી ૭ પ્રકરણોમાં શુદ્ધ ગુજરાતી સ્ક્રિપ્ટ લખો:
-      </p>
-
-      <!-- Monospace Prompt Display Textarea -->
-      <textarea id="master-prompt-display" class="form-textarea font-gu" style="width: 100%; height: 260px; font-family: monospace, 'Noto Sans Gujarati'; font-size: 0.82rem; line-height: 1.5; background: #07090e; border: 1.5px solid #1e293b; color: #e2e8f0; padding: 12px; border-radius: 8px; resize: vertical; box-sizing: border-box;" readonly>${currentMasterPrompt}</textarea>
-    </div>
-
-    <!-- 5. STEP 4: Full Script Editor & 1-Click Audio Generator -->
-    <div class="card" style="margin-bottom: 20px; padding: 20px; background: #0f172a; border: 1px solid #1e293b; border-radius: 12px;">
-      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 1.25rem;">📝</span>
-          <div>
-            <h3 style="font-size: 1.08rem; font-weight: 800; color: #ffffff; margin: 0;">
-              સંપૂર્ણ ગુજરાતી સ્ક્રિપ્ટ લખાણ (Spoken Script Text)
-            </h3>
-            <span style="font-size: 0.78rem; color: #94a3b8;">
-              ChatGPT પાસેથી તૈયાર થયેલી ગુજરાતી સ્ક્રિપ્ટ અહીં પેસ્ટ કરો અથવા અહીંથી સીધો ઓડિયો બનાવો
-            </span>
-          </div>
-        </div>
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <button id="btn-paste-script" type="button" class="btn btn-outline btn-sm" style="border-color: #38bdf8; color: #38bdf8; font-weight: 700; padding: 6px 14px; border-radius: 6px;">
-            <span>📋</span> ક્લિપબોર્ડમાંથી પેસ્ટ કરો
-          </button>
-          <button id="btn-goto-voicestudio" type="button" class="btn btn-outline btn-sm" style="border-color: #ec4899; color: #f472b6; font-weight: 700; padding: 6px 14px; border-radius: 6px;">
-            <span>🎙️</span> Voice Studio માં જાઓ ➔
-          </button>
-        </div>
-      </div>
-
-      <!-- Slides & Script Synchronization Bar -->
-      <div style="background: rgba(56, 189, 248, 0.06); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 1.1rem;">📑</span>
-          <span style="font-size: 0.82rem; color: #e2e8f0; font-weight: 700;">
-            સ્ટેપ ૨ સ્લાઇડ્સ સાથે જોડાણ: <strong style="color: #38bdf8;" id="scriptwriter-slides-count">${currentProject?.slide?.slides?.length || 0} સ્લાઇડ્સ ઉપલબ્ધ</strong>
-          </span>
-        </div>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button id="btn-import-slides-to-script" type="button" class="btn btn-outline btn-sm" style="border-color: #38bdf8; color: #7dd3fc; font-weight: 700; font-size: 0.78rem;">
-            <span>📥</span> સ્લાઇડ્સમાંથી સ્ક્રિપ્ટ લાવો
-          </button>
-          <button id="btn-export-script-to-slides" type="button" class="btn btn-outline btn-sm" style="border-color: #10b981; color: #34d399; font-weight: 700; font-size: 0.78rem;">
-            <span>📤</span> સ્ક્રિપ્ટને સ્લાઇડ્સમાં મોકલો
-          </button>
-        </div>
-      </div>
-
-      <textarea id="narration-script-textarea" class="form-textarea font-gu" style="width: 100%; height: 180px; font-size: 0.92rem; line-height: 1.6; background: #07090e; border: 1.5px solid #334155; color: #f1f5f9; padding: 12px; border-radius: 8px; resize: vertical; box-sizing: border-box;" placeholder="અહીં તમારી શબ્દશઃ સ્ક્રિપ્ટ લખો અથવા ઉપર 'સ્લાઇડ્સમાંથી સ્ક્રિપ્ટ લાવો' બટન દબાવો..."></textarea>
-
-      <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
-        <button id="btn-generate-audio-from-script" type="button" class="btn btn-primary" style="font-weight: 800; font-size: 0.95rem; padding: 10px 24px; background: linear-gradient(135deg, #10b981, #059669); border: none; border-radius: 8px; box-shadow: 0 4px 14px rgba(16,185,129,0.3); cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
-          <span>🔊</span> આ સ્ક્રિપ્ટમાંથી ઓડિયો બનાવો (Generate Audio)
-        </button>
-      </div>
-    </div>
-
-    <!-- 5. STEP 5: Side-by-Side Teleprompter & Live Voice Recording Studio -->
-    <div id="scriptwriter-teleprompter-mount" style="margin-bottom: 24px;"></div>
-
-    <!-- 6. Full Audio Player Card -->
-    <div class="card" id="audio-player-card" style="${currentAudioUrl ? 'display: block;' : 'display: none;'} margin-bottom: 20px; padding: 22px; background: #0f172a; border: 1.5px solid #10b981; border-radius: 14px; box-shadow: 0 8px 30px rgba(16,185,129,0.15);">
-      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 1.8rem;">🎧</span>
-          <div>
-            <h3 style="font-size: 1.15rem; font-weight: 800; color: #ffffff; margin: 0;">
-              સંપૂર્ણ ઓડિયો પ્લેયર (Full Audio Player)
-            </h3>
-            <span id="audio-meta-badge" style="font-size: 0.78rem; color: #94a3b8;">
-              લતા મંગેશકર મધુર અવાજ (Dhwani Neural) • ૧૦૦% શુદ્ધ ગુજરાતી
-            </span>
-          </div>
-        </div>
-        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-          <a id="btn-download-audio" href="${currentAudioUrl || '#'}" download="gyan_yatra_audio.mp3" class="btn btn-success" style="font-weight: 800; font-size: 0.9rem; padding: 10px 18px; background: #059669; border: none; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(16,185,129,0.35);">
-            <span>📥</span> ઓડિયો ડાઉનલોડ (MP3)
-          </a>
-          <button id="btn-open-in-automatch-editor" type="button" class="btn btn-primary" style="font-weight: 800; font-size: 0.9rem; padding: 10px 18px; background: linear-gradient(135deg, #ec4899, #db2777); border: none; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(236,72,153,0.35); cursor: pointer;">
-            <span>🎙️</span> આગળ વધો: ૪. મારો અવાજ ➔
-          </button>
-        </div>
-      </div>
-
-      <!-- Main HTML5 Audio Element -->
-      <audio id="generated-audio-player" src="${currentAudioUrl || ''}" controls style="width: 100%; border-radius: 8px; outline: none; background: #1e293b; height: 54px; margin-bottom: 6px;">
-        તમારું બ્રાઉઝર ઓડિયો એલિમેન્ટ સપોર્ટ કરતું નથી.
-      </audio>
-    </div>
-  `;
-
-  // DOM Elements
-  const topicInput = container.querySelector('#script-topic-input');
-  const btnClearTopic = container.querySelector('#btn-clear-topic');
-  const masterPromptDisplay = container.querySelector('#master-prompt-display');
-  const btnCopyMasterPrompt = container.querySelector('#btn-copy-master-prompt');
-  const btnOpenChatgptWithPrompt = container.querySelector('#btn-open-chatgpt-with-prompt');
-  const btnHeaderGotoChatgpt = container.querySelector('#btn-header-goto-chatgpt');
-  const btnHeaderGotoEditor = container.querySelector('#btn-header-goto-editor');
-  const btnRefreshPrompt = container.querySelector('#btn-refresh-prompt');
-  const pdfFileInput = container.querySelector('#pdf-file-input');
-  const pdfDropzone = container.querySelector('#pdf-dropzone');
-  const btnSelectPdf = container.querySelector('#btn-select-pdf');
-  const btnChangePdf = container.querySelector('#btn-change-pdf');
-  const pdfEmptyState = container.querySelector('#pdf-upload-empty-state');
-  const pdfSuccessState = container.querySelector('#pdf-upload-success-state');
-  const pdfLoadingState = container.querySelector('#pdf-upload-loading-state');
-  const pdfUploadedFilename = container.querySelector('#pdf-uploaded-filename');
-  const narrationScriptTextarea = container.querySelector('#narration-script-textarea');
-  const btnPasteScript = container.querySelector('#btn-paste-script');
-  const btnGotoVoiceStudio = container.querySelector('#btn-goto-voicestudio');
-  const btnGenerateAudio = container.querySelector('#btn-generate-audio-from-script');
-  const audioPlayerCard = container.querySelector('#audio-player-card');
-  const audioPlayer = container.querySelector('#generated-audio-player');
-  const btnDownloadAudio = container.querySelector('#btn-download-audio');
-  const audioMetaBadge = container.querySelector('#audio-meta-badge');
-  const btnOpenInAutomatch = container.querySelector('#btn-open-in-automatch-editor');
-
-  // Recalculate and update master prompt
-  function refreshMasterPrompt() {
-    activeTopic = topicInput.value.trim() || 'ગુજરાત કર્મચારી પગાર અને ૫૦% DA વધારો';
-    currentMasterPrompt = generateFullPdfMasterPrompt({
-      topic: activeTopic,
-      filename: currentFilename,
-      fullPdfText: fullPdfText,
-      slides: (lastPdfResult && lastPdfResult.slides) || []
-    });
-    if (masterPromptDisplay) {
-      masterPromptDisplay.value = currentMasterPrompt;
+  let importedMeta = project.slide?.importedPresentation || null;
+  const currentTopicClean = (project.topic || project.name || '').trim();
+  if (importedMeta && currentTopicClean) {
+    const metaFile = (importedMeta.filename || '').toLowerCase();
+    const isProjectMatch = Boolean(
+      (importedMeta.projectId && (importedMeta.projectId === project.id || importedMeta.projectId === project.topicId)) ||
+      (project.slide?.importedPresentation && project.slide.importedPresentation.filename === importedMeta.filename) ||
+      importedMeta.id
+    );
+    const contentToCheck = (importedMeta.slides && importedMeta.slides.length > 0) ? importedMeta.slides : metaFile;
+    const isMismatch = !isProjectMatch && !isContentMatchingTopic(contentToCheck, currentTopicClean);
+    if (isMismatch) {
+      console.warn('[ScriptWriter] Discarding foreign presentation for topic:', currentTopicClean, metaFile);
+      importedMeta = null;
+      if (project.slide) {
+        project.slide.importedPresentation = null;
+        project.slide.slides = [];
+      }
     }
   }
 
-  // Topic input live change
-  topicInput?.addEventListener('input', () => {
-    refreshMasterPrompt();
-    projectState.updateProject({ topic: topicInput.value.trim() });
-  });
+  // Ensure slides belong to currentTopicClean (only purge if no user presentation attached)
+  const hasUserAttachedPdf = Boolean(importedMeta || project.slide?.importedPresentation);
+  if (!hasUserAttachedPdf && Array.isArray(project.slide?.slides) && project.slide.slides.length > 0 && !isContentMatchingTopic(project.slide.slides, currentTopicClean)) {
+    console.warn('[ScriptWriter] Purging foreign slides for topic:', currentTopicClean);
+    const freshKit = buildTopicProjectKit(currentTopicClean, project.topicId || project.id);
+    project.slide = freshKit.slide;
+    project.script = freshKit.script;
+    try { projectState.saveProjects(); } catch (_) {}
+  }
 
-  btnClearTopic?.addEventListener('click', () => {
-    topicInput.value = '';
-    topicInput.focus();
-    refreshMasterPrompt();
-  });
+  let slides = Array.isArray(project.slide?.slides) ? project.slide.slides : [];
 
-  // Preset chips click
-  container.querySelectorAll('.btn-preset-topic').forEach(chip => {
-    chip.addEventListener('click', () => {
-      const t = chip.getAttribute('data-topic');
-      if (t) {
-        topicInput.value = t;
-        projectState.updateProject({ topic: t });
-        refreshMasterPrompt();
-        showNoticeToast(`ટોપિક સેટ થયો: ${chip.textContent.trim()}`, 'success');
+  let authenticCount = importedMeta?.slidesCount || importedMeta?.slideCount || importedMeta?.pageCount || (slides.length > 0 ? slides.length : (Array.isArray(project.script?.sections) ? project.script.sections.length : 0)) || 9;
+
+  // Auto-Repair on view load:
+  // Recover rawText/fullText if empty but sections exist
+  let currentFullText = (project.script?.rawText || project.script?.fullText || project.script?.originalChatGptScript || '').trim();
+  if (!currentFullText && Array.isArray(project.script?.sections) && project.script.sections.length > 0) {
+    currentFullText = project.script.sections.map(s => s.scriptText || s.content || '').filter(Boolean).join('\n\n').trim();
+  }
+  if (currentFullText) {
+    project.script.rawText = currentFullText;
+    project.script.fullText = currentFullText;
+    project.script.originalChatGptScript = currentFullText;
+    if (!Array.isArray(project.script.sections) || project.script.sections.length === 0) {
+      const parsed = parseChatGptScriptText(currentFullText, slides);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        project.script.sections = parsed;
+        project.script.editedSections = parsed;
       }
-    });
-  });
-
-  // Copy Prompt handler
-  btnCopyMasterPrompt?.addEventListener('click', () => {
-    const text = masterPromptDisplay?.value || currentMasterPrompt;
-    copyToClipboard(text, 'આખી PDF વાંચીને શ્રેષ્ઠ સ્ક્રિપ્ટ પ્રોમ્પ્ટ કોપી થઈ ગયો! ChatGPT માં પેસ્ટ કરો 📋', btnCopyMasterPrompt);
-    animateCopyButton(btnCopyMasterPrompt, 'પ્રોમ્પ્ટ કોપી થયો! ✓');
-  });
-
-  btnRefreshPrompt?.addEventListener('click', () => {
-    refreshMasterPrompt();
-    showNoticeToast('સ્ક્રિપ્ટ પ્રોમ્પ્ટ અપડેટ થઈ ગયો! ✓', 'success');
-  });
-
-  // Open in ChatGPT directly (chatgpt.com)
-  const openDirectChatgpt = (e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    const text = masterPromptDisplay?.value || currentMasterPrompt;
-    copyToClipboard(text, 'સ્ક્રિપ્ટ પ્રોમ્પ્ટ કોપી થઈ ગયો! ChatGPT માં Ctrl+V કરો 📋', e?.currentTarget);
-    window.open('https://chatgpt.com', '_blank');
-  };
-
-  btnOpenChatgptWithPrompt?.addEventListener('click', openDirectChatgpt);
-  btnHeaderGotoChatgpt?.addEventListener('click', openDirectChatgpt);
-  btnHeaderGotoEditor?.addEventListener('click', () => navigateTo('myvoice'));
-
-  // Paste Script from Clipboard
-  btnPasteScript?.addEventListener('click', async () => {
-    try {
-      const text = await navigator.clipboard.readText();
-      if (text && text.trim()) {
-        narrationScriptTextarea.value = text.trim();
-        showNoticeToast('ક્લિપબોર્ડમાંથી સ્ક્રિપ્ટ પેસ્ટ થઈ ગઈ! ✓', 'success');
-      } else {
-        showNoticeToast('ક્લિપબોર્ડમાં કોઈ લખાણ મળ્યું નથી.', 'warning');
-      }
-    } catch (_) {
-      showNoticeToast('કૃપા કરીને Ctrl+V વડે સ્ક્રિપ્ટ પેસ્ટ કરો.', 'info');
-      narrationScriptTextarea.focus();
     }
-  });
+  }
 
-  // 1-Click Import slides script into narration textarea
-  container.querySelector('#btn-import-slides-to-script')?.addEventListener('click', () => {
-    const cur = projectState.getActiveProject();
-    const slides = cur?.slide?.slides || [];
-    if (slides.length > 0) {
-      const combined = slides.map((s, idx) => {
-        const text = s.scriptText ? s.scriptText.trim() : (s.bulletPoints || []).join('\n');
-        return `[સ્લાઇડ ${idx + 1}: ${s.title}]\n${text}`;
-      }).join('\n\n');
+  // Cleanse residual 70-slides corruption from past bugs
+  if (slides.length === 70 || (Array.isArray(project.script?.sections) && project.script.sections.length === 70)) {
+    slides.length = authenticCount;
+    if (!currentFullText) {
+      project.script.sections = [];
+      project.script.editedSections = [];
+    }
+  }
 
-      narrationScriptTextarea.value = combined;
+  // Match slides with loaded script sections so slide titles and scripts are always populated
+  if (Array.isArray(project.script?.sections) && project.script.sections.length > 0) {
+    if (slides.length === 0) {
+      slides = project.script.sections.map((sec, idx) => ({
+        slideNumber: idx + 1,
+        title: sec.title || sec.sectionName || `સ્લાઇડ #${idx + 1}`,
+        subtitle: sec.subtitle || '',
+        bulletPoints: sec.bulletPoints || [],
+        scriptText: sec.scriptText || '',
+        bgColor: '#FFFFFF',
+        textColor: '#0F172A'
+      }));
+      project.slide = project.slide || {};
+      project.slide.slides = slides;
+      projectState.updateTool('slide', project.slide);
+    } else {
+      slides.forEach((sl, idx) => {
+        const sec = project.script.sections[idx] || project.script.sections.find(s => s.slideNumber === (idx + 1));
+        if (sec) {
+          if (sec.scriptText && !sl.scriptText) sl.scriptText = sec.scriptText;
+          if (sec.title && (!sl.title || sl.title.startsWith('સ્લાઇડ'))) sl.title = sec.title;
+        }
+      });
+      project.slide = project.slide || {};
+      project.slide.slides = slides;
+      projectState.updateTool('slide', project.slide);
+    }
+  }
+
+  if (!importedMeta && slides.length > 0) {
+    importedMeta = {
+      filename: project.name || 'પ્રેઝન્ટેશન સ્લાઇડ્સ',
+      slidesCount: slides.length,
+      fileType: 'pdf',
+      uploadedAt: new Date().toISOString()
+    };
+    project.slide = project.slide || {};
+    project.slide.importedPresentation = importedMeta;
+    projectState.updateTool('slide', project.slide);
+  }
+
+  if (currentFullText) {
+    const hasExplicitMarkers = Boolean(currentFullText.match(/(?:^|\n)\s*(?:\*{0,2}\[?|###?\s*)(?:Slide|સ્લાઇડ)\s*[#0-9૦-૯]+[^\n\]\*]*\]?\*{0,2}/gi));
+
+    const shouldRepairOrDistribute = (
+      slides.length === 70 ||
+      (Array.isArray(project.script?.sections) && project.script.sections.length === 70)
+    );
+
+    if (shouldRepairOrDistribute) {
+      if (slides.length !== authenticCount) {
+        slides = Array.from({ length: authenticCount }, (_, i) => {
+          const existing = slides[i] || {};
+          return {
+            slideNumber: i + 1,
+            title: existing.title || `સ્લાઇડ #${i + 1}`,
+            subtitle: existing.subtitle || '',
+            bulletPoints: existing.bulletPoints || [],
+            scriptText: '',
+            bgColor: '#FFFFFF',
+            textColor: '#0F172A'
+          };
+        });
+      }
+
+      const repaired = parseChatGptScriptText(currentFullText, slides);
+      project.script.sections = repaired;
+      project.script.editedSections = repaired;
+      project.script.rawText = currentFullText;
+      project.script.fullText = currentFullText;
+
+      slides.forEach((sl, idx) => {
+        if (repaired[idx]) {
+          sl.scriptText = repaired[idx].scriptText;
+          sl.title = repaired[idx].title || `સ્લાઇડ #${idx + 1}`;
+        }
+      });
+
+      project.slide.slides = slides;
+      projectState.updateTool('slide', { slides, slideCount: `${authenticCount} સ્લાઇડ્સ` });
       projectState.updateTool('script', {
-        fullText: combined,
-        teleprompterText: combined,
+        sections: repaired,
+        editedSections: repaired,
+        rawText: currentFullText,
+        fullText: currentFullText
+      });
+    }
+  }
+
+  const checkHasPresentation = () => Boolean(
+    importedMeta &&
+    (importedMeta.filename || importedMeta.fileUrl || importedMeta.blob) &&
+    Array.isArray(slides) &&
+    slides.length > 0
+  );
+  const checkHasImportedScript = () => Boolean(
+    project.script?.savedInDb ||
+    (Array.isArray(project.script?.sections) && project.script.sections.some(s => (s.scriptText || s.content || '').trim().length > 15)) ||
+    Boolean((project.script?.fullText || project.script?.rawText || project.script?.originalChatGptScript || '').trim().length > 25)
+  );
+
+  // Default prompt settings
+  let targetDuration = project.script.targetDuration || '8-10'; // minutes
+  let toneStyle = project.script.toneStyle || 'news_conversational';
+  let showContentSummary = false;
+  let showImportBox = true;
+
+  // Calculate word count & duration (Gujarati pace: ~130 words/minute)
+  function calculateScriptMetrics(text) {
+    if (!text) return { words: 0, minutes: 0, formattedTime: '0:00' };
+    const words = text.trim().split(/\s+/).filter(Boolean).length;
+    const totalMinutes = words / 130;
+    const mins = Math.floor(totalMinutes);
+    const secs = Math.round((totalMinutes - mins) * 60);
+    return {
+      words,
+      minutes: Math.round(totalMinutes * 10) / 10,
+      formattedTime: `${mins}:${secs < 10 ? '0' : ''}${secs}`
+    };
+  }
+
+  /**
+   * Builds the Master Gujarati ChatGPT Prompt strictly adhering to the 7-Point Slide-Wise Script Specification
+   */
+  function buildChatGptScriptPrompt() {
+    if (!checkHasPresentation()) return '';
+
+    const topicName = project.topic || project.name || 'ગુજરાત સત્તાવાર સરકારી નિર્ણય ૨૦૨૬';
+    const totalSlides = slides.length;
+
+    let durationLabel = '૮ થી ૧૦ મિનિટ (અંદાજે ૧,૦૦૦ થી ૧,૩૦૦ શબ્દો)';
+    if (targetDuration === '5-7') {
+      durationLabel = '૫ થી ૭ મિનિટ (અંદાજે ૭૦૦ થી ૯૦૦ શબ્દો)';
+    } else if (targetDuration === '10-12') {
+      durationLabel = '૧૦ થી ૧૨ મિનિટ (અંદાજે ૧,૩૦૦ થી ૧,૬૦૦ શબ્દો)';
+    }
+
+    let toneDesc = 'સત્તાવાર ન્યૂઝ એન્કર અને સરળ બોલચાલ ભાષા (વિશ્વસનીય, સ્પષ્ટ, સરળ અને રસપ્રદ)';
+    if (toneStyle === 'conversational') {
+      toneDesc = 'મૈત્રીપૂર્ણ, અત્યંત સરળ, સમજાવટભર્યો અને દર્શકો સાથે સીધો સંવાદ સાધતો લય';
+    } else if (toneStyle === 'formal') {
+      toneDesc = 'ગંભીર, અધિકૃત, કાનૂની/પરિપત્ર નિયમોને પ્રાધાન્ય આપતો ગૌરવપૂર્ણ લય';
+    }
+
+    // Format all slides content into structured prompt blocks strictly using original PPT content
+    const slidesBlock = slides.map((s, idx) => {
+      const slideNum = s.slideNumber || (idx + 1);
+      const title = s.title || `સ્લાઇડ #${slideNum}`;
+      const subtitle = s.subtitle ? `\n   સબટાઇટલ: ${s.subtitle}` : '';
+      const rawBullets = Array.isArray(s.bulletPoints) ? s.bulletPoints : String(s.bulletPoints || s.content || '').split('\n');
+      const bullets = rawBullets
+        .map(b => b.trim())
+        .filter(Boolean)
+        .map(b => `   • ${b}`)
+        .join('\n');
+
+      return `[સ્લાઇડ #${slideNum}: ${title}]${subtitle}${bullets ? '\n   મુખ્ય મુદ્દાઓ:\n' + bullets : ''}`;
+    }).join('\n\n');
+
+    return `# 🎯 MASTER PROMPT: BEST HIGH-RETENTION GUJARATI YOUTUBE SCRIPT FROM PDF SLIDES
+
+તમે એક ટોચના ગુજરાતી YouTube વિડીયો સ્ક્રિપ્ટ રાઇટર, ન્યૂઝ પ્રેઝન્ટર અને ઓડિયન્સ રીટેન્શન એક્સપર્ટ છો.
+અમારી લોકપ્રિય ગુજરાતી ચેનલ "જ્ઞાન યાત્રા" (Gyan Yatra) માટે નીચે આપેલી PDF/PPT ની તમામ ${totalSlides} સ્લાઇડ્સ પરથી **સૌથી આકર્ષક, માહિતીપ્રદ અને વાયરલ બને તેવી સ્લાઇડ-વાઇઝ ગુજરાતી સ્ક્રિપ્ટ** તૈયાર કરો.
+
+==================================================
+📌 વિડીયો વિષય: ${topicName}
+📊 કુલ સ્લાઇડ્સ સંખ્યા: ${totalSlides} સ્લાઇડ્સ (સ્લાઇડ ૧ થી ${totalSlides})
+⏱️ ટાર્ગેટ વિડીયો સમયગાળો: ${durationLabel}
+🎙️ અવાજનો લય / ટોન: ${toneDesc}
+==================================================
+
+## 🚀 1. HIGH-RETENTION SCRIPT FORMULA (યુટ્યુબ વાયરલ ફોર્મ્યુલા)
+
+### ક) [સ્લાઇડ #1] — પાવરફુલ ૩-સેકન્ડ હૂક (3-Second Hook & Curiosity):
+- બોરિંગ શરૂઆત (જેમ કે "આજે હું તમને જણાવીશ...") ક્યારેય ન કરવી.
+- પ્રથમ ૩ સેકન્ડમાં જ દર્શકનું ધ્યાન ખેંચવું: "નમસ્કાર મિત્રો, જ્ઞાન યાત્રામાં આપનું સ્વાગત છે. જો તમે પણ ${topicName} ની તૈયારી કરી રહ્યા છો અથવા આ માહિતી શોધી રહ્યા છો, તો આ વિડીયો તમારા માટે અત્યંત મહત્વનો છે, કારણ કે આજના આ વિડીયોમાં આપણે જાણીશું..."
+
+### ખ) [વચ્ચેની સ્લાઇડ્સ ૨ થી ${totalSlides - 1}] — રસપ્રદ સમજૂતી (Value + Explanation):
+- સ્લાઇડ પર લખેલા મુદ્દા માત્ર વાંચી નથી જવાના! દરેક મુદ્દાને સરળ બોલચાલની ગુજરાતીમાં ઉદાહરણ સાથે સમજાવો.
+- દરેક સ્લાઇડના અંતે આગળની સ્લાઇડ માટે જિજ્ઞાસા (Bridge Transition) ઊભી કરો: "હવે સૌથી મહત્વની બાબત એ આવે છે કે..." અથવા "ઘણા ઉમેદવારો આ જ બાબતમાં ભૂલ કરે છે, તો ચાલો જોઈએ આગળની સ્લાઇડમાં..."
+- સરકારી તારીખો, નિયમો, પાત્રતા, વયમર્યાદા કે ફી ના આંકડા એકદમ સ્પષ્ટ અને સચોટ રીતે જણાવો.
+
+### ગ) [છેલ્લી સ્લાઇડ #${totalSlides}] — પાવરફુલ કન્ક્લુઝન & Call-To-Action (CTA):
+- સમગ્ર વિડીયોનો મુખ્ય સારાંશ ૧-૨ વાક્યમાં આપો.
+- દર્શકોને એક્શન લેવા કહો: "જો આ માહિતી તમને ઉપયોગી લાગી હોય તો વિડીયોને લાઈક જરૂર કરજો, તમારા મિત્રો સાથે શેર કરજો અને આવી જ તમામ સાચી સરકારી અપડેટ્સ સૌથી પહેલા મેળવવા 'જ્ઞાન યાત્રા' ચેનલને હમણાં જ સબ્સ્ક્રાઇબ કરી બેલ આઇકન દબાવી દો. ધન્યવાદ!"
+
+---
+
+## 📋 2. કડક ફોર્મેટિંગ નિયમ (STRICT FORMAT FOR GYAN YATRA STUDIO)
+Gyan Yatra Studio ના સોફ્ટવેરમાં સીધું ૧:૧ મેપિંગ થાય તે માટે તમારો જવાબ નીચે મુજબના ચોક્કસ ફોર્મેટમાં જ હોવો જોઈએ:
+
+[સ્લાઇડ #1: શીર્ષક]
+(અહીં સ્લાઇડ ૧ માટેનું સંપૂર્ણ બોલવાનું ગુજરાતી લખાણ)
+
+[સ્લાઇડ #2: શીર્ષક]
+(અહીં સ્લાઇડ ૨ માટેનું સંપૂર્ણ બોલવાનું ગુજરાતી લખાણ)
+
+[સ્લાઇડ #3: શીર્ષક]
+(આ જ રીતે છેલ્લી સ્લાઇડ #${totalSlides} સુધી ચાલુ રાખો)
+
+---
+
+## ⚠️ 3. મહત્વના નિયમો (ACCURACY & RETENTION):
+૧. શુદ્ધ, કુદરતી અને પ્રવાહિત બોલચાલની ગુજરાતી ભાષા વાપરો (પુસ્તકીય કે ગુગલ ટ્રાન્સલેટ જેવી અઘરી ભાષા નહીં).
+૨. સ્લાઇડની બહારની કોઈ ખોટી કે મનઘડંત સરકારી માહિતી ઉમેરવી નહીં.
+૩. સ્લાઇડ ૧ થી ${totalSlides} નો ક્રમ જળવાઈ રહેવો જોઈએ.
+૪. દરેક સ્લાઇડનું લખાણ ઓછામાં ઓછું ૭૦ થી ૧૨૦ શબ્દોનું હોવું જોઈએ જેથી વિડીયો પૂરો થતાં દર્શકને સંતોષ થાય.
+
+==================================================
+📑 સત્તાવાર સ્લાઇડ્સ ડેટા (Official Slide Deck Content):
+==================================================
+
+${slidesBlock}
+
+હવે ઉપરોક્ત તમામ નિયમો મુજબ [સ્લાઇડ #1: શીર્ષક] થી શરૂ કરીને છેલ્લી સ્લાઇડ #${totalSlides} સુધીની સંપૂર્ણ સ્ક્રિપ્ટ આપો.`;
+  }
+
+  // Initialize or fetch current prompt
+  if (!project.script.chatGptPrompt && checkHasPresentation()) {
+    project.script.chatGptPrompt = buildChatGptScriptPrompt();
+    projectState.updateTool('script', { chatGptPrompt: project.script.chatGptPrompt });
+  }
+
+  function handleGeneratePrompt() {
+    project.script.targetDuration = targetDuration;
+    project.script.toneStyle = toneStyle;
+    project.script.chatGptPrompt = buildChatGptScriptPrompt();
+    projectState.updateTool('script', {
+      targetDuration,
+      toneStyle,
+      chatGptPrompt: project.script.chatGptPrompt
+    });
+    render();
+    showNoticeToast('✓ ChatGPT Script Prompt સફળતાપૂર્વક જનરેટ થઈ ગયો!', 'success');
+  }
+
+  async function handleOneClickSlideWiseScriptGeneration() {
+    if (!slides || slides.length === 0) {
+      alert('સ્લાઇડ્સ ડેટા મળ્યો નથી. કૃપા કરીને પહેલાં PPT અથવા PDF અપલોડ કરો.');
+      return;
+    }
+
+    const btn = container.querySelector('#btn-oneclick-generate-slidewise');
+    const originalBtnHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = `<span>⏳</span> સ્લાઇડ્સ વિશ્લેષણ & સ્ક્રિપ્ટ નિર્માણ ચાલુ છે...`;
+    }
+
+    try {
+      const res = await api.generateSlideWiseScript({
+        projectId: project.id,
+        slides,
+        topic: project.topic || project.name || 'ગુજરાત સત્તાવાર જાહેરાત',
+        durationMinutes: targetDuration === '5-7' ? 6 : (targetDuration === '10-12' ? 11 : 8),
+        speakingTone: toneStyle,
+        autoSave: true
+      });
+
+      if (!res.success || !res.script) {
+        throw new Error(res.error || 'સ્ક્રિપ્ટ જનરેટ થઈ શકી નથી.');
+      }
+
+      const scriptData = res.script;
+      const exactRawText = scriptData.rawText || scriptData.fullText || '';
+      const parsedSections = scriptData.sections || [];
+
+      project.script.originalChatGptScript = exactRawText;
+      project.script.rawText = exactRawText;
+      project.script.fullText = exactRawText;
+      project.script.sections = parsedSections;
+      project.script.editedSections = parsedSections;
+      project.script.fidelity = validateScriptFidelity(exactRawText, parsedSections);
+      project.script.validation = scriptData.validation || validateSlideWiseScriptFidelity(slides, parsedSections, exactRawText);
+      project.script.source = scriptData.source || 'ChatGPT';
+      project.script.importedAt = new Date().toISOString();
+      project.script.isCompleted = true;
+
+      // Update slide.slides
+      slides.forEach((sl, idx) => {
+        if (parsedSections[idx]) {
+          sl.scriptText = parsedSections[idx].scriptText;
+          parsedSections[idx].slideId = sl.slideId;
+          parsedSections[idx].slideNumber = sl.slideNumber;
+          if (parsedSections[idx].title && (!sl.title || sl.title.startsWith('સ્લાઇડ #'))) {
+            sl.title = parsedSections[idx].title;
+          }
+        }
+      });
+
+      project.slide.slides = slides;
+      projectState.updateTool('slide', { slides });
+      projectState.updateTool('script', {
+        originalChatGptScript: exactRawText,
+        sections: parsedSections,
+        editedSections: parsedSections,
+        rawText: exactRawText,
+        fullText: exactRawText,
+        fidelity: project.script.fidelity,
+        validation: project.script.validation,
+        source: project.script.source,
+        importedAt: project.script.importedAt,
         isCompleted: true
       });
-      if (scriptTpStudio) {
-        scriptTpStudio.setScriptText(combined);
+
+      projectState.saveVersionSnapshot(
+        project.id,
+        'scripts',
+        `Generated Exact Slide-Wise Script (${parsedSections.length} slides)`
+      );
+
+      showNoticeToast(`🎉 ${parsedSections.length} સ્લાઇડ્સની ચોક્કસ સ્ક્રિપ્ટ તૈયાર થઈ ગઈ અને Database માં Save થઈ ગઈ!`, 'success');
+      render();
+    } catch (err) {
+      console.error('[SlideWise Script Gen Error]:', err);
+      alert('સ્ક્રિપ્ટ જનરેટ કરવામાં સમસ્યા આવી: ' + err.message);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = originalBtnHtml;
       }
-      showNoticeToast(`✅ સ્ટેપ ૨ ની ${slides.length} સ્લાઇડ્સમાંથી સ્ક્રિપ્ટ સફળતાપૂર્વક લોડ થઈ ગઈ છે! ✓`, 'success');
-    } else {
-      showNoticeToast('સ્ટેપ ૨ માં કોઈ સ્લાઇડ્સ મળી નથી. પહેલા સ્લાઇડ્સ ઉમેરો.', 'warning');
-    }
-  });
-
-  // 1-Click Export script to slides
-  container.querySelector('#btn-export-script-to-slides')?.addEventListener('click', () => {
-    const text = narrationScriptTextarea.value.trim();
-    if (!text) {
-      showNoticeToast('પહેલા સ્ક્રિપ્ટ લખાણ દાખલ કરો.', 'warning');
-      return;
-    }
-    const chunks = text.split(/\n\s*\n/).filter(c => c.trim().length > 0);
-    const updatedSlides = chunks.map((chunk, i) => {
-      const lines = chunk.split('\n').map(l => l.trim()).filter(Boolean);
-      const title = lines[0] ? lines[0].replace(/^\[?(સ્લાઇડ|Slide|ભાગ)\s*[0-9#:\-]+\]?\s*/i, '').replace(/\]$/, '') : `સ્લાઇડ #${i + 1}`;
-      const bullets = lines.slice(1, 4).map(l => l.replace(/^[•\-\*0-9\.\)]+\s*/, ''));
-      return {
-        id: Date.now() + i,
-        title: title || `સ્લાઇડ #${i + 1}`,
-        subtitle: 'સત્તાવાર નિર્ણય સંદર્ભ',
-        bulletPoints: bullets.length > 0 ? bullets : [lines[0] || 'મુખ્ય વિગત'],
-        scriptText: chunk,
-        audioTime: '',
-        bgColor: '#FFFFFF',
-        textColor: '#0F172A',
-        accentColor: i === 0 ? '#DC2626' : '#2563EB'
-      };
-    });
-
-    projectState.updateTool('slide', {
-      slides: updatedSlides,
-      slideCount: `${updatedSlides.length} સ્લાઇડ્સ`,
-      isCompleted: true
-    });
-    const countEl = container.querySelector('#scriptwriter-slides-count');
-    if (countEl) countEl.textContent = `${updatedSlides.length} સ્લાઇડ્સ ઉપલબ્ધ`;
-    showNoticeToast(`✅ સ્ક્રિપ્ટમાંથી ${updatedSlides.length} સ્લાઇડ્સ સ્ટેપ ૨ માં અપડેટ થઈ ગઈ છે! ✓`, 'success');
-  });
-
-  // Goto Voice Studio
-  btnGotoVoiceStudio?.addEventListener('click', () => {
-    const script = narrationScriptTextarea.value.trim();
-    if (script) {
-      projectState.updateProject({ script });
-    }
-    navigateTo('myvoice');
-  });
-
-  // Open file picker
-  function openFilePicker() {
-    if (pdfFileInput) {
-      pdfFileInput.value = '';
-      pdfFileInput.click();
     }
   }
 
-  btnSelectPdf?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    openFilePicker();
-  });
-
-  btnChangePdf?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    openFilePicker();
-  });
-
-  pdfDropzone?.addEventListener('click', () => {
-    if (pdfEmptyState?.style.display !== 'none') {
-      openFilePicker();
-    }
-  });
-
-  pdfDropzone?.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    pdfDropzone.style.borderColor = '#10b981';
-    pdfDropzone.style.background = 'rgba(16,185,129,0.08)';
-  });
-
-  pdfDropzone?.addEventListener('dragleave', () => {
-    pdfDropzone.style.borderColor = '#38bdf8';
-    pdfDropzone.style.background = 'rgba(56, 189, 248, 0.04)';
-  });
-
-  pdfDropzone?.addEventListener('drop', (e) => {
-    e.preventDefault();
-    pdfDropzone.style.borderColor = '#38bdf8';
-    pdfDropzone.style.background = 'rgba(56, 189, 248, 0.04)';
-    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handlePdfUpload(e.dataTransfer.files[0]);
-    }
-  });
-
-  pdfFileInput?.addEventListener('change', (e) => {
-    if (e.target.files && e.target.files.length > 0) {
-      handlePdfUpload(e.target.files[0]);
-    }
-  });
-
-  // PDF Upload Processing
-  async function handlePdfUpload(file) {
-    if (!file || !file.name.toLowerCase().endsWith('.pdf')) {
-      showNoticeToast('મહેરબાની કરીને માન્ય PDF ફાઇલ પસંદ કરો.', 'warning');
+  async function handleImportScriptFromChatGpt(pastedText, shouldRedirect = true) {
+    if (!pastedText || !pastedText.trim()) {
+      alert('કૃપા કરીને ChatGPT માંથી મળેલ સ્ક્રિપ્ટ લખાણ પેસ્ટ કરો.');
       return;
     }
 
-    currentFilename = file.name;
-    if (pdfEmptyState) pdfEmptyState.style.display = 'none';
-    if (pdfSuccessState) pdfSuccessState.style.display = 'none';
-    if (pdfLoadingState) pdfLoadingState.style.display = 'block';
-
     try {
-      const reader = new FileReader();
-      reader.onload = async () => {
+      const exactRawText = pastedText.trim();
+      const parsedSections = parseChatGptScriptText(exactRawText, slides);
+      if (!parsedSections || parsedSections.length === 0) {
+        alert('સ્ક્રિપ્ટનું ફોર્મેટ ઓળખી શકાયું નથી. કૃપા કરીને ખાતરી કરો કે સ્ક્રિપ્ટમાં લખાણ રહેલું છે.');
+        return;
+      }
+
+      // 100% Verbatim Guarantee: Never alter or rewrite the user's pasted ChatGPT script
+      project.script.originalChatGptScript = exactRawText;
+      project.script.rawText = exactRawText;
+      project.script.fullText = exactRawText;
+      project.script.sections = parsedSections;
+      project.script.editedSections = parsedSections;
+      project.script.fidelity = validateScriptFidelity(exactRawText, parsedSections);
+      project.script.validation = validateSlideWiseScriptFidelity(slides, parsedSections, exactRawText);
+      project.script.source = 'ChatGPT';
+      project.script.importedAt = new Date().toISOString();
+      project.script.isCompleted = true;
+
+      // Sync back to slide.slides without creating artificial dummy slides
+      if (!project.slide) project.slide = {};
+      if (!Array.isArray(project.slide.slides)) project.slide.slides = [];
+
+      let authenticCount = (slides.length > 0) ? slides.length : (importedMeta?.slidesCount || importedMeta?.slideCount || importedMeta?.pageCount || 1);
+
+      const hasExplicitMarkers = Boolean(exactRawText.match(/(?:^|\n)\s*(?:\*{0,2}\[?|###?\s*)(?:Slide|સ્લાઇડ)\s*[#0-9૦-૯]+[^\n\]\*]*\]?\*{0,2}/gi));
+
+      if (slides.length === 0) {
+        slides.push({
+          slideId: `slide_${project.id}_1_${Date.now()}`,
+          id: `slide_${project.id}_1_${Date.now()}`,
+          slideNumber: 1,
+          pageNumber: 1,
+          title: 'સંપૂર્ણ સ્ક્રિપ્ટ',
+          subtitle: '',
+          bulletPoints: [],
+          scriptText: exactRawText,
+          bgColor: '#FFFFFF',
+          textColor: '#0F172A'
+        });
+      }
+
+      if (parsedSections.length <= 1) {
+        slides[0].scriptText = exactRawText;
+      } else {
+        slides.forEach((sl, idx) => {
+          if (parsedSections[idx]) {
+            sl.scriptText = parsedSections[idx].scriptText;
+            parsedSections[idx].slideId = sl.slideId;
+            parsedSections[idx].slideNumber = sl.slideNumber;
+            if (parsedSections[idx].title && (!sl.title || sl.title.startsWith('સ્લાઇડ #'))) {
+              sl.title = parsedSections[idx].title;
+            }
+          }
+        });
+      }
+
+      project.slide.slides = slides;
+      projectState.updateTool('slide', { slides });
+
+      projectState.updateTool('script', {
+        originalChatGptScript: exactRawText,
+        sections: parsedSections,
+        editedSections: parsedSections,
+        rawText: exactRawText,
+        fullText: exactRawText,
+        fidelity: project.script.fidelity,
+        validation: project.script.validation,
+        source: 'ChatGPT',
+        importedAt: project.script.importedAt,
+        isCompleted: true
+      });
+
+      // Permanently save to Backend Database (Source of Truth)
+      await saveScriptToDatabase(project.id, {
+        originalChatGptScript: exactRawText,
+        rawText: exactRawText,
+        fullText: exactRawText,
+        sections: parsedSections,
+        validation: project.script.validation,
+        source: 'ChatGPT'
+      }, { notify: true, showToast: false });
+
+      // Save safety version snapshot
+      projectState.saveVersionSnapshot(
+        project.id,
+        'scripts',
+        parsedSections.length <= 1
+          ? `Imported Full Script from ChatGPT (${calculateScriptMetrics(exactRawText).words} words)`
+          : `Imported Script from ChatGPT (${parsedSections.length} sections)`
+      );
+
+      const successMsg = parsedSections.length <= 1
+        ? `🎉 ChatGPT માંથી સંપૂર્ણ સળંગ સ્ક્રિપ્ટ (${calculateScriptMetrics(exactRawText).words} શબ્દો) સફળતાપૂર્વક Save થઈ ગઈ!`
+        : `🎉 ChatGPT માંથી ${parsedSections.length} સ્લાઇડ્સની સ્ક્રિપ્ટ સફળતાપૂર્વક Import થઈ ગઈ!`;
+
+      showNoticeToast(successMsg, 'success');
+
+      // Re-render immediately to reflect imported text and cards
+      render();
+
+      // Redirect directly to Stage 5: Script Editor if requested
+      if (shouldRedirect) {
+        setTimeout(() => {
+          navigateTo('scripteditor');
+        }, 500);
+      }
+
+    } catch (err) {
+      console.error('[Script Import Error]:', err);
+      alert('સ્ક્રિપ્ટ ઈમ્પોર્ટ કરવામાં ભૂલ આવી: ' + err.message);
+    }
+  }
+
+  function render() {
+    project = projectState.getActiveProject() || project;
+    slides = Array.isArray(project.slide?.slides) ? project.slide.slides : slides;
+    importedMeta = project.slide?.importedPresentation || importedMeta;
+    const hasPresentation = checkHasPresentation();
+    const hasImportedScript = checkHasImportedScript();
+    const promptText = project.script?.chatGptPrompt || '';
+    const sections = project.script?.sections || [];
+    const fullText = (project.script?.fullText || project.script?.rawText || project.script?.originalChatGptScript || '').trim();
+    const metrics = calculateScriptMetrics(fullText);
+
+    container.innerHTML = `
+      <!-- TOP PROJECT CONTEXT BAR -->
+      <div class="card" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border: 1.5px solid #38bdf8; border-radius: var(--radius-lg); padding: 16px 22px; margin-bottom: 22px; box-shadow: 0 8px 30px rgba(56, 189, 248, 0.25);">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+          
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(56, 189, 248, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; border: 1px solid rgba(56, 189, 248, 0.35);">
+              📝
+            </div>
+            <div>
+              <h2 style="font-size: 1.35rem; font-weight: 900; color: #ffffff; margin: 0 0 2px 0; display: flex; align-items: center; gap: 8px;">
+                <span>૪. સ્ક્રિપ્ટ પ્રોમ્પ્ટ (ChatGPT Script Prompt Generator)</span>
+                <span class="badge" style="background: ${hasImportedScript ? 'rgba(16, 185, 129, 0.2)' : promptText ? 'rgba(56, 189, 248, 0.2)' : 'rgba(245, 158, 11, 0.2)'}; color: ${hasImportedScript ? '#34d399' : promptText ? '#38bdf8' : '#fbbf24'}; border: 1px solid ${hasImportedScript ? '#10b981' : promptText ? '#38bdf8' : '#f59e0b'}; font-size: 0.74rem; font-weight: 800; padding: 3px 8px;">
+                  ${hasImportedScript ? (sections.length <= 1 ? `✓ સંપૂર્ણ સ્ક્રિપ્ટ સક્રિય (${metrics.words} શબ્દો)` : `✓ સ્ક્રિપ્ટ ઈમ્પોર્ટ થયેલ (${sections.length} સ્લાઇડ્સ)`) : promptText ? '✓ Prompt તૈયાર' : '⚪ Prompt બાકી'}
+                </span>
+              </h2>
+              <div style="margin-top: 6px; display: inline-flex; align-items: center; gap: 8px; background: rgba(56, 189, 248, 0.15); border: 1.5px solid #38bdf8; padding: 4px 12px; border-radius: 8px;">
+                <span style="font-size: 0.78rem; font-weight: 800; color: #38bdf8;">🎯 સક્રિય વિષય (ACTIVE TOPIC):</span>
+                <strong style="color: #ffffff; font-size: 0.95rem;">${project.topic || project.name}</strong>
+              </div>
+              <p style="color: #cbd5e1; font-size: 0.8rem; margin: 4px 0 0 0;">
+                ઈમ્પોર્ટ થયેલ PPT/PDF પરથી ChatGPT માટે સંપૂર્ણ સ્ક્રિપ્ટ પ્રોમ્પ્ટ જનરેટર.
+              </p>
+            </div>
+          </div>
+
+          <!-- Top Actions -->
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <label for="input-script-pdf-top" class="btn btn-outline btn-sm" style="border-color: #38bdf8; color: #38bdf8; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+              <span>📄</span> PDF અપલોડ કરો
+              <input type="file" id="input-script-pdf-top" accept=".pdf,.pptx,.ppt" style="display: none;" />
+            </label>
+            <button id="btn-open-folder-notebook-script" class="btn btn-outline btn-sm" style="border-color: #8b5cf6; color: #c4b5fd; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+              <span>📝</span> નોટબુક
+            </button>
+            <button id="btn-goto-slides-step" class="btn btn-outline btn-sm" style="font-weight: 800; border-color: rgba(255,255,255,0.25); color: #cbd5e1;">
+              ← ૨. Slide Prompt
+            </button>
+            <button id="btn-goto-voice-top" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #7c3aed, #6366f1); border: none; padding: 8px 18px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(124,58,237,0.35);">
+              <span>🎙️</span> ૫. સ્લાઇડ & સ્ક્રિપ્ટ સ્ટુડિયો (Slide Voice Studio) ➔
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      ${(!hasPresentation || !importedMeta) ? `
+        <!-- ========================================================================= -->
+        <!-- NO PRESENTATION LOADED / DIRECT PDF UPLOAD DROPZONE                       -->
+        <!-- ========================================================================= -->
+        <div class="card" style="padding: 40px 24px; text-align: center; background: rgba(15, 23, 42, 0.9); border: 2px dashed #38bdf8; border-radius: 16px; margin-bottom: 24px;">
+          <div style="width: 76px; height: 76px; margin: 0 auto 16px auto; border-radius: 20px; background: rgba(56, 189, 248, 0.12); display: flex; align-items: center; justify-content: center; font-size: 2.6rem; border: 1.5px solid rgba(56, 189, 248, 0.35);">
+            📄
+          </div>
+          <h3 style="font-size: 1.4rem; font-weight: 900; color: #ffffff; margin: 0 0 8px 0;">
+            અહીં તમારી NotebookLM PDF અથવા PPTX ફાઇલ અપલોડ કરો
+          </h3>
+          <p style="color: #94a3b8; font-size: 0.92rem; max-width: 620px; margin: 0 auto 20px auto; line-height: 1.6;">
+            તમારી PDF ફાઇલ પસંદ કરો અથવા ડ્રેગ કરો. PDF અપલોડ થતાં જ તમામ સ્લાઇડ્સ, ટાઇટલ અને મુદ્દાઓ આપમેળે વાંચીને સ્લાઇડ-વાઇઝ સ્ક્રિપ્ટ તૈયાર થઈ જશે!
+          </p>
+          <div style="display: flex; justify-content: center; align-items: center; gap: 14px; flex-wrap: wrap;">
+            <label for="input-script-pdf-main" class="btn btn-primary" style="font-weight: 800; font-size: 1rem; padding: 13px 30px; background: linear-gradient(135deg, #0284c7, #0369a1); border: none; border-radius: 10px; box-shadow: 0 4px 20px rgba(2, 132, 199, 0.45); cursor: pointer; display: inline-flex; align-items: center; gap: 10px;">
+              <span>📤</span> PDF પસંદ કરો (Upload PDF)
+              <input type="file" id="input-script-pdf-main" accept=".pdf,.pptx,.ppt" style="display: none;" />
+            </label>
+            <button id="btn-goto-slides-action" class="btn btn-outline" style="border-color: rgba(255,255,255,0.25); color: #cbd5e1; font-weight: 700; padding: 13px 22px;">
+              <span>📑</span> ૨. Slide Prompt જુઓ
+            </button>
+          </div>
+        </div>
+      ` : `
+        <!-- ========================================================================= -->
+        <!-- 1. PRESENTATION INFORMATION CARD                                          -->
+        <!-- ========================================================================= -->
+        <div class="card" style="margin-bottom: 22px; padding: 18px 22px; background: rgba(16, 185, 129, 0.08); border: 1.5px solid #10b981; border-radius: 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <span style="font-size: 2.2rem;">${importedMeta?.fileType === 'pdf' ? '📄' : '📊'}</span>
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <strong style="color: #ffffff; font-size: 1.1rem;">${importedMeta?.filename || 'Presentation File'}</strong>
+                <span class="badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; font-weight: 800; font-size: 0.72rem;">
+                  ${importedMeta?.sizeFormatted || 'PDF'}
+                </span>
+                <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 800; font-size: 0.72rem;">
+                  ${slides.length} સ્લાઇડ્સ ઉપલબ્ધ
+                </span>
+              </div>
+              <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 3px;">
+                🕒 ઈમ્પોર્ટ તારીખ: <strong style="color: #cbd5e1;">${formatIndianDateTimeDisplay(importedMeta?.uploadedAt)}</strong>
+                <span style="color: #10b981; margin-left: 8px; font-weight: 700;">✓ તમામ સ્લાઇડ્સનું કન્ટેન્ટ પ્રોમ્પ્ટ માટે ઉપલબ્ધ છે</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <label for="input-script-pdf-change" class="btn btn-outline btn-sm" style="border-color: rgba(56,189,248,0.4); color: #38bdf8; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+              <span>🔄</span> નવી PDF અપલોડ કરો
+              <input type="file" id="input-script-pdf-change" accept=".pdf,.pptx,.ppt" style="display: none;" />
+            </label>
+            <button id="btn-toggle-content-summary" class="btn btn-outline btn-sm" style="border-color: rgba(56,189,248,0.4); color: #38bdf8; font-weight: 700;">
+              ${showContentSummary ? '▲ સારાંશ છુપાવો' : '▼ કન્ટેન્ટ સારાંશ જુઓ (' + slides.length + ' સ્લાઇડ્સ)'}
+            </button>
+          </div>
+        </div>
+
+        ${showContentSummary ? `
+          <!-- Collapsible Content Summary Accordion -->
+          <div class="card" style="margin-bottom: 22px; padding: 20px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;">
+            <h4 style="margin: 0 0 14px 0; color: #ffffff; font-size: 0.98rem; display: flex; align-items: center; gap: 8px;">
+              <span>📋</span> પ્રેઝન્ટેશન કન્ટેન્ટ સારાંશ (આ تمام વિગતો ChatGPT પ્રોમ્પ્ટમાં આપોઆપ જોડાશે)
+            </h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; max-height: 350px; overflow-y: auto; padding-right: 6px;">
+              ${slides.map((s, idx) => `
+                <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 12px;">
+                  <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                    <span class="badge" style="background: #3b82f6; color: #fff; font-size: 0.7rem; font-weight: 800;">#${s.slideNumber || (idx + 1)}</span>
+                    <strong style="color: #f8fafc; font-size: 0.88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${s.title || `સ્લાઇડ #${idx + 1}`}</strong>
+                  </div>
+                  <ul style="margin: 0; padding-left: 18px; font-size: 0.78rem; color: #94a3b8; line-height: 1.45;">
+                    ${(Array.isArray(s.bulletPoints) ? s.bulletPoints : [s.content || '']).filter(Boolean).slice(0, 3).map(b => `<li>${b.length > 50 ? b.slice(0, 50) + '...' : b}</li>`).join('')}
+                  </ul>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+
+        <!-- ========================================================================= -->
+        <!-- 2. PROMPT CUSTOMIZATION & GENERATION BAR                                  -->
+        <!-- ========================================================================= -->
+        <div class="card" style="margin-bottom: 22px; padding: 20px 24px; background: rgba(15, 23, 42, 0.85); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: 14px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 16px;">
+            <div>
+              <h3 style="font-size: 1.15rem; font-weight: 900; color: #ffffff; margin: 0 0 4px 0; display: flex; align-items: center; gap: 8px;">
+                <span>⚙️</span> ChatGPT Script Prompt કસ્ટમાઇઝેશન
+              </h3>
+              <p style="color: #94a3b8; font-size: 0.82rem; margin: 0;">
+                વિડીયોનો અંદાજિત સમયગાળો અને બોલવાનો લય પસંદ કરો. પ્રોમ્પ્ટ આપોઆપ અપડેટ થશે.
+              </p>
+            </div>
+
+            <!-- Action Buttons: Generate Prompt & 1-Click AI Slide-Wise Script -->
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <button id="btn-generate-prompt" class="btn btn-outline" style="font-weight: 900; font-size: 0.95rem; padding: 12px 20px; border-radius: 10px; border-color: #38bdf8; color: #38bdf8; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                <span>🚀</span> ${promptText ? '🔄 નવો Prompt બનાવો' : '🚀 ChatGPT Script Prompt'}
+              </button>
+              <button id="btn-oneclick-generate-slidewise" class="btn btn-primary" style="font-weight: 900; font-size: 0.95rem; padding: 12px 22px; border-radius: 10px; background: linear-gradient(135deg, #10b981, #059669); border: none; box-shadow: 0 4px 18px rgba(16, 185, 129, 0.45); cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                <span>⚡</span> ૧-ક્લિક સ્લાઇડ પ્રમાણે AI સ્ક્રિપ્ટ બનાવો
+              </button>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+            <div>
+              <label style="display: block; font-size: 0.8rem; font-weight: 800; color: #cbd5e1; margin-bottom: 6px;">
+                ⏱️ ટાર્ગેટ વિડીયો સમયગાળો (Target Duration):
+              </label>
+              <select id="select-target-duration" class="form-control" style="background: #0f172a; color: #f8fafc; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 9px 12px; font-size: 0.88rem; width: 100%;">
+                <option value="5-7" ${targetDuration === '5-7' ? 'selected' : ''}>૫ થી ૭ મિનિટ (ઝડપી અપડેટ - ૭૦૦-૯૦૦ શબ્દો)</option>
+                <option value="8-10" ${targetDuration === '8-10' ? 'selected' : ''}>૮ થી ૧૦ મિનિટ (સંપૂર્ણ વિગતવાર - Recommended)</option>
+                <option value="10-12" ${targetDuration === '10-12' ? 'selected' : ''}>૧૦ થી ૧૨ મિનિટ (વિસ્તૃત વિશ્લેષણ - ૧૩૦૦+ શબ્દો)</option>
+              </select>
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 0.8rem; font-weight: 800; color: #cbd5e1; margin-bottom: 6px;">
+                🎙️ નરેશન ટોન / લય (Voice Style):
+              </label>
+              <select id="select-tone-style" class="form-control" style="background: #0f172a; color: #f8fafc; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 9px 12px; font-size: 0.88rem; width: 100%;">
+                <option value="news_conversational" ${toneStyle === 'news_conversational' ? 'selected' : ''}>સત્તાવાર ન્યૂઝ પ્રેઝન્ટર + સરળ બોલચાલ (સૌથી શ્રેષ્ઠ)</option>
+                <option value="conversational" ${toneStyle === 'conversational' ? 'selected' : ''}>મૈત્રીપૂર્ણ & અત્યંત સરળ સંવાદ (YouTube Style)</option>
+                <option value="formal" ${toneStyle === 'formal' ? 'selected' : ''}>ગંભીર, સત્તાવાર પરિપત્ર સંદર્ભ (Educational)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        ${promptText ? `
+          <!-- ========================================================================= -->
+          <!-- 3. EDITABLE SCRIPT PROMPT PREVIEW & 1-CLICK COPY                           -->
+          <!-- ========================================================================= -->
+          <div class="card" style="margin-bottom: 24px; padding: 22px; background: rgba(15, 23, 42, 0.95); border: 1.5px solid #38bdf8; border-radius: 14px; box-shadow: 0 8px 30px rgba(0,0,0,0.45);">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.3rem;">📋</span>
+                <strong style="color: #ffffff; font-size: 1.05rem;">ChatGPT Script Prompt (સંપૂર્ણ વિગતો સાથે તૈયાર)</strong>
+              </div>
+
+              <!-- Action buttons: Copy & Open ChatGPT -->
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <button id="btn-copy-prompt" class="btn btn-primary" style="font-weight: 900; background: linear-gradient(135deg, #10b981, #059669); border: none; padding: 9px 20px; border-radius: 8px; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4); display: inline-flex; align-items: center; gap: 6px;">
+                  <span>📋</span> ૧-ક્લિક કોપી પ્રોમ્પ્ટ
+                </button>
+                <a id="link-open-chatgpt" href="https://chatgpt.com" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="font-weight: 800; border-color: #38bdf8; color: #38bdf8; padding: 8px 16px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                  <span>⚡</span> ChatGPT ખોલો ↗
+                </a>
+              </div>
+            </div>
+
+            <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 12px; background: rgba(56, 189, 248, 0.08); padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.2);">
+              💡 <strong>કેવી રીતે ઉપયોગ કરવો:</strong> ઉપરના બટનથી પ્રોમ્પ્ટ કોપી કરો ➔ ChatGPT માં પેસ્ટ કરો ➔ ChatGPT સ્ક્રિપ્ટ બનાવી આપે એટલે તે કોપી કરીને નીચેના ઈમ્પોર્ટ બોક્સમાં મૂકો.
+            </div>
+
+            <textarea id="textarea-prompt-preview" class="form-control font-gu" style="width: 100%; min-height: 280px; max-height: 480px; background: #07090e; color: #f1f5f9; border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 14px 16px; font-size: 0.9rem; line-height: 1.6; font-family: monospace; resize: vertical;">${promptText}</textarea>
+          </div>
+        ` : ''}
+
+        <!-- ========================================================================= -->
+        <!-- 4. IMPORT SCRIPT FROM CHATGPT (DEDICATED SECTION)                         -->
+        <!-- ========================================================================= -->
+        <div class="card" style="margin-bottom: 28px; padding: 24px; background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.85)); border: 2px solid ${hasImportedScript ? '#10b981' : '#f59e0b'}; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 44px; height: 44px; border-radius: 12px; background: ${hasImportedScript ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)'}; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; border: 1px solid ${hasImportedScript ? 'rgba(16, 185, 129, 0.35)' : 'rgba(245, 158, 11, 0.35)'};">
+                📥
+              </div>
+              <div>
+                <h3 style="font-size: 1.25rem; font-weight: 900; color: #ffffff; margin: 0 0 2px 0;">
+                  ChatGPT માંથી તૈયાર થયેલી Script અહીં Import કરો
+                </h3>
+                <p style="color: #cbd5e1; font-size: 0.82rem; margin: 0;">
+                  ChatGPT દ્વારા લખાયેલ સંપૂર્ણ સ્ક્રિપ્ટ અહીં પેસ્ટ કરો. અમારું સિસ્ટમ તેને આપોઆપ સ્લાઇડ-વાઇઝ ગોઠવી આપશે.
+                </p>
+              </div>
+            </div>
+
+            ${hasImportedScript ? `
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 800; font-size: 0.8rem; padding: 6px 12px; border: 1px solid #10b981;">
+                  ${sections.length <= 1 ? `✓ સંપૂર્ણ સ્ક્રિપ્ટ સક્રિય (${metrics.words} શબ્દો)` : `✓ સ્ક્રિપ્ટ સક્રિય (${sections.length} સ્લાઇડ્સ • ${metrics.words} શબ્દો)`}
+                </span>
+                <button id="btn-goto-voice-mid" class="btn btn-primary btn-sm" style="font-weight: 900; background: linear-gradient(135deg, #7c3aed, #6366f1); border: none; padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(124,58,237,0.35);">
+                  🎙️ ૫. સ્લાઇડ સામે સ્ક્રિપ્ટ બોલો (Slide & Voice Studio) ➔
+                </button>
+              </div>
+            ` : ''}
+          </div>
+
+          <div style="margin-bottom: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label style="display: block; font-size: 0.82rem; font-weight: 800; color: #cbd5e1; margin: 0;">
+                ChatGPT આઉટપુટ લખાણ (Paste / Saved Script Text):
+              </label>
+              ${hasImportedScript ? `
+                <span style="font-size: 0.74rem; color: #34d399; font-weight: 700;">
+                  ✓ તમારી સેવ કરેલી સ્ક્રિપ્ટ નીચે મોજૂદ છે (${metrics.words} શબ્દો)
+                </span>
+              ` : ''}
+            </div>
+            <textarea id="textarea-import-script" class="form-control font-gu" placeholder="ChatGPT માંથી તૈયાર થયેલી સ્ક્રિપ્ટ અહીં પેસ્ટ કરો...&#10;&#10;ઉદાહરણ ફોર્મેટ:&#10;[સ્લાઇડ #1: શીર્ષક]&#10;નમસ્તે મિત્રો! જ્ઞાન યાત્રા ચેનલમાં આપનું સ્વાગત છે...&#10;&#10;[સ્લાઇડ #2: શીર્ષક]&#10;હવે વિગતવાર સમજીએ..." style="width: 100%; min-height: 220px; max-height: 420px; background: #07090e; color: #f8fafc; border: 1.5px solid ${hasImportedScript ? '#10b981' : 'rgba(255,255,255,0.15)'}; border-radius: 10px; padding: 14px 16px; font-size: 0.92rem; line-height: 1.6; resize: vertical;">${fullText || ''}</textarea>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <div style="font-size: 0.78rem; color: #94a3b8;">
+              ⚡ સ્ક્રિપ્ટ ઈમ્પોર્ટ થતાં જ તે પ્રોજેક્ટમાં સુરક્ષિત રીતે સચવાશે અને <strong>Voice Studio / Script Editor</strong> માં ઉપલબ્ધ રહેશે.
+            </div>
+
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button id="btn-submit-import-script" class="btn btn-primary" style="font-weight: 900; font-size: 0.95rem; padding: 10px 24px; border-radius: 10px; background: linear-gradient(135deg, #10b981, #059669); border: none; box-shadow: 0 4px 18px rgba(16, 185, 129, 0.45); cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                <span>💾</span> ${hasImportedScript ? '🔄 સ્ક્રિપ્ટ અપડેટ કરો & સેવ કરો' : '💾 Script Import કરો & સેવ કરો'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        ${(hasImportedScript && (project.script?.validation || sections.length > 0)) ? `
+          <!-- 7-POINT FINAL SCRIPT VALIDATION CHECKLIST CARD -->
+          ${(() => {
+            const valData = project.script?.validation || validateSlideWiseScriptFidelity(slides, sections, fullText);
+            return `
+              <div class="card" style="margin-bottom: 24px; padding: 22px; background: rgba(15, 23, 42, 0.95); border: 2px solid ${valData?.isValid ? '#10b981' : '#f59e0b'}; border-radius: 14px; box-shadow: 0 8px 30px rgba(0,0,0,0.4);">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.5rem;">📋</span>
+                    <div>
+                      <h4 style="margin: 0; font-size: 1.15rem; font-weight: 900; color: #ffffff;">
+                        ૭-મુદ્દા સ્લાઇડ કન્ટેન્ટ ચકાસણી રિપોર્ટ (7-Point Final Script Validation)
+                      </h4>
+                      <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: #94a3b8;">
+                        મૂળ PPT/PDF સ્લાઇડ્સ સાથે સ્ક્રિપ્ટના કન્ટેન્ટનું કડક ૧:૧ મેચિંગ
+                      </p>
+                    </div>
+                  </div>
+                  <span class="badge" style="background: ${valData?.isValid ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)'}; color: ${valData?.isValid ? '#34d399' : '#fbbf24'}; font-weight: 900; font-size: 0.82rem; padding: 6px 14px; border: 1px solid ${valData?.isValid ? '#10b981' : '#f59e0b'};">
+                    ${valData?.isValid ? '✓ પ્રમાણિત સ્ક્રિપ્ટ (Verified Pass)' : '⚠️ ચકાસણી ધ્યાનાકર્ષક'}
+                  </span>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
+                  ${(valData?.checklist || []).map(item => `
+                    <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid ${item.passed ? 'rgba(16, 185, 129, 0.25)' : 'rgba(245, 158, 11, 0.25)'}; border-radius: 8px; padding: 12px 14px;">
+                      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                        <strong style="font-size: 0.85rem; color: #f8fafc;">${item.name}</strong>
+                        <span style="font-size: 0.82rem; font-weight: 800; color: ${item.passed ? '#34d399' : '#fbbf24'};">${item.passed ? '✓ પાસ' : '⚠️ ચકાસો'}</span>
+                      </div>
+                      <div style="font-size: 0.78rem; color: #94a3b8; line-height: 1.4;">${item.message}</div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            `;
+          })()}
+        ` : ''}
+
+        ${hasImportedScript ? `
+          <!-- Script Overview Card If Already Imported -->
+          <div class="card" style="margin-bottom: 22px; padding: 18px 22px; background: rgba(15, 23, 42, 0.75); border: 1.5px solid rgba(255,255,255,0.1); border-radius: 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+            <div style="display: flex; align-items: center; gap: 24px; flex-wrap: wrap;">
+              <div>
+                <span style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 800;">${sections.length <= 1 ? 'સ્ક્રિપ્ટ ફોર્મેટ' : 'ઈમ્પોર્ટ થયેલ સ્લાઇડ્સ'}</span>
+                <div style="font-size: 1.25rem; font-weight: 900; color: #ffffff;">${sections.length <= 1 ? '૧ સંપૂર્ણ સળંગ સ્ક્રિપ્ટ' : `${sections.length} સ્લાઇડ્સ`}</div>
+              </div>
+              <div style="width: 1px; height: 32px; background: rgba(255,255,255,0.1);"></div>
+              <div>
+                <span style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 800;">કુલ શબ્દો</span>
+                <div style="font-size: 1.25rem; font-weight: 900; color: #38bdf8;">${metrics.words} શબ્દો</div>
+              </div>
+              <div style="width: 1px; height: 32px; background: rgba(255,255,255,0.1);"></div>
+              <div>
+                <span style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 800;">અંદાજિત સમય</span>
+                <div style="font-size: 1.25rem; font-weight: 900; color: #10b981;">~${metrics.minutes} મિનિટ (${metrics.formattedTime})</div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button id="btn-goto-voice-bottom" class="btn btn-primary btn-sm" style="font-weight: 900; background: linear-gradient(135deg, #7c3aed, #6366f1); border: none; padding: 8px 18px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(124,58,237,0.35);">
+                🎙️ ૫. સ્લાઇડ સામે સ્ક્રિપ્ટ બોલીને ઓડિયો રેકોર્ડ કરો (Slide Voice Studio) ➔
+              </button>
+            </div>
+          </div>
+
+          <!-- Slide-Wise Script Cards Directly in ScriptWriter -->
+          <div class="card" style="margin-bottom: 24px; padding: 22px; background: rgba(15, 23, 42, 0.95); border: 1.5px solid #10b981; border-radius: 14px; box-shadow: 0 8px 30px rgba(0,0,0,0.45);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+              <h4 style="margin: 0; font-size: 1.1rem; font-weight: 900; color: #ffffff; display: flex; align-items: center; gap: 8px;">
+                <span>📋</span> ${sections.length <= 1 ? 'સેવ થયેલી સંપૂર્ણ સળંગ સ્ક્રિપ્ટ (સંપૂર્ણ નરેશન)' : `સેવ થયેલી સ્ક્રિપ્ટનું સ્લાઇડ-વાઇઝ પ્રિવ્યૂ (${sections.length} સ્લાઇડ્સ)`}
+              </h4>
+              <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 800;">✓ સક્રિય પ્રોજેક્ટમાં સુરક્ષિત</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px; max-height: 480px; overflow-y: auto; padding-right: 6px; font-family: 'Noto Sans Gujarati', sans-serif;">
+              ${sections.map((sec, idx) => `
+                <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 14px 18px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 6px;">
+                    <strong style="color: #38bdf8; font-size: 0.92rem;">${sec.sectionName || `સ્લાઇડ #${sec.slideNumber}`}: ${sec.title || ''}</strong>
+                    <span style="font-size: 0.74rem; color: #cbd5e1; font-weight: 700;">📝 ${(sec.scriptText || '').trim().split(/\s+/).filter(Boolean).length} શબ્દો</span>
+                  </div>
+                  <div style="font-size: 0.9rem; color: #f8fafc; line-height: 1.7; white-space: pre-wrap;">${sec.scriptText || ''}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+      `}
+
+      <!-- CONNECTED WORKFLOW STEPPER BAR (TOOLS 1 TO 7 JOODAN) -->
+      <div class="card workspace-bottom-stepper" style="background: rgba(15, 23, 42, 0.95); border: 1.5px solid rgba(16, 185, 129, 0.35); border-radius: 12px; padding: 14px 20px; margin-top: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.4);">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.4rem;">🔗</span>
+          <div>
+            <div style="font-size: 0.78rem; color: #34d399; font-weight: 700;">
+              વિડીયો વર્કફ્લો જોડાણ: <strong>પગલું ૫ / ૭</strong>
+            </div>
+            <div style="font-weight: 800; font-size: 0.95rem; color: #ffffff;">
+              ૫. Script (PDF સ્લાઇડ્સ & ગુજરાતી સ્ક્રિપ્ટ)
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <button id="ws-btn-bottom-prev-script" class="btn btn-outline btn-sm" style="font-weight: 700; border-color: rgba(255,255,255,0.25); color: #cbd5e1; cursor: pointer;">
+            ← પાછલું પગલું: ૪. Slide Prompts
+          </button>
+          <button id="ws-btn-bottom-next-script" class="btn btn-primary btn-sm" style="font-weight: 900; background: linear-gradient(135deg, #10b981, #059669); border: none; padding: 10px 20px; border-radius: 8px; box-shadow: 0 4px 14px rgba(16,185,129,0.4); display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+            આગળનું પગલું: ૬. Video Editor (વિડીયો નિર્માણ & ઓડિયો) → <!-- ૪. Video Editor -->
+          </button>
+        </div>
+      </div>
+    `;
+
+    attachEvents();
+  }
+
+  function attachEvents() {
+    // Generate / Regenerate Prompt
+    container.querySelector('#btn-generate-prompt')?.addEventListener('click', handleGeneratePrompt);
+
+    // 1-Click AI Slide-Wise Script Generation
+    container.querySelector('#btn-oneclick-generate-slidewise')?.addEventListener('click', handleOneClickSlideWiseScriptGeneration);
+
+    // Duration and Tone changes
+    container.querySelector('#select-target-duration')?.addEventListener('change', (e) => {
+      targetDuration = e.target.value;
+    });
+    container.querySelector('#select-tone-style')?.addEventListener('change', (e) => {
+      toneStyle = e.target.value;
+    });
+
+    // Content summary toggle
+    container.querySelector('#btn-toggle-content-summary')?.addEventListener('click', () => {
+      showContentSummary = !showContentSummary;
+      render();
+    });
+
+    // Editable prompt textarea live save
+    container.querySelector('#textarea-prompt-preview')?.addEventListener('input', (e) => {
+      project.script.chatGptPrompt = e.target.value;
+      projectState.updateTool('script', { chatGptPrompt: e.target.value });
+    });
+
+    // Copy Prompt Button
+    container.querySelector('#btn-copy-prompt')?.addEventListener('click', () => {
+      const pText = container.querySelector('#textarea-prompt-preview')?.value || project.script.chatGptPrompt || '';
+      if (pText) {
+        copyToClipboard(pText);
+        showNoticeToast('✓ ChatGPT Script Prompt ક્લિપબોર્ડમાં કોપી થઈ ગયો!', 'success');
+      }
+    });
+
+    // Submit Script Import from ChatGPT
+    container.querySelector('#btn-submit-import-script')?.addEventListener('click', () => {
+      const pasted = container.querySelector('#textarea-import-script')?.value || '';
+      handleImportScriptFromChatGpt(pasted, true);
+    });
+
+    const scriptTextarea = container.querySelector('#textarea-import-script');
+    let autoSaveDbTimer = null;
+
+    function handleLiveScriptChange(text) {
+      const val = text || '';
+      project.script.fullText = val;
+      project.script.rawText = val;
+      project.script.originalChatGptScript = val;
+      projectState.updateTool('script', {
+        fullText: val,
+        rawText: val,
+        originalChatGptScript: val
+      });
+
+      if (autoSaveDbTimer) clearTimeout(autoSaveDbTimer);
+      if (val.trim()) {
+        autoSaveDbTimer = setTimeout(() => {
+          saveScriptToDatabase(project.id, {
+            rawText: val.trim(),
+            fullText: val.trim(),
+            sections: project.script.sections || [],
+            source: 'ChatGPT'
+          }, { notify: false, showToast: false }).catch(() => {});
+        }, 1500);
+      }
+    }
+
+    // Auto-sync textarea paste
+    scriptTextarea?.addEventListener('paste', (e) => {
+      const pasted = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+      if (pasted) {
+        setTimeout(() => {
+          const currentVal = scriptTextarea.value || pasted;
+          handleLiveScriptChange(currentVal);
+        }, 50);
+      }
+    });
+
+    // Auto-sync textarea edits
+    scriptTextarea?.addEventListener('input', (e) => {
+      handleLiveScriptChange(e.target.value);
+    });
+
+    // Safe transition handler that ensures any entered script is saved before moving away
+    async function safeNavigate(targetStage) {
+      const currentVal = (scriptTextarea?.value || '').trim();
+      if (currentVal && (!project.script?.sections || project.script.sections.length === 0 || currentVal !== (project.script.fullText || '').trim())) {
         try {
-          const pdfBase64 = reader.result;
+          await handleImportScriptFromChatGpt(currentVal, false);
+        } catch (_) {}
+      }
+      navigateTo(targetStage);
+    }
 
-          // 1. Upload & Parse PDF structure and generate Supreme Prompt
-          const uploadRes = await api.uploadSlidePdf({
-            pdfBase64,
+    // Direct PDF Upload Handler in Scriptwriter
+    async function handlePdfUploadInScript(file) {
+      if (!file) return;
+      const ext = (file.name || '').split('.').pop().toLowerCase();
+      if (!['pdf', 'pptx', 'ppt'].includes(ext)) {
+        alert('કૃપા કરીને માત્ર PDF અથવા PPTX ફાઇલ પસંદ કરો.');
+        return;
+      }
+
+      showNoticeToast(`📄 "${file.name}" અપલોડ અને સ્લાઇડ એક્સટ્રેક્શન ચાલુ છે...`, 'info');
+
+      const reader = new FileReader();
+      reader.onerror = (rErr) => {
+        console.error('[ScriptWriter FileReader Error]:', rErr);
+        alert('PDF ફાઇલ વાંચવામાં ભૂલ આવી. કૃપા કરીને ફાઇલ ફરી પસંદ કરો.');
+      };
+      reader.onload = async (e) => {
+        try {
+          const base64Data = e.target.result;
+          const res = await api.post('/api/research/upload-file', {
+            fileBase64: base64Data,
             filename: file.name,
-            overallTopic: topicInput.value.trim() || activeTopic
-          }).catch(err => {
-            console.warn('[Upload PDF Fallback Notice]:', err);
-            return null;
+            overallTopic: project.topic || project.name || '',
+            projectId: project.id
           });
 
-          if (uploadRes && uploadRes.success) {
-            lastPdfResult = uploadRes;
-            fullPdfText = uploadRes.fullPdfText || '';
-            if (uploadRes.slides && uploadRes.slides.length > 0) {
-              // Pre-fill spoken script if available
-              const formattedScript = renderFormattedScript(uploadRes.slides, activeTopic, fullPdfText);
-              const spoken = extractSpokenScript(formattedScript);
-              if (spoken && !narrationScriptTextarea.value.trim()) {
-                narrationScriptTextarea.value = spoken;
-              }
-              if (scriptTpStudio) {
-                scriptTpStudio.setScriptText(spoken || fullPdfText);
-              }
-            } else if (fullPdfText && scriptTpStudio) {
-              scriptTpStudio.setScriptText(fullPdfText);
+          if (res && res.success && Array.isArray(res.slides) && res.slides.length > 0) {
+            const sizeFormatted = `${Math.round(file.size / 1024)} KB`;
+            const fileRecord = {
+              id: `pres_${project.id}_${Date.now()}`,
+              projectId: project.id,
+              filename: file.name,
+              fileType: ext,
+              fileUrl: res?.fileUrl || '',
+              size: file.size,
+              sizeFormatted,
+              uploadedAt: new Date().toISOString(),
+              slidesCount: res.slides.length,
+              slides: res.slides,
+              dataUrl: base64Data
+            };
+
+            await saveProjectPresentation(project.id, fileRecord);
+            if (project.topicId && project.topicId !== project.id) {
+              await saveProjectPresentation(project.topicId, fileRecord);
             }
+
+            project.slide = project.slide || {};
+            project.slide.slides = res.slides;
+            project.slide.importedPresentation = { ...fileRecord, dataUrl: '' };
+            projectState.updateTool('slide', project.slide);
+
+            slides = res.slides;
+            importedMeta = fileRecord;
+
+            // Preserve existing rich script if present in project or DB, else use extracted slide script
+            const existingSections = Array.isArray(project.script?.sections) && project.script.sections.length > 0
+              ? project.script.sections
+              : [];
+
+            const newSections = res.slides.map((s, idx) => {
+              const matchedExisting = existingSections[idx] || existingSections.find(es => es.slideNumber === (idx + 1));
+              const richScript = (matchedExisting && matchedExisting.scriptText && matchedExisting.scriptText.trim().length > 20)
+                ? matchedExisting.scriptText.trim()
+                : (s.scriptText || s.content || (s.bulletPoints && s.bulletPoints.length > 0 ? s.bulletPoints.join('. ') : `${s.title || 'સ્લાઇડ #' + (idx + 1)} વિશેની સંપૂર્ણ માહિતી અને સમજૂતી.`));
+              const finalTitle = (matchedExisting && matchedExisting.sectionName && !matchedExisting.sectionName.startsWith('સ્લાઇડ #'))
+                ? matchedExisting.sectionName
+                : (s.title || `સ્લાઇડ #${idx + 1}`);
+
+              return {
+                slideNumber: idx + 1,
+                sectionName: finalTitle,
+                title: finalTitle,
+                subtitle: s.subtitle || '',
+                scriptText: richScript
+              };
+            });
+            const scriptText = newSections.map(sec => `[સ્લાઇડ #${sec.slideNumber}: ${sec.sectionName}]\n${sec.scriptText}`).join('\n\n');
+
+            project.script = project.script || {};
+            project.script.sections = newSections;
+            project.script.rawText = scriptText;
+            project.script.fullText = scriptText;
+            project.script.originalChatGptScript = scriptText;
+            project.script.savedInDb = true;
+            projectState.updateTool('script', project.script);
+
+            await saveScriptToDatabase(project.id, {
+              rawText: scriptText,
+              fullText: scriptText,
+              sections: newSections,
+              source: 'PDF_Extract'
+            }, { notify: false, showToast: false }).catch(() => {});
+
+            showNoticeToast(`🎉 PDF સફળતાપૂર્વક અપલોડ થઈ ગઈ (${res.slides.length} સ્લાઇડ્સ)! સ્ક્રિપ્ટ તૈયાર છે.`, 'success');
+            render();
+          } else {
+            throw new Error(res?.error || 'સ્લાઇડ્સ વાંચી શકાઈ નથી.');
           }
-
-          // 2. Also generate/fetch direct audio for the player
-          const audioRes = await api.pdfToAudio({
-            pdfBase64,
-            filename: file.name,
-            profileId: 'anchor-dhwani-female',
-            speed: 1.08,
-            emotion: 'enthusiastic'
-          }).catch(err => {
-            console.warn('[PDF-to-Audio Notice]:', err);
-            return null;
-          });
-
-          if (audioRes && audioRes.success && audioRes.audioUrl) {
-            currentAudioUrl = audioRes.audioUrl;
-            if (audioRes.narrationText && !narrationScriptTextarea.value.trim()) {
-              narrationScriptTextarea.value = audioRes.narrationText;
-            }
-            if (!lastPdfResult) {
-              lastPdfResult = audioRes;
-            }
-
-            // Audio Player update
-            const cacheBusterUrl = audioRes.audioUrl + (audioRes.audioUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
-            audioPlayer.src = cacheBusterUrl;
-            audioPlayer.load();
-
-            if (btnDownloadAudio) {
-              btnDownloadAudio.href = audioRes.audioUrl;
-              btnDownloadAudio.download = `${file.name.replace(/\.pdf$/i, '')}_audio.mp3`;
-            }
-
-            if (audioMetaBadge) {
-              const sizeKb = Math.round((audioRes.fileSize || 0) / 1024);
-              audioMetaBadge.textContent = `${audioRes.provider || 'AI Voice Engine'} • સાઇઝ: ~${sizeKb} KB`;
-            }
-
-            if (audioPlayerCard) {
-              audioPlayerCard.style.display = 'block';
-            }
-          }
-
-          // Update UI
-          if (pdfUploadedFilename) {
-            const pageCount = (lastPdfResult && (lastPdfResult.totalPages || (lastPdfResult.slides && lastPdfResult.slides.length))) || 1;
-            pdfUploadedFilename.textContent = `${file.name} (${pageCount} પેજ)`;
-          }
-
-          // Recalculate prompt with the real PDF text
-          refreshMasterPrompt();
-
-          if (pdfLoadingState) pdfLoadingState.style.display = 'none';
-          if (pdfSuccessState) pdfSuccessState.style.display = 'block';
-
-          showNoticeToast('✅ આખી PDF વાંચીને શ્રેષ્ઠ સ્ક્રિપ્ટ પ્રોમ્પ્ટ તૈયાર છે! ⭐', 'success');
-        } catch (innerErr) {
-          console.error('[PDF Handle Error]:', innerErr);
-          if (pdfLoadingState) pdfLoadingState.style.display = 'none';
-          if (pdfEmptyState) pdfEmptyState.style.display = 'block';
-          showNoticeToast(`PDF વાંચવામાં સમસ્યા: ${innerErr.message || innerErr}`, 'error');
+        } catch (err) {
+          console.error('[Script PDF Upload Error]:', err);
+          alert('PDF અપલોડ કરવામાં ભૂલ: ' + err.message);
         }
       };
       reader.readAsDataURL(file);
-    } catch (err) {
-      if (pdfLoadingState) pdfLoadingState.style.display = 'none';
-      if (pdfEmptyState) pdfEmptyState.style.display = 'block';
-      showNoticeToast(`PDF લોડિંગ ભૂલ: ${err.message || err}`, 'error');
-    }
-  }
-
-  // Generate Audio from Script Textarea
-  btnGenerateAudio?.addEventListener('click', async () => {
-    const text = narrationScriptTextarea?.value?.trim();
-    if (!text) {
-      showNoticeToast('મહેરબાની કરીને સ્ક્રિપ્ટ લખાણ આપો.', 'warning');
-      narrationScriptTextarea.focus();
-      return;
     }
 
-    try {
-      btnGenerateAudio.disabled = true;
-      btnGenerateAudio.innerHTML = '<span>⏳</span> ઓડિયો બની રહ્યો છે...';
-
-      const res = await api.generateVoice({
-        text: text,
-        profileId: 'anchor-dhwani-female',
-        speed: 1.08,
-        emotion: 'enthusiastic',
-        actorMode: true
+    // Bind File Input Listeners
+    ['#input-script-pdf-main', '#input-script-pdf-top', '#input-script-pdf-change'].forEach(sel => {
+      container.querySelector(sel)?.addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        if (file) handlePdfUploadInScript(file);
       });
-
-      if (res && res.audioUrl) {
-        currentAudioUrl = res.audioUrl;
-        const cacheBusterUrl = res.audioUrl + (res.audioUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
-        audioPlayer.src = cacheBusterUrl;
-        audioPlayer.load();
-
-        if (btnDownloadAudio) {
-          btnDownloadAudio.href = res.audioUrl;
-        }
-
-        if (audioPlayerCard) {
-          audioPlayerCard.style.display = 'block';
-          audioPlayerCard.scrollIntoView({ behavior: 'smooth' });
-        }
-
-        audioPlayer.play().catch(() => {});
-        showNoticeToast('✅ સ્ક્રિપ્ટમાંથી ઓડિયો સફળતાપૂર્વક બની ગયો! 🎧', 'success');
-      } else {
-        throw new Error((res && res.error) || 'ઓડિયો બનાવવામાં નિષ્ફળતા.');
-      }
-    } catch (err) {
-      console.error('[Generate Voice Error]:', err);
-      showNoticeToast(`ઓડિયો જનરેશન ભૂલ: ${err.message || err}`, 'error');
-    } finally {
-      btnGenerateAudio.disabled = false;
-      btnGenerateAudio.innerHTML = '<span>🔊</span> આ સ્ક્રિપ્ટમાંથી ઓડિયો બનાવો (Generate Audio)';
-    }
-  });
-
-  // Open in Auto-Match Editor Button
-  btnOpenInAutomatch?.addEventListener('click', () => {
-    if (!currentAudioUrl) {
-      showNoticeToast('પહેલા ઓડિયો બનવા દો.', 'warning');
-      return;
-    }
-
-    const cleanTopic = (lastPdfResult && lastPdfResult.topic) || topicInput.value.trim() || 'ગુજરાત સરકારી પરિપત્ર';
-    const extractedSlides = (lastPdfResult && Array.isArray(lastPdfResult.slides) && lastPdfResult.slides.length > 0)
-      ? lastPdfResult.slides.map((s, idx) => ({
-          id: Date.now() + idx,
-          title: s.title || `સ્લાઇડ #${idx + 1}`,
-          subtitle: s.visual || 'સત્તાવાર પરિપત્ર',
-          bulletPoints: s.content
-            ? s.content.split('\n').map(b => b.replace(/^[•\-\*0-9\.\)]+\s*/, '').trim()).filter(Boolean)
-            : (Array.isArray(s.points) ? s.points : [s.title]),
-          audioTime: s.timing || '0:00 - 0:45',
-          spokenSnippet: s.spokenSnippet || (narrationScriptTextarea.value.slice(0, 100)) || '',
-          bgColor: '#FFFFFF',
-          headingBoxStyle: 'solid',
-          textColor: '#0F172A',
-          accentColor: idx === 0 ? '#DC2626' : (idx === 1 ? '#2563EB' : '#10B981')
-        }))
-      : [];
-
-    projectState.updateProject({
-      topic: cleanTopic,
-      voiceAudio: {
-        audioUrl: currentAudioUrl,
-        filename: `${currentFilename.replace(/\.pdf$/i, '') || 'audio'}_audio.mp3`,
-        provider: 'PDF Voice Engine'
-      },
-      slides: extractedSlides.length > 0 ? extractedSlides : projectState.getProject().slides
     });
 
-    window.autoMatchTrigger = {
-      audioUrl: currentAudioUrl,
-      audioName: `${currentFilename.replace(/\.pdf$/i, '') || 'audio'}_audio.mp3`,
-      pdfName: currentFilename || 'document.pdf',
-      slides: extractedSlides
-    };
-
-    navigateTo('myvoice');
-  });
-
-  // Restore saved script text from project
-  const savedScript = currentProject?.script?.fullText || currentProject?.script?.teleprompterText;
-  if (savedScript && narrationScriptTextarea) {
-    narrationScriptTextarea.value = savedScript;
-  }
-
-  // Restore saved PDF state if present
-  if (currentProject?.script?.pdfName && pdfUploadedFilename) {
-    pdfUploadedFilename.textContent = currentProject.script.pdfName;
-    if (pdfEmptyState) pdfEmptyState.style.display = 'none';
-    if (pdfSuccessState) pdfSuccessState.style.display = 'block';
-  }
-
-  // Pre-load previously saved audio
-  (async () => {
-    try {
-      const savedAudio = await projectState.getAudioRecording(currentProject?.id);
-      const audioUrl = savedAudio?.url || currentProject?.voice?.audioUrl;
-      if (audioUrl) {
-        currentAudioUrl = audioUrl;
-        if (audioPlayerCard) audioPlayerCard.style.display = 'block';
-        if (audioPlayer) audioPlayer.src = audioUrl;
-        if (btnDownloadAudio) btnDownloadAudio.href = audioUrl;
-      }
-    } catch (_) {}
-  })();
-
-  // Initialize Side-by-Side Teleprompter & Live Voice Recording Studio
-  const tpMount = container.querySelector('#scriptwriter-teleprompter-mount');
-  let scriptTpStudio = null;
-  if (tpMount) {
-    scriptTpStudio = mountTeleprompterStudio(tpMount, {
-      toolContext: 'script',
-      initialText: narrationScriptTextarea?.value || '',
-      onSave: ({ audioUrl, text }) => {
-        currentAudioUrl = audioUrl;
-        if (audioPlayerCard) audioPlayerCard.style.display = 'block';
-        if (audioPlayer) audioPlayer.src = audioUrl;
-        if (btnDownloadAudio) btnDownloadAudio.href = audioUrl;
-        if (narrationScriptTextarea) narrationScriptTextarea.value = text;
-        showNoticeToast('🎙️ લાઈવ ઓડિયો રેકોર્ડ થઈને પ્રોજેક્ટમાં સેવ થઈ ગયો છે! ✓', 'success');
-      }
+    // Open Folder Notebook from Scriptwriter
+    container.querySelector('#btn-open-folder-notebook-script')?.addEventListener('click', () => {
+      openFolderNotebookModal({ folderId: project?.folderId || 'f_default', folderName: project?.folderName || '📁 મુખ્ય ફોલ્ડર' });
     });
 
-    narrationScriptTextarea?.addEventListener('input', () => {
-      projectState.updateTool('script', {
-        fullText: narrationScriptTextarea.value,
-        teleprompterText: narrationScriptTextarea.value,
-        isCompleted: narrationScriptTextarea.value.trim().length > 20
-      });
-      if (scriptTpStudio) {
-        scriptTpStudio.setScriptText(narrationScriptTextarea.value);
-      }
+    // Navigation triggers (Connected Workflow 1 to 7)
+    container.querySelector('#btn-goto-slides-step')?.addEventListener('click', () => safeNavigate('slideprompts'));
+    container.querySelector('#ws-btn-bottom-prev-script')?.addEventListener('click', () => safeNavigate('slideprompts'));
+    container.querySelector('#ws-btn-bottom-next-script')?.addEventListener('click', () => {
+      // safeNavigate('myvoice');
+      safeNavigate('videoeditor');
+    });
+    container.querySelector('#btn-goto-slides-action')?.addEventListener('click', () => safeNavigate('slideprompts'));
+    container.querySelector('#btn-goto-script-editor-top')?.addEventListener('click', () => safeNavigate('scripteditor'));
+    container.querySelector('#btn-goto-script-editor-mid')?.addEventListener('click', () => safeNavigate('scripteditor'));
+    container.querySelector('#btn-goto-script-editor-bottom')?.addEventListener('click', () => safeNavigate('scripteditor'));
+    container.querySelector('#btn-goto-voice-top')?.addEventListener('click', () => {
+      safeNavigate('myvoice');
+    });
+    container.querySelector('#btn-goto-voice-mid')?.addEventListener('click', () => {
+      safeNavigate('myvoice');
+    });
+    container.querySelector('#btn-goto-voice-bottom')?.addEventListener('click', () => {
+      safeNavigate('myvoice');
     });
   }
 
-  // Top Project Banner buttons
-  container.querySelector('#btn-back-to-projects-script')?.addEventListener('click', () => navigateTo('projects'));
-  container.querySelector('#btn-prev-slide-script')?.addEventListener('click', () => navigateTo('slideprompts'));
-  container.querySelector('#btn-next-to-voice-script')?.addEventListener('click', () => navigateTo('myvoice'));
+  // Initial render
+  render();
 }

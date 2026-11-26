@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Gyan Yatra YouTube Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Noto+Sans+Gujarati:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-purple: #7C3AED;
+      --primary-blue: #2563EB;
+      --accent-gradient: linear-gradient(135deg, #7C3AED 0%, #2563EB 100%);
+      --accent-light: #F3E8FF;
+      --accent-blue-light: #EFF6FF;
+      --yt-red: #FF0000;
+      --bg-main: #FFFFFF;
+      --bg-canvas: #F8FAFC;
+      --card-bg: #FFFFFF;
+      --card-border: #E2E8F0;
+      --text-dark: #0F172A;
+      --text-secondary: #475569;
+      --text-muted: #94A3B8;
+      --radius-card: 16px;
+      --shadow-card: 0 4px 16px -2px rgba(124, 58, 237, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+      --shadow-card-hover: 0 8px 22px -4px rgba(124, 58, 237, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: #F8FAFC;
+      font-family: 'Noto Sans Gujarati', 'Outfit', system-ui, -apple-system, sans-serif;
+      color: var(--text-dark);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      margin: 0;
+      overflow-x: hidden;
+    }
+
+    /* Android Status Bar */
+    .mobile-status-bar {
+      height: 32px;
+      background: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: #0F172A;
+      border-bottom: 1px solid rgba(0,0,0,0.03);
+    }
+
+    /* App Header */
+    .mobile-app-header {
+      background: #FFFFFF;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1.5px solid #F1F5F9;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-hamburger {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0F172A;
+      border-radius: 8px;
+    }
+
+    .app-brand-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .yt-icon-box {
+      width: 28px;
+      height: 20px;
+      background: #FF0000;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(255, 0, 0, 0.35);
+    }
+
+    .yt-icon-box svg {
+      width: 12px;
+      height: 12px;
+      fill: #FFFFFF;
+      margin-left: 2px;
+    }
+
+    .app-brand-text {
+      line-height: 1.15;
+    }
+
+    .app-brand-text h1 {
+      font-size: 0.98rem;
+      font-weight: 900;
+      color: #0F172A;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+    }
+
+    .app-brand-text span {
+      font-size: 0.65rem;
+      font-weight: 800;
+      color: var(--primary-purple);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-header-icon {
+      position: relative;
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #334155;
+      cursor: pointer;
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      width: 16px;
+      height: 16px;
+      background: #EF4444;
+      color: #FFFFFF;
+      border-radius: 50%;
+      font-size: 0.62rem;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #FFFFFF;
+    }
+
+    /* Scrollable Container */
+    .mobile-content {
+      flex: 1;
+      padding: 16px 14px 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Channel Hero Card */
+    .channel-hero-card {
+      background: linear-gradient(135deg, #7C3AED 0%, #2563EB 100%);
+      border-radius: 18px;
+      padding: 16px 18px;
+      color: #FFFFFF;
+      margin-bottom: 16px;
+      box-shadow: 0 6px 20px rgba(124, 58, 237, 0.22);
+    }
+
+    .hero-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .channel-avatar-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .channel-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.9);
+      object-fit: cover;
+    }
+
+    .channel-meta h3 {
+      font-size: 0.98rem;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+
+    .channel-meta p {
+      font-size: 0.72rem;
+      opacity: 0.9;
+    }
+
+    .channel-stats-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      background: rgba(255, 255, 255, 0.14);
+      backdrop-filter: blur(8px);
+      border-radius: 12px;
+      padding: 8px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .stat-pill {
+      text-align: center;
+    }
+
+    .stat-pill .val {
+      font-size: 0.88rem;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+
+    .stat-pill .lbl {
+      font-size: 0.65rem;
+      opacity: 0.85;
+    }
+
+    .stat-divider {
+      width: 1px;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Section Title */
+    .section-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 4px 2px 14px;
+    }
+
+    .section-title {
+      font-size: 1rem;
+      font-weight: 900;
+      color: #0F172A;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .section-title span {
+      color: var(--primary-purple);
+    }
+
+    .section-subtitle {
+      font-size: 0.72rem;
+      color: #64748B;
+      font-weight: 700;
+    }
+
+    /* 2-COLUMN FEATURE GRID */
+    .features-two-col-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .feature-card {
+      background: #FFFFFF;
+      border: 1.5px solid var(--card-border);
+      border-radius: var(--radius-card);
+      padding: 14px 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 120px;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: var(--shadow-card);
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-card-hover);
+      border-color: #C4B5FD;
+    }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .card-icon-bubble {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .card-badge {
+      font-size: 0.62rem;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 999px;
+    }
+
+    .card-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .card-title {
+      font-size: 0.94rem;
+      font-weight: 900;
+      color: #0F172A;
+      line-height: 1.25;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-title .arrow {
+      font-size: 0.82rem;
+      color: #94A3B8;
+    }
+
+    .card-desc {
+      font-size: 0.72rem;
+      color: #64748B;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+
+    /* Distinct Gradient Colors for the 10 Cards */
+    .card-1 .card-icon-bubble { background: #EEF2FF; color: #4F46E5; }
+    .card-1 .card-badge { background: #EEF2FF; color: #4F46E5; }
+
+    .card-2 .card-icon-bubble { background: #F0FDF4; color: #16A34A; }
+    .card-2 .card-badge { background: #DCFCE7; color: #15803D; }
+
+    .card-3 .card-icon-bubble { background: #FEF3C7; color: #D97706; }
+    .card-3 .card-badge { background: #FEF3C7; color: #B45309; }
+
+    .card-4 .card-icon-bubble { background: #F3E8FF; color: #7C3AED; }
+    .card-4 .card-badge { background: #F3E8FF; color: #7C3AED; }
+
+    .card-5 .card-icon-bubble { background: #FEE2E2; color: #DC2626; }
+    .card-5 .card-badge { background: #FEE2E2; color: #B91C1C; }
+
+    .card-6 .card-icon-bubble { background: #FCE7F3; color: #DB2777; }
+    .card-6 .card-badge { background: #FCE7F3; color: #BE185D; }
+
+    .card-7 .card-icon-bubble { background: #E0F2FE; color: #0284C7; }
+    .card-7 .card-badge { background: #E0F2FE; color: #0369A1; }
+
+    .card-8 .card-icon-bubble { background: #E0E7FF; color: #3B82F6; }
+    .card-8 .card-badge { background: #DBEAFE; color: #1D4ED8; }
+
+    .card-9 .card-icon-bubble { background: #F5F3FF; color: #8B5CF6; }
+    .card-9 .card-badge { background: #EDE9FE; color: #6D28D9; }
+
+    .card-10 .card-icon-bubble { background: #FFF1F2; color: #E11D48; }
+    .card-10 .card-badge { background: #FFE4E6; color: #BE123C; }
+
+    /* Bottom Navigation Bar */
+    .mobile-bottom-nav {
+      height: 60px;
+      background: #FFFFFF;
+      border-top: 1.5px solid #F1F5F9;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 10px;
+      position: sticky;
+      bottom: 0;
+      z-index: 40;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      color: #94A3B8;
+      font-size: 0.68rem;
+      font-weight: 700;
+      border: none;
+      background: none;
+      padding: 6px 12px;
+      border-radius: 8px;
+    }
+
+    .nav-item.active {
+      color: var(--primary-purple);
+    }
+
+    .nav-item svg {
+      width: 22px;
+      height: 22px;
+      fill: currentColor;
+    }
+
+    /* Android System Gesture Bar */
+    .android-system-bar {
+      height: 22px;
+      background: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .system-gesture-pill {
+      width: 100px;
+      height: 4px;
+      background: #CBD5E1;
+      border-radius: 999px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Android Status Bar -->
+  <div class="mobile-status-bar">
+    <span>09:41</span>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <span>5G</span>
+      <span>📶</span>
+      <span>🔋 100%</span>
+    </div>
+  </div>
+
+  <!-- App Header -->
+  <header class="mobile-app-header">
+    <div class="header-left">
+      <button class="btn-hamburger" aria-label="Open Menu">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+      <div class="app-brand-title">
+        <div class="yt-icon-box">
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </div>
+        <div class="app-brand-text">
+          <h1>Gyan Yatra</h1>
+          <span>YouTube Studio</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <button class="btn-header-icon" aria-label="Notifications">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+        <span class="notification-badge">3</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Scrollable Content -->
+  <main class="mobile-content">
+
+    <!-- Section Title -->
+    <div class="section-header-row">
+      <h2 class="section-title">
+        <span>⚡</span> સ્ટુડિયો ટૂલ્સ (Studio Features)
+      </h2>
+      <span class="section-subtitle">૧૦ સંપૂર્ણ ટૂલ્સ</span>
+    </div>
+
+    <!-- 2-COLUMN GRID (EXACT ORDER AS REQUESTED) -->
+    <div class="features-two-col-grid">
+      
+      <!-- 1. Video Idea -->
+      <div class="feature-card card-1">
+        <div class="card-top">
+          <div class="card-icon-bubble">💡</div>
+          <span class="card-badge">AI Research</span>
+        </div>
+        <div class="card-content">
+          <div class="card-title">
+            <span>Video Idea</span>
+            <span class="arrow">→</span>
+          </div>
+          <div class="card-desc">૪૮ કલાક ટ્રેન્ડ્સ & સબ-ટોપિક્સ</div>
+        </div>
+      </div>
+
+      <!-- 2. Slide બનાવો -->
+      <div class="feature-card card-2">
+        <div class="card-top">
+          <div class="card-icon-bubble">📑</div>
+          <span class="card-badge">Slide Deck</span>
+        </div>
+        <div class="card-content">
+          <div class="card-title">
+            <span>Slide બનાવો</span>
+            <span class="arrow">→</span>
+          </div>
+          <div class="card-desc">PDF & NotebookLM સ્લાઇડ્સ</div>
+        </div>
+      </div>
+
+      <!-- 3. Script લખો -->
+      <div class="feature-card card-3">
+        <div class="card-top">
+          <div class="card-icon-bubble">📝</div>
+          <span class="card-badge">Full Script</span>
+        </div>
+        <div class="card-content">
+          <div class="card-title">
+            <span>Script લખો</span>
+            <span class="arrow">→</span>
+          </div>
+          <div class="card-desc">૪ વિભાગ ગુજરાતી સ્ક્રિપ્ટ</div>
+        </div>
+      </div>
+
+      <!-- 4. Voice બનાવો -->
+      <div class="feature-card card-4">
+        <div class="card-top">
+          <div class="card-icon-bubble">🎙️</div>
+          <span class="card-badge">Voice Studio</span>
+        </div>
+        <div class="card-content">
+          <div class="card-title">
+            <span>Voice બનાવો</span>
+            <span class="arrow">→</span>
+          </div>
+          <div class="card-desc">સ્લાઇડ ઓડિયો રેકોર્ડર</div>
+        </div>
+      </div>
+
+      <!-- 5. Video Editing -->
+      <div class="feature-card card-5">
+        <div class="card-top">
+          <div class="card-icon-bubble">🎬</div>
+          <span class="card-badge">1080p MP4</span>
+        </div>
+        <div class="card-content">
+          <div class="card-title">
+            <span>Video Editing</span>
+            <span class="arrow">→</span>
+          </div>
+          <div class="card-desc">૫-સ્ટેપ વિડીયો પ્રોડક્શન</div>
+        </div>
+      </div>
+
+      <!-- 6. Thumbnail -->
+      <div class="feature-card card-6">
+        <div class="card-top">
+          <div class="card-icon-bubble">🖼️</div>
+          <span class="card-badge">High CTR</span>
+        </div>
+        <div class="card-content">
+          <div class="card-title">
+            <span>Thumbnail</span>
+            <span class="arrow">→</span>
+          </div>
+          <div class="card-desc">હાઇ-ક્લિક થંબનેલ કોન્સેપ્ટ</div>
+        </div>
+      </div>
+
+      <!-- 7. SEO & Tags -->
+      <div class="feature-card card-7">
+        <div class="card-top">
+          <div class="card-icon-bubble">🏷️</div>
+          <span class="card-badge">Rank #1</span>
+        </div>
+        <div class="card-content">
+          <div class="card-title">
+            <span>SEO & Tags</span>
+            <span class="arrow">→</span>
+          </div>
+          <div class="card-desc">ટાઇટલ, ડિસ્ક્રિપ્શન & ટેગ્સ</div>
+        </div>
+      </div>
+
+      <!-- 8. Facebook Upload -->
+      <div class="feature-card card-8">
+        <div class="card-top">
+          <div class="card-icon-bubble">📱</div>
+          <span class="card-badge">Meta Creator</span>
+        </div>
+        <div class="card-content">
+          <div class="card-title">
+            <span>Facebook Upload</span>
+            <span class="arrow">→</span>
+          </div>
+          <div class="card-desc">૧:૧ & ૧૬:૯ ક્રોસ પોસ્ટિંગ</div>
+        </div>
+      </div>
+
+      <!-- 9. YouTube Community -->
+      <div class="feature-card card-9">
+        <div class="card-top">
+          <div class="card-icon-bubble">💬</div>
+          <span class="card-badge">Community</span>
+        </div>
+        <div class="card-content">
+          <div class="card-title">
+            <span>YouTube Community</span>
+            <span class="arrow">→</span>
+          </div>
+          <div class="card-desc">પોલ, ક્વિઝ & અનાઉન્સમેન્ટ</div>
+        </div>
+      </div>
+
+      <!-- 10. YouTube Shorts Upload -->
+      <div class="feature-card card-10">
+        <div class="card-top">
+          <div class="card-icon-bubble">⚡</div>
+          <span class="card-badge">Shorts 9:16</span>
+        </div>
+        <div class="card-content">
+          <div class="card-title">
+            <span>YouTube Shorts Upload</span>
+            <span class="arrow">→</span>
+          </div>
+          <div class="card-desc">૬૦ સેકન્ડ વાયરલ શોર્ટ્સ</div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Bottom Navigation Bar -->
+  <nav class="mobile-bottom-nav">
+    <button class="nav-item active">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      <span>હોમ</span>
+    </button>
+    <button class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg>
+      <span>આઈડિયા</span>
+    </button>
+    <button class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
+      <span>વોઇસ</span>
+    </button>
+    <button class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>
+      <span>એડિટર</span>
+    </button>
+  </nav>
+
+  <!-- Android System Gesture Pill -->
+  <div class="android-system-bar">
+    <div class="system-gesture-pill"></div>
+  </div>
+
+</body>
+</html>

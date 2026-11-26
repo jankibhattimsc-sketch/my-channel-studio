@@ -1,0 +1,1967 @@
+<!DOCTYPE html>
+<html lang="gu" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>જ્ઞાન યાત્રા - વિડીયો અને સ્લાઇડ પ્રીવ્યુ પોર્ટલ (Preview Studio)</title>
+  
+  <meta name="description" content="જ્ઞાન યાત્રા ચેનલના ૧૦૮૦p વિડીયો, સ્લાઇડ્સ, ગુજરાતી વોઇસઓવર અને સ્ક્રિપ્ટ પ્રીવ્યુ પોર્ટલ.">
+  <meta name="theme-color" content="#070a12">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="જ્ઞાન યાત્રા - વિડીયો અને સ્લાઇડ પ્રીવ્યુ">
+  <meta property="og:description" content="ઓરિજિનલ ગુજરાતી ૧૦૮૦p પ્રેઝન્ટેશન, સ્લાઇડ્સ અને ઓડિયો પ્રીવ્યુ">
+  <meta property="og:type" content="video.other">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/jpeg" href="/images/logo.jpg">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-dark: #070a13;
+      --card-bg: #0f172a;
+      --card-border: #1e293b;
+      --card-hover: #1e293b;
+      --accent-indigo: #6366f1;
+      --accent-purple: #8b5cf6;
+      --accent-emerald: #10b981;
+      --accent-cyan: #38bdf8;
+      --accent-amber: #f59e0b;
+      --accent-red: #ef4444;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --font-gu: 'Noto Sans Gujarati', sans-serif;
+      --font-en: 'Outfit', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-gu);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button { font-family: inherit; }
+
+    /* Top Sticky Header */
+    .preview-header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(7, 10, 19, 0.94);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1.5px solid #1e293b;
+      padding: 10px 18px;
+    }
+
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-logo-img {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      object-fit: cover;
+      border: 1.5px solid var(--accent-indigo);
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
+    }
+
+    .brand-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .brand-subtitle {
+      font-size: 0.72rem;
+      color: var(--accent-cyan);
+      font-family: var(--font-en);
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    /* Project Switcher Bar */
+    .project-picker {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #0f172a;
+      border: 1.5px solid #334155;
+      border-radius: 10px;
+      padding: 6px 12px;
+      flex: 1;
+      max-width: 520px;
+      min-width: 240px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .project-select {
+      background: transparent;
+      border: none;
+      color: #ffffff;
+      font-size: 0.88rem;
+      font-weight: 700;
+      font-family: var(--font-gu);
+      outline: none;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    .project-select option {
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 8px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-indigo), var(--accent-purple));
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    }
+    .btn-primary:hover {
+      box-shadow: 0 6px 18px rgba(99, 102, 241, 0.55);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: #1e293b;
+      color: #e2e8f0;
+      border-color: #334155;
+    }
+    .btn-secondary:hover {
+      background: #334155;
+      color: #ffffff;
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #ffffff;
+    }
+
+    .btn-whatsapp {
+      background: linear-gradient(135deg, #25D366, #128C7E);
+      color: #ffffff;
+    }
+
+    /* Sub-nav Tabs Bar */
+    .tabs-bar {
+      background: #090e1a;
+      border-bottom: 1.5px solid #1e293b;
+      padding: 0 16px;
+      overflow-x: auto;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+      display: flex;
+      justify-content: center;
+    }
+
+    .tabs-inner {
+      display: flex;
+      gap: 4px;
+      max-width: 1400px;
+      width: 100%;
+    }
+
+    .tab-btn {
+      padding: 12px 18px;
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      color: #94a3b8;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      color: #e2e8f0;
+      background: rgba(255,255,255,0.02);
+    }
+
+    .tab-btn.active {
+      color: var(--accent-cyan);
+      border-bottom-color: var(--accent-cyan);
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    .tab-badge {
+      font-size: 0.68rem;
+      padding: 2px 7px;
+      border-radius: 12px;
+      background: #1e293b;
+      color: #cbd5e1;
+    }
+
+    .tab-btn.active .tab-badge {
+      background: var(--accent-cyan);
+      color: #000;
+      font-weight: 800;
+    }
+
+    /* Main Container */
+    .main-body {
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 20px 16px 80px 16px;
+      flex: 1;
+    }
+
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Video Player View */
+    .video-view-grid {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 20px;
+    }
+
+    @media (max-width: 992px) {
+      .video-view-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .player-card {
+      background: var(--card-bg);
+      border: 1.5px solid var(--card-border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .video-wrapper {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #000000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .video-wrapper video {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: #000;
+    }
+
+    .player-bottom-bar {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      background: #0c1222;
+      border-top: 1px solid #1e293b;
+    }
+
+    .speed-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .speed-btn {
+      background: #1e293b;
+      color: #cbd5e1;
+      border: 1px solid #334155;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .speed-btn.active {
+      background: var(--accent-indigo);
+      color: #ffffff;
+      border-color: var(--accent-indigo);
+    }
+
+    .video-details-card {
+      background: var(--card-bg);
+      border: 1.5px solid var(--card-border);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .meta-box {
+      background: #090e1a;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .meta-label {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .meta-value {
+      font-size: 0.92rem;
+      color: #ffffff;
+      font-weight: 600;
+      word-break: break-word;
+    }
+
+    /* Interactive Slide View */
+    .slide-view-container {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 20px;
+    }
+
+    @media (max-width: 1024px) {
+      .slide-view-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .slide-screen-card {
+      background: var(--card-bg);
+      border: 1.5px solid var(--card-border);
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    /* 16:9 Presentation Canvas Simulation */
+    .slide-canvas {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: radial-gradient(circle at 80% 20%, #1e1b4b 0%, #0f172a 60%, #020617 100%);
+      padding: 3.5%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-sizing: border-box;
+      color: #ffffff;
+      border-bottom: 2px solid #334155;
+      overflow: hidden;
+    }
+
+    .slide-decor-glow {
+      position: absolute;
+      top: -20%;
+      right: -10%;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .slide-canvas-header {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid rgba(255,255,255,0.12);
+      padding-bottom: 8px;
+    }
+
+    .slide-badge-category {
+      background: linear-gradient(135deg, #ef4444, #b91c1c);
+      color: #ffffff;
+      font-size: clamp(0.65rem, 1.2vw, 0.85rem);
+      font-weight: 800;
+      padding: 4px 12px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+
+    .slide-canvas-number {
+      font-family: var(--font-en);
+      font-weight: 900;
+      font-size: clamp(0.75rem, 1.4vw, 1rem);
+      color: var(--accent-cyan);
+      background: rgba(56, 189, 248, 0.12);
+      padding: 3px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .slide-canvas-content {
+      position: relative;
+      z-index: 2;
+      margin: auto 0;
+      display: flex;
+      flex-direction: column;
+      gap: clamp(8px, 1.5vw, 16px);
+    }
+
+    .slide-canvas-title {
+      font-size: clamp(1rem, 2.2vw, 1.65rem);
+      font-weight: 800;
+      line-height: 1.35;
+      color: #ffffff;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    }
+
+    .slide-canvas-subtitle {
+      font-size: clamp(0.8rem, 1.3vw, 1.05rem);
+      color: #93c5fd;
+      font-weight: 600;
+    }
+
+    .slide-canvas-bullets {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: clamp(6px, 1.1vw, 12px);
+    }
+
+    .slide-canvas-bullets li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: clamp(0.78rem, 1.25vw, 1rem);
+      line-height: 1.45;
+      color: #f1f5f9;
+      background: rgba(15, 23, 42, 0.55);
+      padding: clamp(6px, 1vw, 10px) 14px;
+      border-radius: 8px;
+      border-left: 3.5px solid var(--accent-cyan);
+    }
+
+    .slide-canvas-footer {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      padding-top: 8px;
+      font-size: clamp(0.65rem, 1vw, 0.78rem);
+      color: #94a3b8;
+    }
+
+    /* Slide Controls Bar */
+    .slide-controls-bar {
+      padding: 14px 18px;
+      background: #090e1a;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .slide-pill-nav {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow-x: auto;
+      max-width: 100%;
+      padding: 4px 0;
+    }
+
+    .slide-num-pill {
+      min-width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: #1e293b;
+      color: #cbd5e1;
+      border: 1px solid #334155;
+      font-size: 0.84rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .slide-num-pill.active {
+      background: var(--accent-indigo);
+      color: #ffffff;
+      border-color: var(--accent-indigo);
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+    }
+
+    /* Slide Voice Player Box */
+    .slide-voice-box {
+      background: var(--card-bg);
+      border: 1.5px solid var(--card-border);
+      border-radius: 16px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .audio-card {
+      background: #090e1a;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .audio-top-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .audio-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .audio-player-element {
+      width: 100%;
+      height: 38px;
+      border-radius: 8px;
+      outline: none;
+    }
+
+    /* Script & Teleprompter Tab */
+    .script-view-card {
+      background: var(--card-bg);
+      border: 1.5px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .script-header-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 16px;
+      border-bottom: 1.5px solid #1e293b;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .script-stat-badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .stat-badge {
+      background: #1e293b;
+      border: 1px solid #334155;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      color: #94a3b8;
+    }
+    .stat-badge strong { color: #ffffff; }
+
+    .script-sections-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .script-section-block {
+      background: #090e1a;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 16px 18px;
+      border-left: 4px solid var(--accent-indigo);
+      transition: all 0.2s ease;
+    }
+
+    .script-section-block:hover {
+      border-color: #334155;
+      border-left-color: var(--accent-cyan);
+    }
+
+    .script-sec-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--accent-cyan);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .script-sec-text {
+      font-size: 1rem;
+      line-height: 1.7;
+      color: #e2e8f0;
+      white-space: pre-wrap;
+    }
+
+    /* Thumbnail & SEO Tab */
+    .seo-view-grid {
+      display: grid;
+      grid-template-columns: 460px 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 992px) {
+      .seo-view-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .thumbnail-card {
+      background: var(--card-bg);
+      border: 1.5px solid var(--card-border);
+      border-radius: 16px;
+      overflow: hidden;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .thumb-preview-box {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #000;
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+      border: 1px solid #334155;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .thumb-preview-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .thumb-simulated {
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at center, #312e81 0%, #0f172a 100%);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      box-sizing: border-box;
+    }
+
+    .thumb-simulated-title {
+      font-size: 1.3rem;
+      font-weight: 900;
+      color: #fbbf24;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+      margin-bottom: 8px;
+    }
+
+    .thumb-simulated-sub {
+      background: #ef4444;
+      color: #ffffff;
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-weight: 800;
+      font-size: 0.85rem;
+    }
+
+    .seo-card {
+      background: var(--card-bg);
+      border: 1.5px solid var(--card-border);
+      border-radius: 16px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .field-card {
+      background: #090e1a;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .field-title {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+    }
+
+    .copy-chip-btn {
+      background: #1e293b;
+      color: #cbd5e1;
+      border: 1px solid #334155;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .copy-chip-btn:hover {
+      background: var(--accent-indigo);
+      color: #fff;
+    }
+
+    .tag-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag-chip {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #38bdf8;
+      padding: 3px 9px;
+      border-radius: 14px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    /* Download Center Grid */
+    .dl-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .dl-card {
+      background: var(--card-bg);
+      border: 1.5px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 16px;
+      transition: all 0.2s ease;
+    }
+
+    .dl-card:hover {
+      border-color: var(--accent-indigo);
+      transform: translateY(-2px);
+    }
+
+    .dl-icon {
+      font-size: 2.2rem;
+      margin-bottom: 8px;
+    }
+
+    .dl-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+
+    .dl-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    /* Mobile Bottom Floating Nav */
+    .mobile-dock {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(15, 23, 42, 0.98);
+      backdrop-filter: blur(12px);
+      border-top: 1.5px solid #1e293b;
+      z-index: 1000;
+      padding: 6px 8px;
+    }
+
+    @media (max-width: 768px) {
+      .mobile-dock {
+        display: flex;
+        justify-content: space-around;
+      }
+      .tabs-bar {
+        display: none;
+      }
+    }
+
+    .dock-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: 6px 10px;
+      color: #94a3b8;
+      font-size: 0.7rem;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .dock-item.active {
+      color: var(--accent-cyan);
+      background: rgba(56, 189, 248, 0.12);
+    }
+
+    .dock-icon {
+      font-size: 1.15rem;
+    }
+
+    /* Toast Notification */
+    #preview-toast {
+      position: fixed;
+      bottom: 70px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #1e293b;
+      color: #ffffff;
+      border: 1.5px solid var(--accent-indigo);
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      z-index: 2000;
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      pointer-events: none;
+    }
+
+    #preview-toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================================
+       TOP STICKY NAVBAR
+       ======================================================== -->
+  <header class="preview-header">
+    <div class="header-inner">
+      <!-- Brand & Home link -->
+      <a href="/studio" class="brand-wrap" title="ક્રિએટર સ્ટુડિયોમાં જાઓ">
+        <img src="/images/logo.jpg" alt="Logo" class="brand-logo-img" onerror="this.src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120'">
+        <div>
+          <div class="brand-title">🎬 જ્ઞાન યાત્રા <span style="font-size: 0.75rem; background: var(--accent-indigo); padding: 2px 7px; border-radius: 6px;">પ્રીવ્યુ પોર્ટલ</span></div>
+          <div class="brand-subtitle">STANDALONE WEB PREVIEW STUDIO</div>
+        </div>
+      </a>
+
+      <!-- Universal Project Selector -->
+      <div class="project-picker" title="વિડીયો વિષય પસંદ કરો">
+        <span style="font-size: 1rem;">🎯</span>
+        <select id="preview-project-select" class="project-select">
+          <option value="">વિષય લોડ થઈ રહ્યો છે...</option>
+        </select>
+        <span id="project-status-pill" style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 12px; background: rgba(16, 185, 129, 0.2); color: #34d399; white-space: nowrap;">
+          ● ૧૦૮૦p તૈયાર
+        </span>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="header-actions">
+        <a href="/app-preview" class="btn btn-secondary" title="ડેસ્કટોપ પર મોબાઇલ એપ સિમ્યુલેટર ખોલો">
+          <span>📱</span> <span>એપ સિમ્યુલેટર</span>
+        </a>
+        <a href="/studio" class="btn btn-secondary" title="મેઇન ક્રિએટર સ્ટુડિયોમાં પાછા જાઓ">
+          <span>🛠️</span> <span>ક્રિએટર સ્ટુડિયો</span>
+        </a>
+        <button id="btn-share-preview" class="btn btn-whatsapp" title="WhatsApp માં આ લિંક શેર કરો">
+          <span>💬</span> <span>WhatsApp શેર</span>
+        </button>
+        <button id="btn-refresh-preview" class="btn btn-secondary" title="તાજો ડેટા રિફ્રેશ કરો">
+          <span>🔄</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================
+       TOP TABS BAR
+       ======================================================== -->
+  <nav class="tabs-bar">
+    <div class="tabs-inner">
+      <button class="tab-btn active" data-tab="video">
+        <span>🎬</span> <span>૧૦૮૦p વિડીયો પ્લેયર</span>
+        <span class="tab-badge" id="badge-video">Ready</span>
+      </button>
+      <button class="tab-btn" data-tab="slides">
+        <span>📑</span> <span>સ્લાઇડ & વોઇસ સિન્ક્રોનાઇઝ્ડ</span>
+        <span class="tab-badge" id="badge-slides">૯ સ્લાઇડ્સ</span>
+      </button>
+      <button class="tab-btn" data-tab="script">
+        <span>📜</span> <span>સંપૂર્ણ સ્ક્રિપ્ટ વાંચન</span>
+        <span class="tab-badge" id="badge-script">વાંચન</span>
+      </button>
+      <button class="tab-btn" data-tab="thumbnail">
+        <span>🖼️</span> <span>થમ્બનેલ & SEO મેટાડેટા</span>
+        <span class="tab-badge" id="badge-seo">HD</span>
+      </button>
+      <button class="tab-btn" data-tab="downloads">
+        <span>📥</span> <span>ડાઉનલોડ સેન્ટર</span>
+        <span class="tab-badge">MP4 + WAV</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ========================================================
+       MAIN BODY AREA
+       ======================================================== -->
+  <main class="main-body">
+
+    <!-- ----------------------------------------------------
+         TAB 1: FULL 1080p VIDEO PLAYER
+         ---------------------------------------------------- -->
+    <section id="tab-video" class="tab-content active">
+      <div class="video-view-grid">
+        <!-- Left: Video Player Card -->
+        <div class="player-card">
+          <div class="video-wrapper">
+            <video id="main-video-player" controls playsinline preload="auto">
+              <source id="video-source" src="/videos/latest_video.mp4" type="video/mp4">
+              તમારું બ્રાઉઝર વિડીયો ટેગ સપોર્ટ કરતું નથી.
+            </video>
+          </div>
+
+          <div class="player-bottom-bar">
+            <!-- Playback Speed -->
+            <div class="speed-controls">
+              <span style="font-size: 0.76rem; color: var(--text-muted); font-weight: 700;">ઝડપ:</span>
+              <button class="speed-btn" data-speed="0.75">0.75x</button>
+              <button class="speed-btn active" data-speed="1.0">1.0x</button>
+              <button class="speed-btn" data-speed="1.25">1.25x</button>
+              <button class="speed-btn" data-speed="1.5">1.5x</button>
+              <button class="speed-btn" data-speed="2.0">2.0x</button>
+            </div>
+
+            <!-- Video Actions -->
+            <div style="display: flex; gap: 8px;">
+              <a id="btn-download-video-mp4" href="/api/voice/download-video?file=latest_video.mp4" download="presentation_1080p.mp4" class="btn btn-primary">
+                <span>📥</span> <span>વિડીયો ડાઉનલોડ (MP4)</span>
+              </a>
+              <button id="btn-copy-video-link" class="btn btn-secondary" title="વિડીયો લિંક કોપી">
+                <span>📋</span> <span>લિંક કોપી</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Video Info & Status Card -->
+        <div class="video-details-card">
+          <h2 id="video-info-title" style="font-size: 1.15rem; color: #ffffff; line-height: 1.4;">
+            ગુજરાતી ૧૦૮૦p પ્રેઝન્ટેશન વિડીયો
+          </h2>
+
+          <div class="meta-box">
+            <span class="meta-label">વિડીયો સ્ટેટસ</span>
+            <span class="meta-value" id="video-info-status" style="color: #34d399;">✓ ૧૦૮૦p Full HD વિડીયો તૈયાર</span>
+          </div>
+
+          <div class="meta-box">
+            <span class="meta-label">ફાઇલ નામ & કદ</span>
+            <span class="meta-value" id="video-info-filename">latest_video.mp4</span>
+          </div>
+
+          <div class="meta-box">
+            <span class="meta-label">કેટેગરી</span>
+            <span class="meta-value" id="video-info-category">સરકારી યોજના & ભરતી</span>
+          </div>
+
+          <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 12px; padding: 14px; font-size: 0.85rem; line-height: 1.5; color: #c7d2fe;">
+            💡 <strong>ટિપ:</strong> આ વિડીયો ઓરિજિનલ ગુજરાતી ૧૦૮૦p સ્લાઇડ્સ અને સ્પષ્ટ વોઇસઓવર સાથે તૈયાર કરાયેલ છે. તમે સીધો જ YouTube માં અપલોડ કરી શકો છો.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ----------------------------------------------------
+         TAB 2: SLIDE & VOICE SYNCHRONIZED PLAYER
+         ---------------------------------------------------- -->
+    <section id="tab-slides" class="tab-content">
+      <div class="slide-view-container">
+        <!-- Left: Slide Screen & Controls -->
+        <div class="slide-screen-card">
+          <!-- Slide 16:9 Canvas -->
+          <div class="slide-canvas" id="slide-preview-canvas">
+            <div class="slide-decor-glow"></div>
+            
+            <!-- Top bar in slide -->
+            <div class="slide-canvas-header">
+              <span class="slide-badge-category" id="canvas-category">સરકારી યોજના ૨૦૨૬</span>
+              <span class="slide-canvas-number" id="canvas-slide-num">SLIDE 1 / 9</span>
+            </div>
+
+            <!-- Central Content -->
+            <div class="slide-canvas-content">
+              <h1 class="slide-canvas-title" id="canvas-title">વિષય શીર્ષક અહીં દર્શાવાશે</h1>
+              <h2 class="slide-canvas-subtitle" id="canvas-subtitle">પરીક્ષાલક્ષી વિશ્લેષણ અને સંપૂર્ણ માહિતી</h2>
+              
+              <ul class="slide-canvas-bullets" id="canvas-bullets">
+                <li>મુખ્ય મુદ્દો ૧: સત્તાવાર પરિપત્ર અને નિયમો</li>
+                <li>મુખ્ય મુદ્દો ૨: પાત્રતા અને અગત્યની તારીખો</li>
+                <li>મુખ્ય મુદ્દો ૩: પરીક્ષામાં ગુણ મેળવવાની શ્રેષ્ઠ પદ્ધતિ</li>
+              </ul>
+            </div>
+
+            <!-- Footer in slide -->
+            <div class="slide-canvas-footer">
+              <span>🎯 જ્ઞાન યાત્રા એજ્યુકેશનલ સીરીઝ</span>
+              <span>HD 1080p Presentation</span>
+            </div>
+          </div>
+
+          <!-- Bottom Slide Controller Bar -->
+          <div class="slide-controls-bar">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button id="btn-prev-slide" class="btn btn-secondary">
+                <span>◀️</span> <span>પાછળ</span>
+              </button>
+              <button id="btn-next-slide" class="btn btn-primary">
+                <span>આગળ</span> <span>▶️</span>
+              </button>
+              <span id="slide-step-indicator" style="font-weight: 800; font-size: 0.88rem; color: var(--accent-cyan); margin-left: 6px;">
+                ૧ / ૯
+              </span>
+            </div>
+
+            <!-- Slide Pills -->
+            <div class="slide-pill-nav" id="slide-pills-container">
+              <!-- Dynamically generated slide buttons -->
+            </div>
+
+            <!-- Continuous Presentation Playback Button -->
+            <button id="btn-autoplay-presentation" class="btn btn-success" title="તમામ સ્લાઇડ્સ અવાજ સાથે સળંગ ચલાવો">
+              <span>▶️</span> <span>સળંગ પ્રેઝન્ટેશન ચલાવો</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: Slide Audio & Narration Box -->
+        <div class="slide-voice-box">
+          <h3 style="font-size: 1.05rem; color: #ffffff; display: flex; align-items: center; gap: 6px;">
+            <span>🎙️</span> <span>સ્લાઇડ વોઇસઓવર (ઓડિયો)</span>
+          </h3>
+
+          <!-- Slide Audio Player -->
+          <div class="audio-card">
+            <div class="audio-top-info">
+              <span class="audio-title" id="audio-slide-title">🎙️ સ્લાઇડ ૧ નો અવાજ</span>
+              <span id="audio-status-pill" style="font-size: 0.72rem; color: #34d399; font-weight: 700;">ઓડિયો તૈયાર</span>
+            </div>
+            
+            <audio id="slide-audio-player" class="audio-player-element" controls preload="auto">
+              તમારું બ્રાઉઝર ઓડિયો સપોર્ટ કરતું નથી.
+            </audio>
+
+            <div style="display: flex; gap: 6px; margin-top: 4px;">
+              <button id="btn-toggle-voice-profile" class="btn btn-secondary" style="flex: 1; font-size: 0.76rem;">
+                <span>✨</span> <span>AI એન્હાન્સ્ડ અવાજ</span>
+              </button>
+              <button id="btn-test-tts-fallback" class="btn btn-secondary" style="font-size: 0.76rem;" title="બ્રાઉઝર ગુજરાતી અવાજ સાંભળો">
+                <span>🔊</span> <span>બોલાવો</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Slide Teleprompter Script -->
+          <div class="meta-box" style="flex: 1;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="meta-label">સ્લાઇડ સ્ક્રિપ્ટ (નરેશન)</span>
+              <button id="btn-copy-slide-text" class="copy-chip-btn">📋 કોપી</button>
+            </div>
+            <p id="slide-narration-text" style="font-size: 0.95rem; line-height: 1.6; color: #e2e8f0; margin-top: 6px; white-space: pre-wrap;">
+              નમસ્કાર મિત્રો, જ્ઞાન યાત્રા ચેનલમાં આપનું હાર્દિક સ્વાગત છે.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ----------------------------------------------------
+         TAB 3: FULL SCRIPT & TELEPROMPTER
+         ---------------------------------------------------- -->
+    <section id="tab-script" class="tab-content">
+      <div class="script-view-card">
+        <div class="script-header-bar">
+          <div>
+            <h2 id="script-title" style="font-size: 1.25rem; color: #ffffff; margin-bottom: 6px;">સંપૂર્ણ ગુજરાતી સ્ક્રિપ્ટ</h2>
+            <div class="script-stat-badges">
+              <span class="stat-badge">શબ્દો: <strong id="stat-words">0</strong></span>
+              <span class="stat-badge">અક્ષરો: <strong id="stat-chars">0</strong></span>
+              <span class="stat-badge">અંદાજિત સમય: <strong id="stat-time">~૦ મિનિટ</strong></span>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 8px;">
+            <button id="btn-copy-full-script" class="btn btn-secondary">
+              <span>📋</span> <span>આખી સ્ક્રિપ્ટ કોપી</span>
+            </button>
+            <button id="btn-download-script-txt" class="btn btn-primary">
+              <span>📥</span> <span>ડાઉનલોડ (.txt)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Slide-by-slide script sections -->
+        <div class="script-sections-list" id="script-sections-container">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ----------------------------------------------------
+         TAB 4: THUMBNAIL & SEO
+         ---------------------------------------------------- -->
+    <section id="tab-thumbnail" class="tab-content">
+      <div class="seo-view-grid">
+        <!-- Thumbnail Preview -->
+        <div class="thumbnail-card">
+          <h3 style="font-size: 1.05rem; color: #ffffff; display: flex; align-items: center; gap: 6px;">
+            <span>🖼️</span> <span>YouTube ૧૬:૯ થમ્બનેલ</span>
+          </h3>
+
+          <div class="thumb-preview-box" id="thumbnail-display-box">
+            <div class="thumb-simulated" id="thumbnail-simulated">
+              <div class="thumb-simulated-title" id="thumb-title-text">સરકારી યોજના અને ભરતી ૨૦૨૬</div>
+              <div class="thumb-simulated-sub">૧૦૮૦p સત્તાવાર જાહેરાત</div>
+            </div>
+          </div>
+
+          <button id="btn-download-thumbnail" class="btn btn-primary" style="width: 100%;">
+            <span>📥</span> <span>થમ્બનેલ ડાઉનલોડ (HD)</span>
+          </button>
+        </div>
+
+        <!-- SEO Metadata -->
+        <div class="seo-card">
+          <h3 style="font-size: 1.05rem; color: #ffffff; display: flex; align-items: center; gap: 6px;">
+            <span>🚀</span> <span>YouTube SEO & રેન્કિંગ મેટાડેટા</span>
+          </h3>
+
+          <!-- Video Title -->
+          <div class="field-card">
+            <div class="field-header">
+              <span class="field-title">૧. વાયરલ ટાઇટલ (Video Title)</span>
+              <button class="copy-chip-btn" data-copy-target="seo-title-val">📋 કોપી</button>
+            </div>
+            <div class="meta-value" id="seo-title-val">Gyan Yatra Educational Video 2026</div>
+          </div>
+
+          <!-- Description -->
+          <div class="field-card">
+            <div class="field-header">
+              <span class="field-title">૨. વિડીયો ડિસ્ક્રિપ્શન (Description)</span>
+              <button class="copy-chip-btn" data-copy-target="seo-desc-val">📋 કોપી</button>
+            </div>
+            <div class="meta-value" id="seo-desc-val" style="font-size: 0.85rem; line-height: 1.6; white-space: pre-wrap;">
+              જ્ઞાન યાત્રા ચેનલ દ્વારા સ્પર્ધાત્મક પરીક્ષાઓ અને સામાન્ય જ્ઞાન માટે ખાસ બનાવેલ વિડીયો.
+            </div>
+          </div>
+
+          <!-- Tags -->
+          <div class="field-card">
+            <div class="field-header">
+              <span class="field-title">૩. રેન્કિંગ ટેગ્સ (Tags & Keywords)</span>
+              <button class="copy-chip-btn" id="btn-copy-all-tags">📋 બધા ટેગ્સ કોપી</button>
+            </div>
+            <div class="tag-chips" id="seo-tags-container">
+              <!-- Dynamically populated tags -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ----------------------------------------------------
+         TAB 5: DOWNLOAD CENTER
+         ---------------------------------------------------- -->
+    <section id="tab-downloads" class="tab-content">
+      <div class="dl-grid">
+        <!-- 1. Video MP4 -->
+        <div class="dl-card">
+          <div>
+            <div class="dl-icon">🎬</div>
+            <div class="dl-title">૧૦૮૦p MP4 વિડીયો ફાઇલ</div>
+            <div class="dl-desc">સંપૂર્ણ સ્લાઇડ્સ, ઓડિયો અને એનિમેશન સાથે તૈયાર થયેલો પૂર્ણ ૧૦૮૦p વિડીયો. સીધો જ YouTube માં અપલોડ કરવા યોગ્ય.</div>
+          </div>
+          <a id="dl-card-video-btn" href="/api/voice/download-video?file=latest_video.mp4" download="presentation_1080p.mp4" class="btn btn-primary">
+            <span>📥</span> <span>વિડીયો ડાઉનલોડ કરો</span>
+          </a>
+        </div>
+
+        <!-- 2. Audio ZIP/WAV -->
+        <div class="dl-card">
+          <div>
+            <div class="dl-icon">🎙️</div>
+            <div class="dl-title">સ્લાઇડ વોઇસ રેકોર્ડિંગ્સ</div>
+            <div class="dl-desc">દરેક સ્લાઇડના અલગ-અલગ ઓરિજિનલ તથા AI એન્હાન્સ્ડ હાઇ-ડેફિનેશન ગુજરાતી ઓડિયો રેકોર્ડિંગ્સ.</div>
+          </div>
+          <button id="dl-card-audio-btn" class="btn btn-secondary">
+            <span>📥</span> <span>ઓડિયો ફાઇલ સેવ કરો</span>
+          </button>
+        </div>
+
+        <!-- 3. Full Script -->
+        <div class="dl-card">
+          <div>
+            <div class="dl-icon">📝</div>
+            <div class="dl-title">ગુજરાતી સ્ક્રિપ્ટ (.txt)</div>
+            <div class="dl-desc">તમામ સ્લાઇડ્સનું ક્રમબદ્ધ ગુજરાતી લખાણ અને નરેશન ટેક્સ્ટ. ઓફલાઇન વાંચન માટે ડાઉનલોડ કરો.</div>
+          </div>
+          <button id="dl-card-script-btn" class="btn btn-secondary">
+            <span>📥</span> <span>સ્ક્રિપ્ટ ડાઉનલોડ કરો</span>
+          </button>
+        </div>
+
+        <!-- 4. Thumbnail -->
+        <div class="dl-card">
+          <div>
+            <div class="dl-icon">🖼️</div>
+            <div class="dl-title">૧૬:૯ થમ્બનેલ ઇમેજ (HD)</div>
+            <div class="dl-desc">હાઇ ક્લિક-થ્રુ-રેટ (CTR) માટે સ્પેશિયલ ડિઝાઇન કરેલી YouTube થમ્બનેલ ફાઇલ.</div>
+          </div>
+          <button id="dl-card-thumb-btn" class="btn btn-secondary">
+            <span>📥</span> <span>થમ્બનેલ ડાઉનલોડ કરો</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================================
+       MOBILE FLOATING DOCK (TOUCH SCREENS)
+       ======================================================== -->
+  <nav class="mobile-dock">
+    <div class="dock-item active" data-tab="video">
+      <span class="dock-icon">🎬</span>
+      <span>વિડીયો</span>
+    </div>
+    <div class="dock-item" data-tab="slides">
+      <span class="dock-icon">📑</span>
+      <span>સ્લાઇડ્સ</span>
+    </div>
+    <div class="dock-item" data-tab="script">
+      <span class="dock-icon">📜</span>
+      <span>સ્ક્રિપ્ટ</span>
+    </div>
+    <div class="dock-item" data-tab="thumbnail">
+      <span class="dock-icon">🖼️</span>
+      <span>થમ્બનેલ</span>
+    </div>
+    <div class="dock-item" data-tab="downloads">
+      <span class="dock-icon">📥</span>
+      <span>ડાઉનલોડ</span>
+    </div>
+  </nav>
+
+  <!-- Global Toast -->
+  <div id="preview-toast">લિંક કોપી થઈ ગઈ છે!</div>
+
+  <!-- ========================================================
+       PREVIEW APP LOGIC SCRIPT
+       ======================================================== -->
+  <script>
+    (function () {
+      'use strict';
+
+      // Application State
+      const state = {
+        projects: [],
+        currentProject: null,
+        currentSlideIndex: 0,
+        isPlayingPresentation: false,
+        activeTab: 'video',
+        enhancedVoice: true
+      };
+
+      // Toast helper
+      function showToast(msg) {
+        const toast = document.getElementById('preview-toast');
+        if (!toast) return;
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2600);
+      }
+
+      // Tab Switching
+      function switchTab(tabId) {
+        state.activeTab = tabId;
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.dock-item').forEach(el => el.classList.remove('active'));
+
+        const targetContent = document.getElementById(`tab-${tabId}`);
+        if (targetContent) targetContent.classList.add('active');
+
+        const activeTabBtn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+        if (activeTabBtn) activeTabBtn.classList.add('active');
+
+        const activeDockBtn = document.querySelector(`.dock-item[data-tab="${tabId}"]`);
+        if (activeDockBtn) activeDockBtn.classList.add('active');
+
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      // Wire Tabs
+      document.querySelectorAll('.tab-btn, .dock-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const tabId = btn.getAttribute('data-tab');
+          if (tabId) switchTab(tabId);
+        });
+      });
+
+      // Load Projects List
+      async function loadProjectsList() {
+        try {
+          const res = await fetch('/api/preview/projects');
+          const data = await res.json();
+          let serverProjects = (data && data.projects) ? data.projects : [];
+
+          // Also merge with client-side localStorage projects if present
+          try {
+            const localProjectsRaw = localStorage.getItem('gyan_yatra_projects_v3');
+            if (localProjectsRaw) {
+              const localProjects = JSON.parse(localProjectsRaw);
+              if (Array.isArray(localProjects)) {
+                localProjects.forEach(lp => {
+                  if (lp && lp.id && !serverProjects.some(sp => sp.id === lp.id)) {
+                    serverProjects.unshift({
+                      id: lp.id,
+                      title: lp.topic || lp.name || 'સ્થાનિક પ્રોજેક્ટ',
+                      category: lp.category || 'શિક્ષણ & ભરતી',
+                      videoUrl: lp.savedVideo || null,
+                      videoFilename: lp.savedVideo ? lp.savedVideo.split('/').pop() : null,
+                      hasVideo: Boolean(lp.savedVideo),
+                      hasAudio: Boolean(lp.voice),
+                      hasSlides: Boolean(lp.slides && lp.slides.length > 0),
+                      hasScript: Boolean(lp.script),
+                      slidesCount: (lp.slides || []).length,
+                      updatedAt: lp.updatedAt || new Date().toISOString()
+                    });
+                  }
+                });
+              }
+            }
+          } catch (_) {}
+
+          state.projects = serverProjects;
+          populateProjectDropdown();
+
+          // Auto-select based on URL params or first project
+          const urlParams = new URLSearchParams(window.location.search);
+          const reqId = urlParams.get('id') || urlParams.get('project');
+          const reqTopic = urlParams.get('topic');
+          const reqVideo = urlParams.get('v');
+
+          let selected = null;
+          if (reqId) {
+            selected = state.projects.find(p => p.id === reqId);
+          }
+          if (!selected && reqTopic) {
+            selected = state.projects.find(p => (p.title || '').includes(reqTopic));
+          }
+          if (!selected && reqVideo) {
+            selected = state.projects.find(p => (p.videoFilename || '').includes(reqVideo));
+          }
+          if (!selected && state.projects.length > 0) {
+            selected = state.projects[0];
+          }
+
+          if (selected) {
+            document.getElementById('preview-project-select').value = selected.id;
+            loadProjectData(selected.id, selected.title, selected.videoFilename);
+          }
+        } catch (err) {
+          console.error('[Preview] loadProjectsList error:', err);
+        }
+      }
+
+      function populateProjectDropdown() {
+        const select = document.getElementById('preview-project-select');
+        select.innerHTML = '';
+
+        if (state.projects.length === 0) {
+          select.innerHTML = '<option value="">કોઈ વિડીયો પ્રોજેક્ટ મળ્યો નથી</option>';
+          return;
+        }
+
+        state.projects.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.id;
+          const statusIcon = p.hasVideo ? '🎬' : (p.hasAudio ? '🎙️' : '📑');
+          opt.textContent = `${statusIcon} ${p.title} (${p.category || 'વિડીયો'})`;
+          select.appendChild(opt);
+        });
+      }
+
+      // Load Single Project Data
+      async function loadProjectData(projectId, topicName = '', videoFile = '') {
+        try {
+          const query = new URLSearchParams({
+            id: projectId || '',
+            topic: topicName || '',
+            videoFile: videoFile || ''
+          });
+
+          const res = await fetch(`/api/preview/project-data?${query.toString()}`);
+          const data = await res.json();
+          if (data && data.success && data.project) {
+            state.currentProject = data.project;
+          } else {
+            // Check local fallback
+            state.currentProject = getLocalFallbackProject(projectId);
+          }
+
+          renderProject();
+        } catch (err) {
+          console.warn('[Preview] Failed to fetch project data, checking local storage:', err);
+          state.currentProject = getLocalFallbackProject(projectId);
+          renderProject();
+        }
+      }
+
+      function getLocalFallbackProject(projectId) {
+        try {
+          const raw = localStorage.getItem('gyan_yatra_projects_v3');
+          if (raw) {
+            const list = JSON.parse(raw);
+            const found = list.find(p => p.id === projectId);
+            if (found) {
+              return {
+                id: found.id,
+                title: found.topic || found.name,
+                category: found.category || 'સરકારી યોજના',
+                videoUrl: found.savedVideo || '/videos/latest_video.mp4',
+                videoFilename: found.savedVideo ? found.savedVideo.split('/').pop() : 'latest_video.mp4',
+                slides: found.slides || [],
+                script: found.script || { fullText: '', sections: [] },
+                slideAudios: {},
+                seo: found.seo || {},
+                thumbnailUrl: null
+              };
+            }
+          }
+        } catch (_) {}
+
+        return {
+          id: projectId,
+          title: 'ગુજરાત સામાન્ય જ્ઞાન પરીક્ષા ૨૦૨૬',
+          category: 'સ્પર્ધાત્મક પરીક્ષા',
+          videoUrl: '/videos/latest_video.mp4',
+          videoFilename: 'latest_video.mp4',
+          slides: [],
+          script: { fullText: '', sections: [] },
+          slideAudios: {}
+        };
+      }
+
+      // Render Project
+      function renderProject() {
+        const p = state.currentProject;
+        if (!p) return;
+
+        // Update Page Title
+        document.title = `${p.title} - જ્ઞાન યાત્રા પ્રીવ્યુ`;
+
+        // Video Player Tab
+        const videoPlayer = document.getElementById('main-video-player');
+        const videoSource = document.getElementById('video-source');
+        const dlBtn = document.getElementById('btn-download-video-mp4');
+        const cardDlBtn = document.getElementById('dl-card-video-btn');
+
+        const activeVideoUrl = p.videoUrl || '/videos/latest_video.mp4';
+        const cleanFilename = p.videoFilename || activeVideoUrl.split('/').pop() || 'presentation_1080p.mp4';
+
+        if (videoSource) {
+          videoSource.src = activeVideoUrl;
+          videoPlayer.load();
+        }
+
+        const downloadLink = `/api/voice/download-video?file=${encodeURIComponent(cleanFilename)}&name=${encodeURIComponent(cleanFilename)}`;
+        if (dlBtn) dlBtn.href = downloadLink;
+        if (cardDlBtn) cardDlBtn.href = downloadLink;
+
+        document.getElementById('video-info-title').textContent = p.title;
+        document.getElementById('video-info-filename').textContent = cleanFilename;
+        document.getElementById('video-info-category').textContent = p.category || 'શિક્ષણ & ભરતી';
+
+        const statusPill = document.getElementById('project-status-pill');
+        if (p.videoUrl) {
+          statusPill.textContent = '● ૧૦૮૦p તૈયાર';
+          statusPill.style.background = 'rgba(16, 185, 129, 0.2)';
+          statusPill.style.color = '#34d399';
+        } else {
+          statusPill.textContent = '● સ્લાઇડ્સ & ઓડિયો';
+          statusPill.style.background = 'rgba(56, 189, 248, 0.2)';
+          statusPill.style.color = '#38bdf8';
+        }
+
+        // Render Slide Pills and First Slide
+        state.currentSlideIndex = 0;
+        renderSlidePills();
+        renderActiveSlide();
+
+        // Render Script Tab
+        renderScriptTab();
+
+        // Render SEO & Thumbnail Tab
+        renderSEOTab();
+      }
+
+      // Render Slide Pills
+      function renderSlidePills() {
+        const container = document.getElementById('slide-pills-container');
+        container.innerHTML = '';
+        const slides = state.currentProject?.slides || [];
+
+        slides.forEach((s, idx) => {
+          const pill = document.createElement('button');
+          pill.className = `slide-num-pill ${idx === state.currentSlideIndex ? 'active' : ''}`;
+          pill.textContent = idx + 1;
+          pill.title = `સ્લાઇડ ${idx + 1}: ${s.title || ''}`;
+          pill.addEventListener('click', () => {
+            state.currentSlideIndex = idx;
+            renderActiveSlide();
+            renderSlidePills();
+          });
+          container.appendChild(pill);
+        });
+
+        const badgeSlides = document.getElementById('badge-slides');
+        if (badgeSlides) badgeSlides.textContent = `${slides.length} સ્લાઇડ્સ`;
+      }
+
+      // Render Active Slide
+      function renderActiveSlide() {
+        const p = state.currentProject;
+        if (!p || !p.slides || p.slides.length === 0) return;
+
+        const idx = state.currentSlideIndex;
+        const slide = p.slides[idx] || p.slides[0];
+        const total = p.slides.length;
+
+        // Slide Canvas Elements
+        document.getElementById('canvas-category').textContent = p.category || 'સરકારી યોજના ૨૦૨૬';
+        document.getElementById('canvas-slide-num').textContent = `SLIDE ${idx + 1} / ${total}`;
+        document.getElementById('canvas-title').textContent = slide.title || p.title;
+        document.getElementById('canvas-subtitle').textContent = slide.subtitle || 'પરીક્ષાલક્ષી વિશ્લેષણ અને સંપૂર્ણ માહિતી';
+
+        const bulletsList = document.getElementById('canvas-bullets');
+        bulletsList.innerHTML = '';
+        const bullets = Array.isArray(slide.bullets) ? slide.bullets : [slide.bullets || 'મુખ્ય માહિતી'];
+        bullets.forEach(b => {
+          if (!b) return;
+          const li = document.createElement('li');
+          li.textContent = b;
+          bulletsList.appendChild(li);
+        });
+
+        // Step indicator
+        document.getElementById('slide-step-indicator').textContent = `${idx + 1} / ${total}`;
+
+        // Audio & Teleprompter
+        const sNum = idx + 1;
+        document.getElementById('audio-slide-title').textContent = `🎙️ સ્લાઇડ ${sNum} નો અવાજ`;
+        
+        const audioPlayer = document.getElementById('slide-audio-player');
+        const audioRec = p.slideAudios && p.slideAudios[sNum];
+
+        if (audioRec && (audioRec.url || audioRec.enhanced || audioRec.original)) {
+          audioPlayer.src = audioRec.enhanced || audioRec.url || audioRec.original;
+          document.getElementById('audio-status-pill').textContent = 'ઓડિયો તૈયાર';
+          document.getElementById('audio-status-pill').style.color = '#34d399';
+        } else {
+          audioPlayer.src = '';
+          document.getElementById('audio-status-pill').textContent = 'રેકોર્ડિંગ બાકી';
+          document.getElementById('audio-status-pill').style.color = '#f59e0b';
+        }
+
+        // Slide Narration Script
+        const narration = slide.scriptText || (p.script && p.script.sections && p.script.sections[idx] ? p.script.sections[idx].scriptText : '') || 'આ સ્લાઇડ માટે સ્ક્રિપ્ટ ઉપલબ્ધ નથી.';
+        document.getElementById('slide-narration-text').textContent = narration;
+
+        // Update pills active state
+        document.querySelectorAll('.slide-num-pill').forEach((pill, pIdx) => {
+          if (pIdx === idx) pill.classList.add('active');
+          else pill.classList.remove('active');
+        });
+      }
+
+      // Slide Navigation Buttons
+      document.getElementById('btn-prev-slide').addEventListener('click', () => {
+        if (!state.currentProject?.slides) return;
+        if (state.currentSlideIndex > 0) {
+          state.currentSlideIndex--;
+          renderActiveSlide();
+          renderSlidePills();
+        }
+      });
+
+      document.getElementById('btn-next-slide').addEventListener('click', () => {
+        if (!state.currentProject?.slides) return;
+        if (state.currentSlideIndex < state.currentProject.slides.length - 1) {
+          state.currentSlideIndex++;
+          renderActiveSlide();
+          renderSlidePills();
+        }
+      });
+
+      // Continuous Presentation Playback Mode
+      const autoPlayBtn = document.getElementById('btn-autoplay-presentation');
+      autoPlayBtn.addEventListener('click', () => {
+        if (state.isPlayingPresentation) {
+          stopPresentationPlayback();
+        } else {
+          startPresentationPlayback();
+        }
+      });
+
+      function startPresentationPlayback() {
+        state.isPlayingPresentation = true;
+        autoPlayBtn.innerHTML = '<span>⏸️</span> <span>પ્રેઝન્ટેશન થોભાવો</span>';
+        autoPlayBtn.classList.remove('btn-success');
+        autoPlayBtn.classList.add('btn-secondary');
+
+        // Start from beginning or current slide
+        playSlideSequence(state.currentSlideIndex);
+      }
+
+      function stopPresentationPlayback() {
+        state.isPlayingPresentation = false;
+        autoPlayBtn.innerHTML = '<span>▶️</span> <span>સળંગ પ્રેઝન્ટેશન ચલાવો</span>';
+        autoPlayBtn.classList.remove('btn-secondary');
+        autoPlayBtn.classList.add('btn-success');
+
+        const audioPlayer = document.getElementById('slide-audio-player');
+        if (audioPlayer) audioPlayer.pause();
+      }
+
+      function playSlideSequence(slideIdx) {
+        if (!state.isPlayingPresentation) return;
+        const slides = state.currentProject?.slides || [];
+        if (slideIdx >= slides.length) {
+          stopPresentationPlayback();
+          showToast('પ્રેઝન્ટેશન પૂરું થયું!');
+          return;
+        }
+
+        state.currentSlideIndex = slideIdx;
+        renderActiveSlide();
+        renderSlidePills();
+
+        const audioPlayer = document.getElementById('slide-audio-player');
+        if (audioPlayer && audioPlayer.src && audioPlayer.src.trim() !== window.location.href) {
+          audioPlayer.play().catch(() => {
+            // If play blocked or failed, wait 4 seconds and advance
+            setTimeout(() => {
+              if (state.isPlayingPresentation) playSlideSequence(slideIdx + 1);
+            }, 4500);
+          });
+
+          audioPlayer.onended = () => {
+            if (state.isPlayingPresentation) {
+              setTimeout(() => {
+                playSlideSequence(slideIdx + 1);
+              }, 600);
+            }
+          };
+        } else {
+          // No audio file for this slide, simulate slide display for 4 seconds then advance
+          setTimeout(() => {
+            if (state.isPlayingPresentation) playSlideSequence(slideIdx + 1);
+          }, 4500);
+        }
+      }
+
+      // Render Script Tab
+      function renderScriptTab() {
+        const p = state.currentProject;
+        if (!p) return;
+
+        document.getElementById('script-title').textContent = `${p.title} - ગુજરાતી વોઇસઓવર સ્ક્રિપ્ટ`;
+
+        let fullText = p.script?.fullText || '';
+        const sections = p.script?.sections || [];
+
+        // If no fullText, construct from sections or slides
+        if (!fullText) {
+          if (sections.length > 0) {
+            fullText = sections.map((s, i) => `[સ્લાઇડ ${s.slideNumber || i + 1}]\n${s.scriptText || ''}`).join('\n\n');
+          } else if (p.slides && p.slides.length > 0) {
+            fullText = p.slides.map((s, i) => `[સ્લાઇડ ${s.slideNumber || i + 1}: ${s.title || ''}]\n${s.scriptText || ''}`).join('\n\n');
+          }
+        }
+
+        const words = fullText.trim().split(/\s+/).filter(Boolean).length;
+        const chars = fullText.length;
+        const minutes = Math.max(1, Math.round(words / 130));
+
+        document.getElementById('stat-words').textContent = words;
+        document.getElementById('stat-chars').textContent = chars;
+        document.getElementById('stat-time').textContent = `~${minutes} મિનિટ`;
+
+        const container = document.getElementById('script-sections-container');
+        container.innerHTML = '';
+
+        if (sections.length > 0) {
+          sections.forEach((sec, idx) => {
+            const block = document.createElement('div');
+            block.className = 'script-section-block';
+            block.innerHTML = `
+              <div class="script-sec-title">
+                <span>📑 સ્લાઇડ ${sec.slideNumber || idx + 1}: ${sec.title || ''}</span>
+                <button class="copy-chip-btn" onclick="navigator.clipboard.writeText(\`${(sec.scriptText || '').replace(/`/g, '\\`')}\`); window.showToast('સ્લાઇડ સ્ક્રિપ્ટ કોપી થઈ!');">📋 કોપી</button>
+              </div>
+              <div class="script-sec-text">${sec.scriptText || ''}</div>
+            `;
+            container.appendChild(block);
+          });
+        } else if (p.slides && p.slides.length > 0) {
+          p.slides.forEach((sl, idx) => {
+            const block = document.createElement('div');
+            block.className = 'script-section-block';
+            block.innerHTML = `
+              <div class="script-sec-title">
+                <span>📑 સ્લાઇડ ${idx + 1}: ${sl.title || ''}</span>
+                <button class="copy-chip-btn" onclick="navigator.clipboard.writeText(\`${(sl.scriptText || '').replace(/`/g, '\\`')}\`); window.showToast('સ્લાઇડ સ્ક્રિપ્ટ કોપી થઈ!');">📋 કોપી</button>
+              </div>
+              <div class="script-sec-text">${sl.scriptText || ''}</div>
+            `;
+            container.appendChild(block);
+          });
+        } else {
+          container.innerHTML = '<div style="color: var(--text-muted); padding: 20px;">કોઈ સ્ક્રિપ્ટ સેક્શન મળ્યા નથી.</div>';
+        }
+      }
+
+      // Render SEO & Thumbnail Tab
+      function renderSEOTab() {
+        const p = state.currentProject;
+        if (!p) return;
+
+        // Simulated thumbnail
+        document.getElementById('thumb-title-text').textContent = p.title;
+
+        // Title & Description
+        const seoTitle = p.seo?.title || `${p.title} | સંપુર્ણ વિશ્લેષણ અને માહિતી`;
+        const seoDesc = p.seo?.description || `જ્ઞાન યાત્રા ચેનલ દ્વારા ${p.title} વિશે ખાસ બનાવેલ વિડીયો. સંપૂર્ણ વિગતો માટે વિડીયો પૂરો જુઓ. લાઈક અને શેર જરૂર કરો!`;
+
+        document.getElementById('seo-title-val').textContent = seoTitle;
+        document.getElementById('seo-desc-val').textContent = seoDesc;
+
+        // Tags
+        const tagsContainer = document.getElementById('seo-tags-container');
+        tagsContainer.innerHTML = '';
+        const tags = Array.isArray(p.seo?.tags) ? p.seo.tags : ['Gyan Yatra', 'Gujarati GK', 'Educational Video', 'Government Scheme'];
+
+        tags.forEach(t => {
+          const chip = document.createElement('span');
+          chip.className = 'tag-chip';
+          chip.textContent = `#${t.replace(/^#/, '')}`;
+          tagsContainer.appendChild(chip);
+        });
+      }
+
+      // Dropdown Project Change
+      document.getElementById('preview-project-select').addEventListener('change', (e) => {
+        const pid = e.target.value;
+        const p = state.projects.find(x => x.id === pid);
+        if (p) {
+          loadProjectData(p.id, p.title, p.videoFilename);
+        }
+      });
+
+      // Video Speed buttons
+      document.querySelectorAll('.speed-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const speed = parseFloat(btn.getAttribute('data-speed')) || 1.0;
+          const video = document.getElementById('main-video-player');
+          if (video) video.playbackRate = speed;
+        });
+      });
+
+      // Copy actions
+      document.getElementById('btn-copy-video-link').addEventListener('click', () => {
+        navigator.clipboard.writeText(window.location.href);
+        showToast('વિડીયો લિંક કોપી થઈ ગઈ છે!');
+      });
+
+      document.getElementById('btn-share-preview').addEventListener('click', () => {
+        const p = state.currentProject;
+        const title = p?.title || 'જ્ઞાન યાત્રા વિડીયો પ્રીવ્યુ';
+        const shareText = `🎬 *${title}*\nજ્ઞાન યાત્રા ચેનલનો નવો ૧૦૮૦p પ્રેઝન્ટેશન વિડીયો અને સ્લાઇડ પ્રીવ્યુ જુઓ:\n${window.location.href}`;
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, '_blank');
+      });
+
+      document.getElementById('btn-refresh-preview').addEventListener('click', () => {
+        loadProjectsList();
+        showToast('ડેટા રિફ્રેશ થઈ ગયો!');
+      });
+
+      document.getElementById('btn-copy-slide-text').addEventListener('click', () => {
+        const txt = document.getElementById('slide-narration-text').textContent;
+        navigator.clipboard.writeText(txt);
+        showToast('સ્લાઇડ સ્ક્રિપ્ટ કોપી થઈ ગઈ!');
+      });
+
+      document.getElementById('btn-copy-full-script').addEventListener('click', () => {
+        let full = '';
+        document.querySelectorAll('.script-sec-text').forEach(el => {
+          full += el.textContent + '\n\n';
+        });
+        navigator.clipboard.writeText(full);
+        showToast('આખી સ્ક્રિપ્ટ ક્લિપબોર્ડમાં કોપી થઈ ગઈ!');
+      });
+
+      document.getElementById('btn-copy-all-tags').addEventListener('click', () => {
+        const tags = Array.from(document.querySelectorAll('.tag-chip')).map(el => el.textContent.replace(/^#/, '')).join(', ');
+        navigator.clipboard.writeText(tags);
+        showToast('બધા ટેગ્સ કોપી થઈ ગયા!');
+      });
+
+      // Download Script File
+      document.getElementById('btn-download-script-txt').addEventListener('click', downloadScriptText);
+      document.getElementById('dl-card-script-btn').addEventListener('click', downloadScriptText);
+
+      function downloadScriptText() {
+        const p = state.currentProject;
+        let full = `${p?.title || 'Script'}\n${'='.repeat(40)}\n\n`;
+        document.querySelectorAll('.script-section-block').forEach(b => {
+          const title = b.querySelector('.script-sec-title')?.textContent || '';
+          const txt = b.querySelector('.script-sec-text')?.textContent || '';
+          full += `${title}\n${txt}\n\n`;
+        });
+        const blob = new Blob([full], { type: 'text/plain;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${(p?.title || 'script').replace(/[^a-zA-Z0-9_\u0A80-\u0AFF]/g, '_')}_script.txt`;
+        a.click();
+        showToast('સ્ક્રિપ્ટ ફાઇલ ડાઉનલોડ થઈ ગઈ!');
+      }
+
+      // Browser TTS Fallback Button
+      document.getElementById('btn-test-tts-fallback').addEventListener('click', () => {
+        const txt = document.getElementById('slide-narration-text').textContent;
+        if (!window.speechSynthesis) {
+          showToast('તમારું બ્રાઉઝર સ્પીચ સપોર્ટ કરતું નથી.');
+          return;
+        }
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(txt);
+        utter.lang = 'gu-IN';
+        utter.rate = 0.95;
+        window.speechSynthesis.speak(utter);
+        showToast('અવાજ પ્લે થઈ રહ્યો છે...');
+      });
+
+      // Make showToast accessible
+      window.showToast = showToast;
+
+      // Start App
+      loadProjectsList();
+    })();
+  </script>
+</body>
+</html>

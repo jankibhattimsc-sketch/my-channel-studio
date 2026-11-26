@@ -1,71 +1,213 @@
 import { api } from '../api.js';
-import { copyToClipboard } from '../utils/clipboard.js';
+import { copyToClipboard, showNoticeToast } from '../utils/clipboard.js';
 import { projectState } from '../utils/projectState.js';
+import { AutoSave } from '../utils/AutoSave.js';
+import { firebaseService } from '../utils/firebaseService.js';
+import { 
+  getCurrentIST, 
+  formatDateISO, 
+  formatTimeISO, 
+  formatISTDisplay, 
+  formatIndianDateDisplay,
+  formatIndianTimeDisplay,
+  formatIndianDateTimeDisplay,
+  filterIdeasByDateRange,
+  groupIdeasByDate,
+  parseYouTubeStudioDate, 
+  calculateTimeDelta, 
+  normalizeIdeaTimestamps 
+} from '../utils/dateTimeIntelligence.js';
+import { 
+  analyzeIdeaMetrics, 
+  CLASSIFICATIONS, 
+  CLASSIFICATION_COLORS, 
+  checkDuplicateTitle 
+} from '../utils/ideaAnalysisEngine.js';
+import { processImageAdjustments } from '../utils/imagePreprocessor.js';
+import { parsePastedIdeaText } from '../utils/textIdeaParser.js';
 
 export async function renderTopics(container, navigateTo) {
-  let uploadedScreenshots = []; // { name, size, base64 }
+  // Navigation & View Sub-Tabs: 'notebook' | 'ocr' | 'paste' | 'manual'
+  let activeTab = 'notebook';
+  let activeTopicIdeaId = null;
+  let activeDiaryEntryId = null;
+  let isDiaryLoadedInitially = false;
+  let readingDiaryIdea = null;
+  let diaryDate = formatDateISO(new Date()) || new Date().toISOString().slice(0, 10);
+  let diaryTitle = '';
+  let diaryNote = '';
+  let uploadedScreenshots = []; // { name, size, base64, rawImage, ocrBase64 }
   let isAnalyzing = false;
   let hasAnalyzed = false;
-  let analysisIdeas = []; // Stores GPT-4o or fallback viral ideas from backend
-  let analysisInsights = ''; // Analyzed insights text from backend
+  let hasConfirmedPrompt = false;
 
-  // 48-Hour YouTube Studio Realtime State (Populated AFTER photo upload)
+  // Image Adjustment & Viewport State for OCR
+  let imageAdjustments = {
+    rotation: 0,
+    brightness: 0,
+    contrast: 0,
+    sharpen: false,
+    zoom: 1.0,
+    activeCropPreset: 'full'
+  };
+
+  let isBoxSelectMode = false;
+  let invertForOcr = false;
+  let activeHighlightedIdx = null;
+
+  // Notebook Dashboard State
+  let selectedIdeaIds = new Set();
+  let dateFilterRange = 'all'; // 'all' | 'today' | 'yesterday' | 'last7days' | 'last30days' | 'custom'
+  let customDateStart = '';
+  let customDateEnd = '';
+  let sourceFilter = 'all'; // 'all' | 'ocr' | 'paste' | 'manual'
+  let categoryFilter = 'all'; // 'all' | 'સરકારી યોજના' | 'સરકારી ભરતી' | 'પરિપત્ર & નિયમ' | 'અન્ય'
+  let searchQuery = '';
+  let sortOrder = 'newest'; // 'newest' | 'oldest' | 'updated' | 'views'
+  let showArchived = false;
+
+  // Central Planner Connection State
+  let plannerTopicsSet = new Set();
+  async function refreshPlannerTopics() {
+    try {
+      const res = await api.getCentralTopics();
+      if (res && Array.isArray(res.topics)) {
+        plannerTopicsSet = new Set(res.topics.map(t => (t.topicName || '').trim().toLowerCase()));
+      }
+    } catch (err) {
+      console.warn('[refreshPlannerTopics]:', err);
+    }
+  }
+  refreshPlannerTopics();
+
+  // Modals state
+  let editingIdea = null; // object when modal is open
+  let chatGptModalData = null; // { prompt: '', count: 0 }
+
+  // Copy-Paste Form State
+  let pasteRawText = '';
+  let parsedPasteData = {
+    title: '',
+    description: '',
+    originalText: '',
+    detectedViews: null,
+    detectedDate: null,
+    detectedUrl: '',
+    detectedSource: 'Copy-Paste',
+    tags: []
+  };
+
+  // Direct Manual Form State
+  let manualFormData = {
+    title: '',
+    category: 'સરકારી યોજના',
+    tags: '',
+    description: '',
+    views48h: '',
+    referenceLinks: '',
+    notes: ''
+  };
+
+  // OCR Studio State
   let studioData = {
     channelTitle: '',
     customUrl: '',
     subscribers: 0,
     totalVideos: 0,
-    views48h: 0,
-    views60m: 0,
-    peakHours: '',
-    avgRetention: '',
-    trafficSearch: 0,
-    trafficBrowse: 0,
-    trafficSuggested: 0,
-    topSearchQueries: '',
+    views48h: null,
+    views60m: null,
+    capturedAt: null,
+    sourcePublishedAt: null,
     topVideos: []
   };
 
-  // Try fetching connected channel title from backend quietly
+  // Fetch connected channel details
   try {
-    const res = await api.getAuthStatus();
-    if (res && res.channel) {
-      studioData.channelTitle = res.channel.title || '';
-      studioData.customUrl = res.channel.customUrl || '';
-      if (res.channel.subscribers) studioData.subscribers = Number(res.channel.subscribers);
-      if (res.channel.videoCount) studioData.totalVideos = Number(res.channel.videoCount);
+    const ch = await api.getConnectedChannel();
+    if (ch && ch.channelTitle) {
+      studioData.channelTitle = ch.channelTitle;
+      studioData.customUrl = ch.customUrl || '';
+      studioData.subscribers = ch.subscriberCount || 0;
     }
-  } catch (e) {
-    // Continue with defaults
+  } catch (_) {}
+
+  // AutoSave Engine
+  let saveStatusText = 'બધું સાચવેલ છે';
+  let saveStatusColor = '#10b981';
+
+  const autoSave = new AutoSave({
+    debounceMs: 1200,
+    onSave: async () => {
+      saveStatusText = 'સાચવી રહ્યું છે...';
+      saveStatusColor = '#f59e0b';
+      updateSaveBadge();
+
+      try {
+        const activeProj = projectState.getActiveProject();
+        if (activeProj) {
+          projectState.saveProjects();
+        }
+        saveStatusText = '✓ ક્લાઉડ સુરક્ષિત';
+        saveStatusColor = '#10b981';
+      } catch (err) {
+        saveStatusText = 'ઓફલાઇન (સ્થાનિક સાચવેલ)';
+        saveStatusColor = '#38bdf8';
+      }
+      updateSaveBadge();
+    }
+  });
+
+  function updateSaveBadge() {
+    const badge = container.querySelector('#idea-autosave-badge');
+    if (badge) {
+      badge.textContent = saveStatusText;
+      badge.style.color = saveStatusColor;
+      badge.style.borderColor = saveStatusColor;
+    }
   }
 
-  function getChatGPTMasterPrompt() {
-    const channelName = studioData.channelTitle || "મારી યુટ્યુબ ચેનલ";
-    const activeTopVideos = (studioData.topVideos || []).filter(v => v && v.title && v.title.trim());
+  // Generate ChatGPT prompt from selected ideas with Zero Hallucination
+  function generatePromptForSelectedIdeas(ideasToUse) {
+    const channelName = studioData.channelTitle || 'Gyan Yatra';
+    const customUrl = studioData.customUrl || '@gyan.yatra1';
 
-    const topVideosFormatted = activeTopVideos.length > 0
-      ? activeTopVideos.map((v, i) => {
-          const vNum = (i + 1);
-          const vViews = v.views48h ? Number(v.views48h).toLocaleString('en-IN') : '0';
-          return `   ${vNum}. "${v.title}"  ➔  વ્યુઝ સંખ્યા: ${vViews}`;
-        }).join('\n\n')
-      : '   (ફોટામાંથી કોઈ વિડીયો કે ટોપિક મળ્યો નથી)';
+    const formattedList = ideasToUse.map((idea, idx) => {
+      const num = idx + 1;
+      const viewsStr = (typeof idea.views48h === 'number' && idea.views48h > 0)
+        ? `${Number(idea.views48h).toLocaleString('en-IN')} વાસ્તવિક વ્યુઝ (Real Views)`
+        : 'વ્યુઝ: ઉપલબ્ધ નથી';
+      const sourceStr = idea.inputType === 'ocr' ? 'YouTube Studio Screenshot (OCR સ્કેન)'
+        : idea.inputType === 'paste' ? `Copy-Paste સોર્સ (${idea.source || 'વેબસાઇટ / ન્યૂઝ'})`
+        : 'ડાયરેક્ટ નોટબુક એન્ટ્રી (Manual Entry)';
+      const dateStr = idea.createdAt ? formatIndianDateTimeDisplay(idea.createdAt) : '';
+      const pubDateStr = idea.sourcePublishedAt ? `\n   - સત્તાવાર પ્રકાશન તારીખ: ${formatIndianDateTimeDisplay(idea.sourcePublishedAt)}` : '';
+      const urlStr = idea.sourceUrl ? `\n   - રેફરન્સ લિંક: ${idea.sourceUrl}` : '';
+      const notesStr = idea.notes ? `\n   - અંગત નોંધ: ${idea.notes}` : '';
+      const descStr = idea.description ? `\n   - વિગત / નોંધ:\n     "${idea.description.trim()}"` : (idea.originalText ? `\n   - મૂળ લખાણ:\n     "${idea.originalText.trim()}"` : '');
+
+      return `[આઈડિયા #${num}]:
+   - ટાઇટલ: "${idea.title}"
+   - કેટેગરી: ${idea.category || 'સરકારી યોજના & ભરતી'}
+   - ઇનપુટ સોર્સ: ${sourceStr}
+   - નોટબુકમાં ઉમેર્યા તારીખ: ${dateStr}${pubDateStr}
+   - સંખ્યા: ${viewsStr}${urlStr}${notesStr}${descStr}`;
+    }).join('\n\n------------------------------------------------------------\n\n');
 
     return `તમે એક વરિષ્ઠ YouTube Strategy & Algorithm નિષ્ણાત છો.
-મારી ચેનલનું નામ: "${channelName}" ${studioData.customUrl ? `(${studioData.customUrl})` : ''}.
-વિષય / કેટેગરી: સરકારી યોજના, સરકારી ભરતી, કર્મચારી પરિપત્ર અને નિયમો (સત્તાવાર પુરાવા સાથે).
+મારી ચેનલનું નામ: "${channelName}" ${customUrl ? `(${customUrl})` : ''}.
+વિષય / કેટેગરી: સરકારી યોજના, સરકારી ભરતી, કર્મચારી પરિપત્ર અને નિયમો (સત્તાવાર પુરાવા સાથે શુદ્ધ બોલચાલની ગુજરાતી ભાષામાં).
 
 ============================================================
-📊 [મારા YOUTUBE STUDIO માંથી સ્કેન કરેલા ટોપિક અને સંખ્યા (VIEWS)]
-(👉 વિશેષ નોંધ: મેં અપલોડ કરેલા YouTube Studio સ્ક્રીનશોટમાંથી આ ટોપિક્સ અને તેની સામે વિડીયોની સાચી સંખ્યા સ્કેન થઈ ચૂકી છે:)
+📊 [મારી આઈડિયા નોટબુકમાંથી પસંદ કરેલા ૧૦૦% સાચા અને વાસ્તવિક વિષયો]
+(👉 વિશેષ નોંધ: નીચેના આઈડિયા મેં મારી જ્ઞાન યાત્રા આઈડિયા નોટબુકમાંથી સિલેક્ટ કરેલા છે. તેમાં આપેલા ટાઈટલ, વાસ્તવિક વ્યુઝ, સત્તાવાર તારીખો અને નોંધ સાચી છે:)
 ============================================================
 
-${topVideosFormatted}
+${formattedList}
 
 ============================================================
-🎯 [તમારું ટાસ્ક: આ વિડીયો ટોપિક્સ અને વ્યુઝના આધારે ૩ સુપરહિટ વાયરલ વિડીયો પ્લાન આપો]
+🎯 [તમારું ટાસ્ક: આ પસંદ કરેલા વિષયોનું વિશ્લેષણ કરીને ૩ સુપરહિટ વાયરલ વિડીયો પ્લાન આપો]
 ============================================================
-ઉપર આપેલા ટોપિક્સ અને તેની વ્યુઝ સંખ્યાને ધ્યાનમાં રાખીને આગામી ૨૪ થી ૪૮ કલાકમાં ચેનલ પર અપલોડ કરવા માટે ૩ સુપરહિટ વાયરલ વિડીયોનો ક્રમબદ્ધ પ્લાન આપો:
+ઉપર આપેલા સાચા ડેટાના આધારે આગામી ૨૪ થી ૪૮ કલાકમાં ચેનલ પર અપલોડ કરવા માટે ૩ શ્રેષ્ઠ ગુજરાતી વિડીયો પ્લાન તૈયાર કરો:
 
 દરેક વિડીયો આઈડિયા માટે નીચેની વિગતો આપો:
 ૧. [ક્લિકેબલ હાઈ-CTR ગુજરાતી ટાઈટલ]: ૨ વૈકલ્પિક ટાઈટલ (ક્લિકબેટ મુક્ત, ૧૦૦% સાચું, અને YouTube Search માં રેન્ક થાય તેવું)
@@ -81,389 +223,1836 @@ ${topVideosFormatted}
 કોઈ પણ ફોટો માંગ્યા વગર સીધો જ ૩ આઈડિયાનો માસ્ટરક્લાસ ગુજરાતી પ્લાન શરૂ કરો!`;
   }
 
-  function render() {
+  // Filter & Sort ideas for the Notebook Tab
+  function getFilteredProjectIdeas() {
     const activeProj = projectState.getActiveProject();
-    const projectHeaderHtml = `
-      <!-- Top Project Context Header -->
-      <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-lg); padding: 14px 20px; margin-bottom: 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <button id="btn-back-to-projects-banner" class="btn btn-outline btn-sm" style="font-weight: 700; display: flex; align-items: center; gap: 6px;">
-            <span>←</span> બધા પ્રોજેક્ટ્સ (Projects)
-          </button>
-          <div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 1.2rem;">💡</span>
-              <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">
-                ૧. Idea (48h વિશ્લેષણ & ChatGPT સમરી પ્રોમ્પ્ટ)
-              </h2>
-            </div>
-            <p style="font-size: 0.8rem; color: #38bdf8; margin: 2px 0 0 0; font-weight: 600;">
-              📁 પ્રોજેક્ટ: ${activeProj.name}
-            </p>
-          </div>
-        </div>
+    if (!activeProj) return [];
+    let list = projectState.getProjectIdeas(activeProj.id) || [];
 
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span class="badge badge-green" style="font-size: 0.72rem; font-weight: 800;">✓ Auto-Saved</span>
-          <button id="btn-goto-step2-banner" class="btn btn-primary btn-sm" style="font-weight: 800; background: #8b5cf6; border: none; padding: 6px 14px;">
-            ૨. સ્લાઇડ્સ (Slide) →
-          </button>
-        </div>
-      </div>
-    `;
-
-    // STATE 1: Initial state (No photo uploaded yet)
-    if (!hasAnalyzed && !isAnalyzing) {
-      container.innerHTML = `
-        <div style="max-width: 1100px; margin: 0 auto; padding-bottom: 30px;">
-          ${projectHeaderHtml}
-          
-          <!-- Header -->
-          <div style="margin-bottom: 22px; text-align: left;">
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
-              <span style="font-size: 1.6rem;">📸</span>
-              <h2 style="font-size: 1.45rem; font-weight: 800; color: #ffffff; margin: 0;">
-                ૪૮ કલાક YouTube Studio ફોટો અપલોડ & એનાલિસિસ
-              </h2>
-            </div>
-            <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0; line-height: 1.5;">
-              પહેલા તમારા YouTube Studio ના 48-Hour Realtime Analytics નો ફોટો અપલોડ કરો. <strong>ફોટો અપલોડ કર્યા પછી જ</strong> તેમાંથી 48 કલાકના વ્યુઝ, વેલોસિટી અને ટોપ વિડીયોનું વિશ્લેષણ થઈને ChatGPT સમરી પ્રોમ્પ્ટ બનશે!
-            </p>
-          </div>
-
-          <!-- Two Cards: Left = Prominent Upload Box, Right = Waiting Indicator -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px; align-items: stretch;">
-            
-            <!-- Upload Box (Prominent & Native Clickable Div) -->
-            <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 2.5px dashed #38bdf8; border-radius: var(--radius-lg); padding: 36px 24px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.45); display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; transition: all 0.25s ease;" id="initial-dropzone">
-              <input type="file" id="initial-file-input" accept="image/*" multiple style="display: none;">
-              
-              <div style="width: 80px; height: 80px; border-radius: 50%; background: rgba(56, 189, 248, 0.15); display: flex; align-items: center; justify-content: center; font-size: 2.8rem; margin-bottom: 16px; border: 1.5px solid rgba(56, 189, 248, 0.4); box-shadow: 0 0 24px rgba(56, 189, 248, 0.2); pointer-events: none;">
-                📤
-              </div>
-
-              <h3 style="font-size: 1.25rem; font-weight: 800; color: #ffffff; margin: 0 0 8px 0; pointer-events: none;">
-                એક કે તેથી વધુ (Multiple) ફોટા અહીં અપલોડ કરો
-              </h3>
-              
-              <p style="font-size: 0.86rem; color: #94a3b8; line-height: 1.5; margin: 0 0 18px 0; max-width: 400px; pointer-events: none;">
-                તમારા YouTube Studio ના ૧, ૨ કે વધુ ફોટા એકસાથે પસંદ કરો<br>
-                (સ્ક્રોલ કરેલા બધા જ ફોટામાંથી તમામ વિડીયો આપોઆપ એક જ લિસ્ટમાં સ્કેન થશે)<br>
-                અથવા સીધું કીબોર્ડ પરથી <kbd style="background: rgba(255,255,255,0.12); padding: 2px 7px; border-radius: 4px; color: #38bdf8; font-weight: 800;">Ctrl + V</kbd> દબાવી પેસ્ટ કરો
-              </p>
-
-              <button type="button" id="btn-initial-choose-photos" class="btn btn-primary" style="background: linear-gradient(135deg, #0284c7, #38bdf8); border: none; font-weight: 800; padding: 12px 24px; font-size: 0.92rem; box-shadow: 0 4px 18px rgba(56, 189, 248, 0.4); display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
-                <span>📁</span> ફોટા પસંદ કરો (Choose Photos)
-              </button>
-            </div>
-
-            <!-- Waiting Card with Demo Quick Test -->
-            <div style="background: rgba(15, 23, 42, 0.6); border: 1.5px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-lg); padding: 36px 24px; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-              <div style="font-size: 3rem; margin-bottom: 14px; opacity: 0.6;">
-                ⏳
-              </div>
-              <h4 style="font-size: 1.15rem; font-weight: 800; color: #cbd5e1; margin: 0 0 8px 0;">
-                ફોટાની રાહ જોવાઈ રહી છે...
-              </h4>
-              <p style="font-size: 0.84rem; color: var(--text-muted); line-height: 1.5; margin: 0 0 14px 0; max-width: 340px;">
-                ડાબી બાજુએ તમારા YouTube Studio ના ફોટા અપલોડ કરો એટલે તરત જ તેમાંથી બધા ટોપ વિડીયો અને વ્યુઝ સ્કેન થઈને ChatGPT પ્રોમ્પ્ટ બની જશે!
-              </p>
-              <button id="btn-quick-sample-test" type="button" class="btn btn-outline btn-sm" style="border-color: #38bdf8; color: #38bdf8; font-weight: 700; padding: 8px 16px;">
-                ⚡ સેમ્પલ ડેમો ડેટાથી જુઓ (Demo Test)
-              </button>
-            </div>
-
-          </div>
-
-        </div>
-      `;
-
-      attachInitialEvents();
-      return;
+    // Archive filter
+    if (!showArchived) {
+      list = list.filter(i => !i.isArchived);
     }
 
-    // STATE 2: Analyzing Loading State with Live Photo Scan
-    if (isAnalyzing) {
-      const activeImg = (uploadedScreenshots[0] && uploadedScreenshots[0].base64) || '';
-      const photoCount = uploadedScreenshots.length;
-      container.innerHTML = `
-        <div style="max-width: 760px; margin: 30px auto; padding: 28px; background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.92)); border: 1.5px solid #38bdf8; border-radius: var(--radius-lg); box-shadow: 0 10px 40px rgba(56, 189, 248, 0.25);">
-          
-          <div style="text-align: center; margin-bottom: 20px;">
-            <div class="pulse-indicator" style="width: 24px; height: 24px; margin: 0 auto 12px; border-color: #38bdf8;"></div>
-            <h3 style="font-size: 1.35rem; font-weight: 800; color: #ffffff; margin: 0 0 6px 0;">
-              🔍 ${photoCount > 1 ? `${photoCount} ફોટામાંથી` : 'ફોટામાંથી'} YouTube Studio ડેટા સ્કેન થઈ રહ્યો છે...
-            </h3>
-            <p style="color: #94a3b8; font-size: 0.85rem; margin: 0;">
-              ${photoCount > 1 ? `બધા જ ${photoCount} ફોટામાંથી તમામ વિડીયો અને વ્યુઝ સંયુક્ત રીતે સ્કેન થઈ રહ્યા છે...` : 'કુલ વ્યુઝ અને સૌથી વધુ ચાલતા વિડીયો સ્કેન થઈ રહ્યા છે...'}
-            </p>
-          </div>
-
-          ${activeImg ? `
-            <!-- Live Scanning Visual Laser Box -->
-            <div class="photo-scanner-wrap" style="margin-bottom: 22px;">
-              <div class="photo-scan-laser"></div>
-              <img src="${activeImg}" alt="Scanning YouTube Studio Screenshot">
-            </div>
-          ` : ''}
-
-          <!-- Live Progress Checklist -->
-          <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px;">
-            <div style="display: flex; align-items: center; gap: 10px; font-size: 0.84rem; color: #34d399;">
-              <span>✓</span> <strong>૧. ફોટો સફળતાપૂર્વક લોડ થયો</strong>
-            </div>
-            <div style="display: flex; align-items: center; gap: 10px; font-size: 0.84rem; color: #38bdf8;">
-              <span class="pulse-indicator" style="width: 8px; height: 8px; border-color: #38bdf8;"></span>
-              <strong>૨. રીઅલ-ટાઇમ 48 કલાક અને 60 મિનિટ વ્યુઝ સ્કેનિંગ...</strong>
-            </div>
-            <div style="display: flex; align-items: center; gap: 10px; font-size: 0.84rem; color: #fbbf24;">
-              <span style="opacity: 0.7;">⏳</span>
-              <span>૩. ટોચના વિડીયો ટાઇટલ અને કન્ટેન્ટ વેલોસિટી ડિટેક્શન...</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 10px; font-size: 0.84rem; color: #94a3b8;">
-              <span style="opacity: 0.5;">⏳</span>
-              <span>૪. ૧૦૦% ફોટો-ફ્રી ChatGPT માસ્ટર પ્રોમ્પ્ટ જનરેશન...</span>
-            </div>
-          </div>
-
-        </div>
-      `;
-      return;
+    // Source Filter
+    if (sourceFilter !== 'all') {
+      list = list.filter(i => (i.inputType || 'manual') === sourceFilter);
     }
 
-    // STATE 3: Post-Upload & Analysis Complete (Full prompt + 48h data)
-    const currentPrompt = getChatGPTMasterPrompt();
+    // Category Filter
+    if (categoryFilter !== 'all') {
+      list = list.filter(i => (i.category || 'સરકારી યોજના') === categoryFilter);
+    }
+
+    // Date Range Filter
+    list = filterIdeasByDateRange(list, dateFilterRange, customDateStart, customDateEnd);
+
+    // Search Query
+    if (searchQuery && searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter(i => 
+        (i.title || '').toLowerCase().includes(q) ||
+        (i.description || '').toLowerCase().includes(q) ||
+        (i.originalText || '').toLowerCase().includes(q) ||
+        (i.notes || '').toLowerCase().includes(q)
+      );
+    }
+
+    // Sort
+    list.sort((a, b) => {
+      if (sortOrder === 'newest') {
+        return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+      } else if (sortOrder === 'oldest') {
+        return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+      } else if (sortOrder === 'updated') {
+        return new Date(b.updatedAt || b.clientUpdatedAt || 0).getTime() - new Date(a.updatedAt || a.clientUpdatedAt || 0).getTime();
+      } else if (sortOrder === 'views') {
+        return (Number(b.views48h) || 0) - (Number(a.views48h) || 0);
+      }
+      return 0;
+    });
+
+    return list;
+  }
+
+  // --- RENDER MAIN VIEW ---
+  function render() {
+    const activeProj = projectState.getActiveProject() || { name: 'મુખ્ય પ્રોજેક્ટ', folderName: 'મુખ્ય ફોલ્ડર', id: 'default' };
+    let allIdeas = projectState.getProjectIdeas(activeProj.id) || [];
+
+    // Fallback Consolidation: If active project has 0 ideas, merge any ideas from other projects so user never loses their writing!
+    if (allIdeas.length === 0 && Array.isArray(projectState.projects)) {
+      for (const p of projectState.projects) {
+        if (p.id !== activeProj.id && Array.isArray(p.ideas) && p.ideas.length > 0) {
+          activeProj.ideas = [...(activeProj.ideas || []), ...p.ideas];
+          projectState.saveProjects();
+          allIdeas = activeProj.ideas;
+          break;
+        }
+      }
+    }
+
+    // Auto-sync 48-Hour YouTube Studio Topics directly into Idea
+    try {
+      const raw48h = localStorage.getItem('gyan_48h_pasted_topics');
+      if (raw48h) {
+        const parsed48h = JSON.parse(raw48h);
+        if (Array.isArray(parsed48h) && parsed48h.length > 0) {
+          let hasNewSync = false;
+          for (const item of parsed48h) {
+            const cleanTitle = (item.title || '').replace(/^\d+[\.\-\)]\s*/, '').trim();
+            if (!cleanTitle) continue;
+            const alreadyExists = allIdeas.some(i => (i.title || '').trim().toLowerCase() === cleanTitle.toLowerCase());
+            if (!alreadyExists) {
+              const newIdeaRecord = {
+                id: item.id || ('idea_48h_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5)),
+                title: cleanTitle,
+                category: 'સરકારી યોજના',
+                inputType: 'paste',
+                source: '48h YouTube Studio',
+                description: item.description || `૪૮ કલાક સ્ટુડિયો પરથી ઉમેરેલો વિષય: ${cleanTitle}`,
+                notes: item.notes || '',
+                createdAt: item.timestamp || new Date().toISOString(),
+                updatedAt: item.timestamp || new Date().toISOString()
+              };
+              if (typeof projectState.saveProjectIdea === 'function') {
+                projectState.saveProjectIdea(newIdeaRecord, activeProj.id);
+              } else {
+                if (!Array.isArray(activeProj.ideas)) activeProj.ideas = [];
+                activeProj.ideas.push(newIdeaRecord);
+              }
+              hasNewSync = true;
+            }
+          }
+          if (hasNewSync) {
+            allIdeas = projectState.getProjectIdeas(activeProj.id) || [];
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[Auto-sync 48h to Idea]:', e);
+    }
+    const filteredIdeas = getFilteredProjectIdeas();
+    const groupedDateSections = groupIdeasByDate(filteredIdeas);
+
+    // Resolve active topic idea from current project or list
+    if (!activeTopicIdeaId || !allIdeas.some(i => i.id === activeTopicIdeaId)) {
+      if (activeProj.topicId && allIdeas.some(i => i.id === activeProj.topicId)) {
+        activeTopicIdeaId = activeProj.topicId;
+      } else if (activeProj.id && allIdeas.some(i => i.id === activeProj.id)) {
+        activeTopicIdeaId = activeProj.id;
+      } else if (activeProj.topic && allIdeas.some(i => (i.title || '').trim() === (activeProj.topic || '').trim())) {
+        activeTopicIdeaId = allIdeas.find(i => (i.title || '').trim() === (activeProj.topic || '').trim()).id;
+      } else if (activeProj.name && allIdeas.some(i => (i.title || '').trim() === (activeProj.name || '').trim())) {
+        activeTopicIdeaId = allIdeas.find(i => (i.title || '').trim() === (activeProj.name || '').trim()).id;
+      } else if (allIdeas.length > 0) {
+        activeTopicIdeaId = allIdeas[0].id;
+      } else {
+        activeTopicIdeaId = null;
+      }
+    }
+    const activeTopicIdea = allIdeas.find(i => i.id === activeTopicIdeaId) || (allIdeas.length > 0 ? allIdeas[0] : null);
+
+    // Auto-load diary content on initial open so writing is immediately visible
+    if (!isDiaryLoadedInitially && allIdeas.length > 0) {
+      isDiaryLoadedInitially = true;
+      const todayISO = formatDateISO(new Date()) || new Date().toISOString().slice(0, 10);
+      const todayEntry = allIdeas.find(i => formatDateISO(i.createdAt) === todayISO);
+      const initialEntry = todayEntry || activeTopicIdea || allIdeas[0];
+      if (initialEntry) {
+        activeDiaryEntryId = initialEntry.id;
+        diaryDate = formatDateISO(initialEntry.createdAt) || todayISO;
+        diaryTitle = initialEntry.title || '';
+        diaryNote = initialEntry.description || initialEntry.notes || initialEntry.originalText || '';
+      }
+    }
 
     container.innerHTML = `
-      <div style="max-width: 1260px; margin: 0 auto; padding-bottom: 30px;">
-        ${projectHeaderHtml}
+      <div style="max-width: 1240px; margin: 0 auto; padding-bottom: 40px;">
         
-        <!-- Header with Success Tag & Reset Option -->
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 18px;">
-          <div>
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
-              <span style="font-size: 1.6rem;">📈</span>
-              <h2 style="font-size: 1.45rem; font-weight: 800; color: #ffffff; margin: 0;">
-                ૪૮ કલાક YouTube Studio વિશ્લેષણ & ChatGPT પ્રોમ્પ્ટ
-              </h2>
-            </div>
-            <p style="color: var(--text-secondary); font-size: 0.88rem; margin: 0;">
-              તમારા ફોટામાંથી તમામ 48 કલાકનો ડેટા સ્કેન થઈ ગયો છે. નીચેનો સંપૂર્ણ પ્રોમ્પ્ટ કોપી કરી ChatGPT માં પેસ્ટ કરો.
-            </p>
-          </div>
-
-          <button id="btn-upload-new-photo" class="btn btn-outline btn-sm" style="border-color: #38bdf8; color: #38bdf8; font-weight: 700; padding: 8px 16px;">
-            <span>🔄</span> બીજો ફોટો અપલોડ કરો (New Photo)
-          </button>
-        </div>
-
-        <!-- 48-Hour Realtime Status Strip (Extracted from photo) -->
-        <div style="background: linear-gradient(135deg, rgba(255, 0, 0, 0.12), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(255, 0, 0, 0.35); border-radius: var(--radius-lg); padding: 14px 20px; margin-bottom: 20px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="width: 44px; height: 44px; border-radius: 50%; background: var(--yt-red); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 900; color: #fff; box-shadow: 0 0 16px rgba(255,0,0,0.4);">
-              ▶
-            </div>
+        <!-- Top Project Context Header -->
+        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-lg); padding: 14px 20px; margin-bottom: 18px; box-shadow: 0 8px 25px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <button id="btn-back-to-projects-banner" class="btn btn-outline btn-sm" style="font-weight: 700; display: flex; align-items: center; gap: 6px;">
+              <span>←</span> બધા ફોલ્ડર્સ
+            </button>
             <div>
-              <div style="font-size: 1.05rem; font-weight: 800; color: #ffffff;">
-                ${studioData.channelTitle ? `${studioData.channelTitle} (${studioData.customUrl || ''})` : 'YouTube Studio Realtime'}
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.25rem;">💡</span>
+                <h2 style="font-size: 1.18rem; font-weight: 800; color: #fff; margin: 0;">
+                  Idea (આઇડિયા બ્રેઇનસ્ટોર્મિંગ)
+                </h2>
               </div>
-              <div style="font-size: 0.76rem; color: #34d399; font-weight: 700;">
-                ✓ ફોટામાંથી સફળતાપૂર્વક સ્કેન થયેલ ડેટા • ૧૦૦% ફોટો-ફ્રી પ્રોમ્પ્ટ
-              </div>
+              <p style="font-size: 0.8rem; color: #38bdf8; margin: 2px 0 0 0; font-weight: 600;">
+                📁 ${activeProj.folderName || 'મુખ્ય ફોલ્ડર'} • ${activeProj.name} (${allIdeas.length} સેવ થયેલા આઈડિયા)
+              </p>
             </div>
           </div>
 
-          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <div style="background: rgba(16, 185, 129, 0.15); border: 1.5px solid #10b981; border-radius: 8px; padding: 6px 14px; text-align: center;">
-              <div style="font-size: 0.7rem; color: #34d399; font-weight: 800;">⏱️ કુલ વ્યુઝ (સ્કેન થયેલ)</div>
-              <div id="status-strip-views" style="font-size: 1.15rem; font-weight: 800; color: #10b981;">${studioData.views48h ? Number(studioData.views48h).toLocaleString('en-IN') : '0'}</div>
-            </div>
-            <div style="background: rgba(56, 189, 248, 0.15); border: 1.5px solid #38bdf8; border-radius: 8px; padding: 6px 14px; text-align: center;">
-              <div style="font-size: 0.7rem; color: #38bdf8; font-weight: 800;">📋 સ્કેન થયેલ વિડીયો</div>
-              <div id="status-strip-count" style="font-size: 1.15rem; font-weight: 800; color: #38bdf8;">${(studioData.topVideos || []).filter(v => v.title).length} ટોપિક્સ</div>
-            </div>
-            ${studioData.subscribers ? `
-            <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 6px 14px; text-align: center;">
-              <div style="font-size: 0.7rem; color: var(--text-muted);">👥 સબસ્ક્રાઇબર</div>
-              <div style="font-size: 1.15rem; font-weight: 800; color: #ffffff;">${Number(studioData.subscribers).toLocaleString('en-IN')}+</div>
-            </div>
-            ` : ''}
-          </div>
-        </div>
-
-        <!-- Main Two-Column View -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 20px; align-items: start;">
-          
-          <!-- LEFT: Uploaded Photo Preview + Extracted Metrics Customizer -->
-          <div style="display: flex; flex-direction: column; gap: 16px;">
-            
-            <!-- Uploaded Photos Strip with Full Clarity Preview & Lightbox Zoom -->
-            <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-lg); padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.45);">
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                <div style="font-size: 0.92rem; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 6px;">
-                  <span>📸</span> અપલોડ કરેલો ફોટો (${uploadedScreenshots.length}):
-                </div>
-                <div style="display: flex; gap: 8px;">
-                  <button id="btn-add-more-photos" class="btn btn-outline btn-sm" style="font-size: 0.75rem; padding: 4px 10px; border-color: #38bdf8; color: #38bdf8;">
-                    + બીજો ફોટો ઉમેરો
-                  </button>
-                  <input type="file" id="more-file-input" accept="image/*" multiple style="display: none;">
-                </div>
-              </div>
-
-              ${uploadedScreenshots.length > 0 ? `
-                <!-- Main High-Clarity Screenshot Preview -->
-                <div style="position: relative; border-radius: 10px; overflow: hidden; border: 1.5px solid #38bdf8; background: #020617; max-height: 260px; display: flex; align-items: center; justify-content: center; cursor: zoom-in;" id="main-screenshot-card" title="ક્લિક કરીને મોટો ફોટો જુઓ (Full Preview)">
-                  <img src="${uploadedScreenshots[0].base64}" id="main-screenshot-img" style="max-height: 250px; max-width: 100%; object-fit: contain; display: block;" alt="${uploadedScreenshots[0].name}">
-                  
-                  <span class="badge" style="position: absolute; top: 10px; left: 10px; background: rgba(16, 185, 129, 0.9); color: #fff; font-weight: 800; font-size: 0.72rem; box-shadow: 0 2px 8px rgba(0,0,0,0.5);">
-                    🟢 સ્કેન સફળ (Scanned)
-                  </span>
-
-                  <button class="btn-remove-screenshot" data-idx="0" title="કાઢી નાખો" style="position: absolute; top: 10px; right: 10px; background: rgba(239, 68, 68, 0.9); color: #fff; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; font-weight: 900; z-index: 5;">✕</button>
-
-                  <button id="btn-zoom-main-photo" class="btn btn-primary btn-sm" style="position: absolute; bottom: 10px; right: 10px; font-size: 0.76rem; padding: 5px 12px; background: rgba(2, 132, 199, 0.92); border: 1px solid #38bdf8; box-shadow: 0 4px 12px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 6px; font-weight: 700;">
-                    🔍 મોટો ફોટો જુઓ (Zoom)
-                  </button>
-                </div>
-
-                ${uploadedScreenshots.length > 1 ? `
-                  <!-- Multi-photo Thumbnails -->
-                  <div style="display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; padding-bottom: 4px;">
-                    ${uploadedScreenshots.map((img, idx) => `
-                      <div class="photo-preview-item" data-idx="${idx}" style="width: 70px; height: 50px; flex-shrink: 0; position: relative;">
-                        <img src="${img.base64}" style="width: 100%; height: 100%; object-fit: cover;" alt="${img.name}">
-                        <button class="btn-remove-screenshot" data-idx="${idx}" title="કાઢી નાખો" style="position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.85); color: #ef4444; border: none; border-radius: 50%; width: 16px; height: 16px; font-size: 0.65rem; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1;">✕</button>
-                      </div>
-                    `).join('')}
-                  </div>
-                ` : ''}
-
-                <!-- Scanned Data Instant Highlights -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px;">
-                  <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 8px; padding: 8px 12px;">
-                    <div style="font-size: 0.7rem; color: #34d399; font-weight: 800;">✓ કુલ વ્યુઝ (સ્કેન થયેલ)</div>
-                    <div id="highlight-total-views" style="font-size: 1.1rem; font-weight: 800; color: #ffffff;">${studioData.views48h ? Number(studioData.views48h).toLocaleString('en-IN') : '0'}</div>
-                  </div>
-                  <div style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 8px; padding: 8px 12px;">
-                    <div style="font-size: 0.7rem; color: #38bdf8; font-weight: 800;">✓ સ્કેન થયેલ ટોપિક્સ</div>
-                    <div id="highlight-total-count" style="font-size: 1.1rem; font-weight: 800; color: #ffffff;">${(studioData.topVideos || []).filter(v => v.title).length} વિડીયો</div>
-                  </div>
-                </div>
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <div id="firebase-auth-badge-area">
+              ${firebaseService.getAuthUID() ? `
+                <span style="font-size: 0.72rem; color: #38bdf8; font-weight: 700; background: rgba(56,189,248,0.15); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(56,189,248,0.3);">
+                  ☁️ ${firebaseService.getCurrentUser()?.email || 'Cloud Active'}
+                </span>
+                <button id="btn-firebase-signout" class="btn btn-outline btn-xs" style="font-size: 0.7rem; padding: 3px 6px; border-color: rgba(255,255,255,0.2); color: #94a3b8;" title="Sign Out">🚪 Logout</button>
               ` : `
-                <div style="font-size: 0.85rem; color: var(--text-muted); text-align: center; padding: 20px;">કોઈ ફોટો નથી</div>
+                <button id="btn-firebase-signin" class="btn btn-outline btn-xs" style="font-size: 0.72rem; padding: 4px 10px; border-color: #38bdf8; color: #38bdf8; font-weight: 800; background: rgba(56,189,248,0.1);" title="Google એકાઉન્ટ વડે સાઇન ઇન કરો">
+                  🔐 Cloud Sync
+                </button>
               `}
             </div>
 
-            <!-- Scanned Topic & Views Table (Topic same vido ni sankhya) -->
-            <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-lg); padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.45);">
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                <div style="font-size: 0.95rem; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 8px;">
-                  <span>📋</span> ટોપિક સામે વિડીયોની સંખ્યા (સ્કેન થયેલ):
-                </div>
-                <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-size: 0.72rem; font-weight: 800; border: 1px solid rgba(16, 185, 129, 0.4);">
-                  સ્કેનર ✓
+            <span id="idea-autosave-badge" class="badge" style="font-size: 0.72rem; font-weight: 800; background: ${saveStatusColor === '#10b981' ? 'rgba(16,185,129,0.2)' : 'rgba(56,189,248,0.2)'}; color: ${saveStatusColor}; border: 1px solid ${saveStatusColor};">
+              ${saveStatusText}
+            </span>
+
+            <button id="btn-goto-planner-from-topics" class="btn btn-primary btn-sm" style="display: none !important; font-weight: 800; background: #102A56; border: 1.5px solid #38bdf8; padding: 6px 14px; margin-right: 6px;">
+              📋 ૨. Production Planner →
+            </button>
+            <button id="btn-goto-step2-banner" class="btn btn-primary btn-sm" style="font-weight: 800; background: #8b5cf6; border: none; padding: 6px 14px; display: inline-flex; align-items: center; gap: 6px;" title="આ ટોપિક સાથે ૨. Slides માં આગળ વધો">
+              ${activeTopicIdea ? `૨. સ્લાઇડ્સ: "${activeTopicIdea.title.length > 18 ? activeTopicIdea.title.slice(0, 18) + '...' : activeTopicIdea.title}" →` : `૨. સ્લાઇડ્સ (Slide) →`}
+            </button>
+          </div>
+        </div>
+
+        <!-- Legacy Sub-Tabs (Strictly hidden for clean Tool 1 layout) -->
+        <div style="display: none !important; visibility: hidden !important; height: 0 !important; overflow: hidden !important; position: absolute !important; pointer-events: none !important;" aria-hidden="true">
+          <button class="btn btn-sm sub-tab-btn ${activeTab === 'notebook' ? 'btn-primary' : 'btn-outline'}" data-tab="notebook">
+            <span>📑</span> આઈડિયા નોટબુક <span class="badge">${allIdeas.length}</span>
+          </button>
+          <button class="btn btn-sm sub-tab-btn ${activeTab === 'ocr' ? 'btn-primary' : 'btn-outline'}" data-tab="ocr">
+            <span>📸</span> ૧. સ્ક્રીનશોટ સ્કેનર (OCR Studio)
+          </button>
+          <button class="btn btn-sm sub-tab-btn ${activeTab === 'paste' ? 'btn-primary' : 'btn-outline'}" data-tab="paste">
+            <span>📋</span> ૨. કોપી-પેસ્ટ આઈડિયા
+          </button>
+          <button class="btn btn-sm sub-tab-btn ${activeTab === 'manual' ? 'btn-primary' : 'btn-outline'}" data-tab="manual">
+            <span>✍️</span> ૩. સીધું લખાણ (Direct Writing)
+          </button>
+        </div>
+
+        <!-- Render Current Tab Body: ONLY Idea Notebook -->
+        <div id="sub-tab-content-area">
+          ${renderNotebookView(allIdeas, filteredIdeas, groupedDateSections, activeTopicIdea)}
+        </div>
+
+      </div>
+
+      <!-- Edit Idea Modal -->
+      ${editingIdea ? renderEditModalHtml(editingIdea) : ''}
+
+      <!-- Reading Diary Full Modal -->
+      ${readingDiaryIdea ? renderReadDiaryModalHtml(readingDiaryIdea) : ''}
+
+      <!-- ChatGPT Master Prompt Modal -->
+      ${chatGptModalData ? renderChatGptModalHtml(chatGptModalData) : ''}
+    `;
+
+    attachEvents();
+  }
+
+  // --- TAB 1: NOTEBOOK DASHBOARD VIEW ---
+  function renderNotebookView(allIdeas, filteredIdeas, groupedDateSections, activeTopicIdea) {
+    return `
+      <!-- IDEA DIARY / DAILY NOTES BOX (તારીખ પ્રમાણે ડાયરી ટૂલ) -->
+      <div class="card idea-diary-box" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.92)); border: 1.5px solid #10b981; border-radius: var(--radius-lg); padding: 18px 22px; margin-bottom: 20px; box-shadow: 0 8px 25px rgba(16,185,129,0.25); transition: all 0.3s ease;">
+        
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.5rem; background: rgba(16,185,129,0.15); padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(16,185,129,0.3);">📔</span>
+            <div>
+              <h3 style="font-weight: 800; font-size: 1.15rem; color: #34d399; margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span>આઈડિયા ડાયરી (Idea Diary & Daily Notes)</span>
+                ${activeDiaryEntryId ? `
+                  <span class="badge" style="background: rgba(16,185,129,0.25); color: #6ee7b7; border: 1px solid #10b981; font-size: 0.72rem; font-weight: 800; padding: 2px 8px;">
+                    📖 ખૂલેલી નોંધ: "${(diaryTitle || 'ડાયરી નોંધ').length > 25 ? (diaryTitle || 'ડાયરી નોંધ').slice(0, 25) + '...' : (diaryTitle || 'ડાયરી નોંધ')}"
+                  </span>
+                ` : `
+                  <span class="badge" style="background: rgba(56,189,248,0.2); color: #38bdf8; border: 1px solid rgba(56,189,248,0.4); font-size: 0.72rem; font-weight: 800; padding: 2px 8px;">
+                    ✍️ નવી ડાયરી નોંધ
+                  </span>
+                `}
+              </h3>
+              <span style="font-size: 0.78rem; color: #94a3b8;">
+                ${activeDiaryEntryId 
+                  ? `તારીખ: <strong>${formatIndianDateDisplay(diaryDate)}</strong> ની સેવ થયેલી ડાયરી નોંધ ખૂલેલી છે. અહીંથી સીધું લખાણ વાંચી અને સુધારી શકો છો.` 
+                  : `તારીખ પસંદ કરી તમારી ઈચ્છા મુજબનું લખાણ લખો, સાચવો, વાંચો અથવા ગમે ત્યારે ડીલીટ કરો.`
+                }
+              </span>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button type="button" id="btn-new-diary-entry" class="btn btn-outline btn-xs" style="border-color: #38bdf8; color: #38bdf8; font-weight: 800; padding: 5px 12px; border-radius: 6px;" title="નવી કોરી નોંધ લખવા માટે બોક્સ ખાલી કરો">
+              ➕ નવી નોંધ લખો
+            </button>
+          </div>
+        </div>
+
+        <form id="form-idea-diary" style="display: flex; flex-direction: column; gap: 12px;">
+          <!-- Top Row: Date Picker & Topic Heading -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+            <!-- Date Picker -->
+            <div>
+              <label for="diary-entry-date" style="display: block; font-size: 0.78rem; font-weight: 800; color: #38bdf8; margin-bottom: 5px;">
+                📅 તારીખ પસંદ કરો (Date):
+              </label>
+              <input 
+                type="date" 
+                id="diary-entry-date" 
+                class="form-input" 
+                value="${diaryDate}" 
+                style="width: 100%; font-size: 0.9rem; font-weight: 700; padding: 10px 14px; background: rgba(0,0,0,0.5); border: 1.5px solid rgba(56,189,248,0.4); border-radius: 8px; color: #ffffff;"
+              />
+            </div>
+
+            <!-- Title / Topic -->
+            <div>
+              <label for="diary-entry-title" style="display: block; font-size: 0.78rem; font-weight: 800; color: #34d399; margin-bottom: 5px;">
+                📌 વિષય / ટાઇટલ (Topic / Heading):
+              </label>
+              <input 
+                type="text" 
+                id="diary-entry-title" 
+                class="form-input font-gu" 
+                value="${diaryTitle}" 
+                placeholder="દા.ત. આજના વિડીયોનો વિચાર, પરિપત્ર કે હેડિંગ..." 
+                style="width: 100%; font-size: 0.9rem; font-weight: 700; padding: 10px 14px; background: rgba(0,0,0,0.5); border: 1.5px solid rgba(16,185,129,0.4); border-radius: 8px; color: #ffffff;"
+              />
+            </div>
+          </div>
+
+          <!-- Notes Textarea (લખાણ) -->
+          <div>
+            <label for="diary-entry-note" style="display: block; font-size: 0.78rem; font-weight: 800; color: #cbd5e1; margin-bottom: 5px;">
+              ✍️ તમારી ઈચ્છા મુજબનું લખાણ / નોંધ (Diary Writing / Content):
+            </label>
+            <textarea 
+              id="diary-entry-note" 
+              class="form-input font-gu" 
+              rows="5" 
+              placeholder="અહીં તમારી ઈચ્છા મુજબનું કોઈપણ લખાણ, વિગત, મહત્વના મુદ્દા, યુટ્યુબ સ્ક્રિપ્ટ કે નોંધ લખો..." 
+              style="width: 100%; font-size: 0.92rem; line-height: 1.7; padding: 12px 14px; background: rgba(0,0,0,0.5); border: 1.5px solid rgba(255,255,255,0.18); border-radius: 8px; color: #ffffff; resize: vertical;"
+            >${diaryNote}</textarea>
+          </div>
+
+          <!-- Hidden Quick Add Title Input for backward compatibility -->
+          <input type="hidden" id="quick-add-idea-title-input" value="">
+          <button type="button" id="btn-quick-add-idea-submit" style="display: none !important;"></button>
+
+          <!-- Form Action Buttons -->
+          <div style="display: flex; gap: 10px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
+            <button type="button" id="btn-clear-diary-form" class="btn btn-outline btn-sm" style="font-weight: 700; border-color: rgba(255,255,255,0.25); color: #cbd5e1; padding: 8px 14px; border-radius: 6px;">
+              ✕ સાફ કરો (Clear)
+            </button>
+            <button type="submit" id="btn-save-diary-entry" class="btn btn-primary btn-sm" style="background: linear-gradient(135deg, #10b981, #059669); border: none; font-weight: 800; padding: 9px 22px; border-radius: 8px; font-size: 0.92rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(16,185,129,0.35);">
+              <span>💾</span> ${activeDiaryEntryId ? 'ડાયરીમાં ફેરફાર સાચવો (Update Entry)' : 'ડાયરીમાં સાચવો (Save to Diary)'}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Selected Active Topic Workflow Banner -->
+      <div class="active-workflow-topic-strip" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(15, 23, 42, 0.95)); border: 1.5px solid #10b981; border-radius: var(--radius-lg); padding: 12px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; box-shadow: 0 4px 15px rgba(16,185,129,0.25);">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 1.4rem;">🎯</span>
+          <div>
+            <div style="font-size: 0.74rem; color: #38bdf8; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
+              વર્કફ્લો માટે પસંદ કરેલ સક્રિય વિષય (Selected Topic):
+            </div>
+            <div style="font-size: 1.02rem; font-weight: 900; color: #ffffff; line-height: 1.3;">
+              ${activeTopicIdea ? activeTopicIdea.title : '<span style="color: #94a3b8; font-weight: 600;">કોઈ વિષય પસંદ કરેલ નથી (નીચેથી કોઈપણ કાર્ડ પર ક્લિક કરીને પસંદ કરો)</span>'}
+            </div>
+          </div>
+        </div>
+
+        ${activeTopicIdea ? `
+          <button type="button" class="btn btn-primary btn-sm btn-proceed-selected-topic" style="background: linear-gradient(135deg, #10b981, #059669); border: none; font-weight: 900; padding: 9px 18px; border-radius: 8px; box-shadow: 0 4px 14px rgba(16,185,129,0.4); display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+            <span>🎬</span> આ વિષય સાથે આગળ વધો: ૨. Slide Prompt →
+          </button>
+        ` : ''}
+      </div>
+
+      <!-- Filter Bar & Search Tools -->
+      <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1.5px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.35);">
+        
+        <!-- Search & Date Filter Pills -->
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+          
+          <!-- Search Box -->
+          <div style="flex: 1; min-width: 260px; position: relative;">
+            <input type="text" id="notebook-search-input" class="form-input font-gu" value="${searchQuery}" placeholder="🔍 ટાઇટલ, લખાણ કે નોંધમાં શોધો..." style="width: 100%; font-size: 0.86rem; padding: 8px 12px; background: rgba(0,0,0,0.4); border-color: rgba(56,189,248,0.3);">
+          </div>
+
+          <!-- Quick Add Buttons (Preserved hidden for backward compatibility) -->
+          <div style="display: none !important;">
+            <button id="btn-quick-add-manual" class="btn btn-outline btn-xs"></button>
+            <button id="btn-quick-add-paste" class="btn btn-outline btn-xs"></button>
+            <button id="btn-quick-add-ocr" class="btn btn-outline btn-xs"></button>
+          </div>
+        </div>
+
+        <!-- Date Range Filter Pills -->
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+          <span style="font-size: 0.74rem; color: #94a3b8; font-weight: 800;">📅 તારીખ:</span>
+          ${[
+            { id: 'all', label: 'બધા જ (All)' },
+            { id: 'today', label: 'આજે (Today)' },
+            { id: 'yesterday', label: 'ગઈકાલે (Yesterday)' },
+            { id: 'last7days', label: 'છેલ્લા ૭ દિવસ' },
+            { id: 'last30days', label: 'છેલ્લા ૩૦ દિવસ' },
+            { id: 'custom', label: 'કસ્ટમ તારીખ' }
+          ].map(df => `
+            <button class="btn btn-xs date-filter-btn ${dateFilterRange === df.id ? 'btn-primary' : 'btn-outline'}" data-range="${df.id}" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px;">
+              ${df.label}
+            </button>
+          `).join('')}
+
+          <button id="btn-select-all-ideas" class="btn btn-xs ${selectedIdeaIds.size > 0 && selectedIdeaIds.size === filteredIdeas.length ? 'btn-primary' : 'btn-outline'}" style="margin-left: auto; font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; border-color: #38bdf8; color: ${selectedIdeaIds.size > 0 && selectedIdeaIds.size === filteredIdeas.length ? '#fff' : '#38bdf8'}; font-weight: 800;">
+            ${selectedIdeaIds.size > 0 && selectedIdeaIds.size === filteredIdeas.length ? '✓ બધા પસંદ કરેલ (All Selected)' : '☑️ Select All (બધા પસંદ કરો)'}
+          </button>
+        </div>
+
+        ${dateFilterRange === 'custom' ? `
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 8px;">
+            <label style="font-size: 0.74rem; color: #cbd5e1;">શરૂઆત:</label>
+            <input type="date" id="custom-date-start" class="form-input" value="${customDateStart}" style="padding: 4px 8px; font-size: 0.76rem;">
+            <label style="font-size: 0.74rem; color: #cbd5e1;">અંત:</label>
+            <input type="date" id="custom-date-end" class="form-input" value="${customDateEnd}" style="padding: 4px 8px; font-size: 0.76rem;">
+            <button id="btn-apply-custom-date" class="btn btn-primary btn-xs" style="font-weight: 800;">લાગુ કરો</button>
+          </div>
+        ` : ''}
+
+        <!-- Source, Category & Sorting Filters -->
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; font-size: 0.76rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px;">
+          <!-- Source -->
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="color: #94a3b8; font-weight: 700;">ઇનપુટ સોર્સ:</span>
+            <select id="filter-source-select" class="form-input" style="font-size: 0.74rem; padding: 4px 8px;">
+              <option value="all" ${sourceFilter === 'all' ? 'selected' : ''}>બધા સોર્સ (All)</option>
+              <option value="diary" ${sourceFilter === 'diary' ? 'selected' : ''}>📔 ડાયરી નોંધ</option>
+              <option value="ocr" ${sourceFilter === 'ocr' ? 'selected' : ''}>📸 OCR સ્કેન</option>
+              <option value="paste" ${sourceFilter === 'paste' ? 'selected' : ''}>📋 કોપી-પેસ્ટ</option>
+              <option value="manual" ${sourceFilter === 'manual' ? 'selected' : ''}>✍️ ડાયરેક્ટ લખાણ</option>
+            </select>
+          </div>
+
+          <!-- Category -->
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="color: #94a3b8; font-weight: 700;">કેટેગરી:</span>
+            <select id="filter-category-select" class="form-input font-gu" style="font-size: 0.74rem; padding: 4px 8px;">
+              <option value="all" ${categoryFilter === 'all' ? 'selected' : ''}>બધી કેટેગરી</option>
+              <option value="ડાયરી નોંધ" ${categoryFilter === 'ડાયરી નોંધ' ? 'selected' : ''}>📔 ડાયરી નોંધ</option>
+              <option value="સરકારી યોજના" ${categoryFilter === 'સરકારી યોજના' ? 'selected' : ''}>સરકારી યોજના</option>
+              <option value="સરકારી ભરતી" ${categoryFilter === 'સરકારી ભરતી' ? 'selected' : ''}>સરકારી ભરતી</option>
+              <option value="પરિપત્ર & નિયમ" ${categoryFilter === 'પરિપત્ર & નિયમ' ? 'selected' : ''}>પરિપત્ર & નિયમ</option>
+              <option value="અન્ય" ${categoryFilter === 'અન્ય' ? 'selected' : ''}>અન્ય વિષયો</option>
+            </select>
+          </div>
+
+          <!-- Sorting -->
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="color: #94a3b8; font-weight: 700;">ગોઠવણી (Sort):</span>
+            <select id="sort-order-select" class="form-input" style="font-size: 0.74rem; padding: 4px 8px;">
+              <option value="newest" ${sortOrder === 'newest' ? 'selected' : ''}>નવા પ્રથમ (Newest First)</option>
+              <option value="oldest" ${sortOrder === 'oldest' ? 'selected' : ''}>જૂના પ્રથમ (Oldest First)</option>
+              <option value="updated" ${sortOrder === 'updated' ? 'selected' : ''}>છેલ્લે ફેરફાર (Recently Updated)</option>
+              <option value="views" ${sortOrder === 'views' ? 'selected' : ''}>સૌથી વધુ વ્યુઝ (Top Views)</option>
+            </select>
+          </div>
+
+          <!-- Show Archived Toggle -->
+          <label style="display: flex; align-items: center; gap: 4px; color: #94a3b8; cursor: pointer; margin-left: auto;">
+            <input type="checkbox" id="check-show-archived" ${showArchived ? 'checked' : ''}> આર્કાઇવ થયેલા બતાવો
+          </label>
+        </div>
+
+      </div>
+
+      <!-- Multi-Selected Ideas Action Bar -->
+      ${selectedIdeaIds.size > 0 ? `
+        <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(15, 23, 42, 0.95)); border: 2px solid #10b981; border-radius: var(--radius-lg); padding: 12px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; box-shadow: 0 8px 24px rgba(16,185,129,0.3);">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.3rem;">✓</span>
+            <strong style="color: #34d399; font-size: 0.92rem;">
+              ${selectedIdeaIds.size} આઈડિયા પસંદ કરેલા છે
+            </strong>
+          </div>
+
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button id="btn-transfer-planner-selected" class="btn btn-primary btn-sm" style="background: #102A56; border: 1.5px solid #38bdf8; font-weight: 800; font-size: 0.82rem; display: flex; align-items: center; gap: 6px;">
+              <span>📋</span> Tool #2: Production Planner માં મોકલો
+            </button>
+            <button id="btn-generate-selected-chatgpt" class="btn btn-success btn-sm" style="font-weight: 800; font-size: 0.82rem; display: flex; align-items: center; gap: 6px;">
+              <span>🚀</span> પસંદ કરેલા આઈડિયા → ChatGPT માસ્ટર પ્રોમ્પ્ટ
+            </button>
+            <button id="btn-deselect-all-ideas" class="btn btn-outline btn-xs" style="color: #cbd5e1;">
+              અનસિલેક્ટ કરો
+            </button>
+          </div>
+        </div>
+      ` : ''}
+
+      ${filteredIdeas.length > 0 ? `
+        <div style="display: flex; flex-direction: column; gap: 24px;">
+          ${groupedDateSections.map(group => `
+            <div>
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 6px;">
+                <span style="font-size: 1.1rem;">📅</span>
+                <h3 style="font-size: 0.98rem; font-weight: 800; color: #38bdf8; margin: 0;">
+                  ${group.dateLabel}
+                </h3>
+                <span class="badge" style="font-size: 0.68rem; background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3);">
+                  ${group.ideas.length} આઈડિયા
                 </span>
               </div>
 
-              <div style="display: grid; grid-template-columns: 1fr 100px 30px; gap: 8px; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 0.74rem; font-weight: 800; color: #94a3b8;">
-                <div>વિડીયો / ટોપિકનું નામ</div>
-                <div style="text-align: right;">સંખ્યા (વ્યુઝ)</div>
-                <div></div>
+              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px;">
+                ${group.ideas.map(idea => renderIdeaCard(idea, activeTopicIdea)).join('')}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      ` : `
+        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1.5px dashed rgba(56, 189, 248, 0.35); border-radius: var(--radius-lg); padding: 48px 24px; text-align: center;">
+          <div style="font-size: 2.8rem; margin-bottom: 12px; opacity: 0.8;">💡</div>
+          <h3 style="font-size: 1.25rem; font-weight: 800; color: #ffffff; margin: 0 0 6px 0;">
+            આ પ્રોજેક્ટમાં હજુ કોઈ આઈડિયા સેવ થયેલા નથી
+          </h3>
+          <p style="font-size: 0.88rem; color: #94a3b8; max-width: 480px; margin: 0 auto 20px auto; line-height: 1.5;">
+            આ પ્રોજેક્ટમાં હજુ સુધી કોઈ આઈડિયા ઉમેરાયો નથી. ઉપરના બોક્સમાં તમારો વિડીયો આઈડિયા લખીને <strong>'➕ આઈડિયા ઉમેરો'</strong> બટન દબાવો.
+          </p>
+
+          <div style="display: none !important; visibility: hidden !important; height: 0 !important; overflow: hidden !important; position: absolute !important; pointer-events: none !important;" aria-hidden="true">
+            <button class="btn btn-primary btn-sm sub-tab-btn" data-tab="ocr">📸 ૧. સ્ક્રીનશોટ સ્કેનર</button>
+            <button class="btn btn-primary btn-sm sub-tab-btn" data-tab="paste">📋 ૨. કોપી-પેસ્ટ આઈડિયા</button>
+            <button class="btn btn-primary btn-sm sub-tab-btn" data-tab="manual">✍️ ૩. સીધું લખાણ લખો</button>
+          </div>
+        </div>
+      `}
+
+      <!-- CONNECTED WORKFLOW STEPPER BAR (TOOLS 1 TO 7 JOODAN) -->
+      <div class="card workspace-bottom-stepper" style="background: rgba(15, 23, 42, 0.95); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: 12px; padding: 14px 20px; margin-top: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.4);">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.4rem;">🔗</span>
+          <div>
+            <div style="font-size: 0.78rem; color: #38bdf8; font-weight: 700;">
+              વિડીયો આઇડિયા ટૂલ (Idea Brainstorming)
+            </div>
+            <div style="font-weight: 800; font-size: 0.95rem; color: #ffffff;">
+              Idea (પસંદ કરેલ વિષય: <span style="color: #34d399;">${activeTopicIdea ? activeTopicIdea.title : 'કોઈ વિષય પસંદ કરો'}</span>)
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <button id="ws-btn-bottom-next-topics" class="btn btn-primary btn-sm" style="font-weight: 900; background: linear-gradient(135deg, #10b981, #059669); border: none; padding: 10px 20px; border-radius: 8px; box-shadow: 0 4px 14px rgba(16,185,129,0.4); display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+            ${activeTopicIdea ? `આ વિષય સાથે આગળ વધો: ૧. Slide Prompts →` : `આગળનું પગલું: ૧. Slide Prompts (સ્લાઇડ પ્રોમ્પ્ટ) →`}
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  // --- RENDER SINGLE IDEA CARD ---
+  function renderIdeaCard(idea, activeTopicIdea) {
+    const isChecked = selectedIdeaIds.has(idea.id);
+    const isCurrentTopic = Boolean(activeTopicIdea && activeTopicIdea.id === idea.id);
+    const srcType = idea.inputType || 'manual';
+    const srcBadgeColor = srcType === 'diary' ? '#10b981' : (srcType === 'ocr' ? '#38bdf8' : (srcType === 'paste' ? '#34d399' : '#a78bfa'));
+    const srcBadgeBg = srcType === 'diary' ? 'rgba(16,185,129,0.15)' : (srcType === 'ocr' ? 'rgba(56,189,248,0.15)' : (srcType === 'paste' ? 'rgba(52,211,153,0.15)' : 'rgba(139,92,246,0.15)'));
+    const srcLabel = srcType === 'diary' ? '📔 ડાયરી નોંધ' : (srcType === 'ocr' ? '📸 OCR સ્કેન' : (srcType === 'paste' ? '📋 કોપી-પેસ્ટ' : '✍️ સીધું લખાણ'));
+
+    const createdDisplay = idea.createdAt ? formatIndianDateTimeDisplay(idea.createdAt) : 'તારીખ નથી';
+    const isModified = idea.updatedAt && idea.createdAt && idea.updatedAt !== idea.createdAt;
+    const normTitle = (idea.title || idea.topic || '').trim().toLowerCase();
+    const isAlreadyInPlanner = plannerTopicsSet.has(normTitle);
+
+    const cardBorder = isCurrentTopic ? '2px solid #10b981' : (isChecked ? '1.5px solid #38bdf8' : '1.5px solid rgba(255,255,255,0.08)');
+    const cardShadow = isCurrentTopic ? '0 0 20px rgba(16, 185, 129, 0.4), 0 4px 15px rgba(0,0,0,0.4)' : '0 4px 15px rgba(0,0,0,0.3)';
+    const cardBg = isCurrentTopic
+      ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(15, 23, 42, 0.96))'
+      : 'linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.8))';
+
+    const diaryText = (idea.description || idea.notes || idea.originalText || '').trim();
+
+    return `
+      <div class="idea-notebook-card ${isCurrentTopic ? 'active-topic-card' : ''}" data-id="${idea.id}" style="background: ${cardBg}; border: ${cardBorder}; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: ${cardShadow}; transition: all 0.2s ease; cursor: pointer;">
+        
+        <div>
+          <!-- Card Header: Checkbox + Badges -->
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 8px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;" onclick="event.stopPropagation()">
+              <input type="checkbox" class="idea-select-checkbox" data-id="${idea.id}" ${isChecked ? 'checked' : ''} style="width: 16px; height: 16px; cursor: pointer;">
+              <span class="badge" style="font-size: 0.68rem; font-weight: 800; background: ${srcBadgeBg}; color: ${srcBadgeColor}; border: 1px solid ${srcBadgeColor}; padding: 2px 7px;">
+                ${srcLabel}
+              </span>
+            </label>
+
+            <div style="display: flex; align-items: center; gap: 6px;">
+              ${isCurrentTopic ? `
+                <span class="badge" style="font-size: 0.72rem; font-weight: 900; background: rgba(16,185,129,0.3); color: #34d399; border: 1.5px solid #10b981; padding: 2px 8px; border-radius: 6px;">
+                  🎯 સક્રિય વિષય
+                </span>
+              ` : `
+                <button type="button" class="btn btn-outline btn-xs btn-set-active-topic" data-id="${idea.id}" style="font-size: 0.68rem; padding: 2px 7px; border-color: rgba(56,189,248,0.4); color: #38bdf8; font-weight: 700; border-radius: 5px; cursor: pointer;" title="આ આઈડિયાને સક્રિય વિષય તરીકે પસંદ કરો" onclick="event.stopPropagation()">
+                  🎯 પસંદ કરો
+                </button>
+              `}
+              <span class="badge" style="font-size: 0.68rem; background: rgba(255,255,255,0.08); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.15);">
+                ${idea.category || 'સરકારી યોજના'}
+              </span>
+            </div>
+          </div>
+
+          <!-- Snippet Thumbnail if available -->
+          ${idea.cropSnippet ? `
+            <div style="margin-bottom: 8px;">
+              <img src="${idea.cropSnippet}" style="max-height: 32px; max-width: 100%; object-fit: contain; border-radius: 4px; border: 1px solid rgba(56,189,248,0.4);" alt="Snippet">
+            </div>
+          ` : ''}
+
+          <!-- Idea Title -->
+          <h4 class="font-gu" style="font-size: 1.02rem; font-weight: 800; color: ${isCurrentTopic ? '#34d399' : '#ffffff'}; line-height: 1.4; margin: 0 0 8px 0;">
+            ${idea.title}
+          </h4>
+
+          <!-- Views Badge if present -->
+          ${typeof idea.views48h === 'number' && idea.views48h > 0 ? `
+            <div style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.74rem; color: #34d399; font-weight: 800; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); border-radius: 6px; padding: 2px 8px; margin-bottom: 8px;">
+              <span>👁️</span> ${Number(idea.views48h).toLocaleString('en-IN')} વ્યુઝ (48h)
+            </div>
+          ` : ''}
+
+          <!-- Diary Writing / Content Display -->
+          ${diaryText ? `
+            <div class="font-gu" style="background: rgba(0, 0, 0, 0.45); border-left: 3px solid ${isCurrentTopic ? '#10b981' : '#38bdf8'}; border-radius: 6px; padding: 10px 12px; margin: 8px 0 10px 0; font-size: 0.85rem; line-height: 1.6; color: #f1f5f9; white-space: pre-wrap; word-break: break-word; max-height: 220px; overflow-y: auto;">
+              ${diaryText}
+            </div>
+          ` : ''}
+
+          <!-- Reference Link -->
+          ${idea.sourceUrl ? `
+            <div style="font-size: 0.72rem; color: #38bdf8; margin-bottom: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              🔗 <a href="${idea.sourceUrl}" target="_blank" rel="noopener noreferrer" style="color: #38bdf8; text-decoration: underline;" onclick="event.stopPropagation()">${idea.sourceUrl}</a>
+            </div>
+          ` : ''}
+        </div>
+
+        <!-- Card Footer: Timestamps & Operations -->
+        <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px; margin-top: 10px;" onclick="event.stopPropagation()">
+          
+          <div style="font-size: 0.7rem; color: #64748b; margin-bottom: 8px; line-height: 1.4;">
+            <div>🕒 ઉમેર્યા તારીખ: <strong style="color: #94a3b8;">${createdDisplay}</strong></div>
+            ${isModified ? `<div>✏️ છેલ્લે ફેરફાર: <span style="color: #cbd5e1;">${formatIndianDateTimeDisplay(idea.updatedAt)}</span></div>` : ''}
+          </div>
+
+          <!-- Action Buttons -->
+          <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
+            <button class="btn btn-primary btn-xs btn-open-in-diary" data-id="${idea.id}" style="font-size: 0.74rem; padding: 4px 10px; background: rgba(16, 185, 129, 0.2); border: 1.5px solid #10b981; color: #34d399; font-weight: 800; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="આ નોંધ ઉપર ડાયરીમાં ખોલો અને સુધારો">
+              <span>📖</span> ડાયરીમાં ખોલો
+            </button>
+            ${diaryText ? `
+              <button class="btn btn-outline btn-xs btn-read-full-diary" data-id="${idea.id}" style="font-size: 0.7rem; padding: 3px 8px; border-color: rgba(56,189,248,0.5); color: #38bdf8; font-weight: 700;" title="સંપૂર્ણ લખાણ વાંચો">
+                👁️ વાંચો
+              </button>
+              <button class="btn btn-outline btn-xs btn-copy-idea-text" data-id="${idea.id}" style="font-size: 0.7rem; padding: 3px 8px; border-color: rgba(56,189,248,0.4); color: #38bdf8; font-weight: 700;" title="લખાણ કોપી કરો">
+                📋 કોપી
+              </button>
+            ` : ''}
+            <button class="btn btn-primary btn-xs btn-start-production-idea" data-id="${idea.id}" data-title="${encodeURIComponent(idea.title)}" style="font-size: 0.76rem; padding: 5px 12px; background: ${isCurrentTopic ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #8b5cf6, #7c3aed)'}; border: none; color: #ffffff; font-weight: 800; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 8px ${isCurrentTopic ? 'rgba(16,185,129,0.4)' : 'rgba(139,92,246,0.35)'};" title="આ વિષય સાથે આગળ વધો: ૪. Slide Prompts">
+              <span>🎬</span> ${isCurrentTopic ? 'આ વિષય સાથે આગળ વધો: ૪. Slide Prompts ➔' : '૪. Slide Prompts ➔'}
+            </button>
+            ${isAlreadyInPlanner ? `
+              <span class="badge" style="display: none !important; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; font-size: 0.7rem; font-weight: 800; padding: 2px 7px; border-radius: 4px;">
+                ✓ In Planner
+              </span>
+            ` : `
+              <button class="btn btn-outline btn-xs btn-add-card-to-planner" data-id="${idea.id}" style="display: none !important;" title="Tool #2 Production Planner માં ઉમેરો">
+                ➕ Add to Planner
+              </button>
+            `}
+            <button class="btn btn-outline btn-xs btn-edit-idea" data-id="${idea.id}" style="font-size: 0.7rem; padding: 3px 8px; border-color: #38bdf8; color: #38bdf8; font-weight: 700;">
+              ✏️ સુધારો
+            </button>
+            <button class="btn btn-outline btn-xs btn-duplicate-idea" data-id="${idea.id}" style="font-size: 0.7rem; padding: 3px 8px; border-color: rgba(255,255,255,0.2); color: #cbd5e1;" title="નકલ બનાવો">
+              📑 નકલ
+            </button>
+            <button class="btn btn-outline btn-xs btn-archive-idea" data-id="${idea.id}" style="font-size: 0.7rem; padding: 3px 8px; border-color: rgba(255,255,255,0.2); color: #94a3b8;" title="${idea.isArchived ? 'અન-આર્કાઇવ કરો' : 'આર્કાઇવ કરો'}">
+              ${idea.isArchived ? '📂 રીસ્ટોર' : '📦 આર્કાઇવ'}
+            </button>
+            <button class="btn btn-outline btn-xs btn-delete-idea" data-id="${idea.id}" style="font-size: 0.7rem; padding: 3px 8px; border-color: rgba(239,68,68,0.5); color: #ef4444; font-weight: 700;" title="ડાયરીમાંથી ડિલીટ કરો">
+              🗑️ ડીલીટ
+            </button>
+          </div>
+        </div>
+
+      </div>
+    `;
+  }
+
+  // --- TAB 2: OCR STUDIO VIEW ---
+  function renderOcrStudioView() {
+    const activePhoto = uploadedScreenshots[0];
+    const filteredVideos = studioData.topVideos || [];
+
+    return `
+      <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-lg); padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.45);">
+        
+        <!-- Header Strip -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h3 style="font-size: 1.2rem; font-weight: 800; color: #fff; margin: 0 0 4px 0;">
+              📸 YouTube Studio સ્ક્રીનશોટ સ્કેનર & વિઝ્યુઅલ બોક્સ ડિટેક્ટર
+            </h3>
+            <p style="font-size: 0.82rem; color: #94a3b8; margin: 0;">
+              સ્ક્રીનશોટ અપલોડ કરો અથવા પેસ્ટ કરો. અસલી ફોટા પર વિઝ્યુઅલ બોક્સ હાઇલાઇટ થશે. સ્કેન થયેલા આઈડિયા ૧-ક્લિકમાં તમારી નોટબુકમાં સેવ થશે.
+            </p>
+          </div>
+
+          <div style="display: flex; gap: 8px;">
+            <button id="btn-upload-new-ocr-photo" class="btn btn-outline btn-xs" style="border-color: #38bdf8; color: #38bdf8; font-weight: 800;">
+              + નવો ફોટો અપલોડ
+            </button>
+          </div>
+        </div>
+
+        ${!activePhoto ? `
+          <!-- Initial Dropzone -->
+          <div style="border: 2.5px dashed #38bdf8; border-radius: 12px; padding: 48px 24px; text-align: center; cursor: pointer; background: rgba(0,0,0,0.3);" id="ocr-main-dropzone">
+            <input type="file" id="ocr-file-input" accept="image/*" multiple style="display: none;">
+            <div style="font-size: 2.8rem; margin-bottom: 12px;">📤</div>
+            <h4 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0 0 6px 0;">
+              YouTube Studio Analytics નો ફોટો અહીં પસંદ કરો
+            </h4>
+            <p style="font-size: 0.84rem; color: #94a3b8; margin: 0 0 16px 0;">
+              કમ્પ્યુટર કે મોબાઈલમાંથી ફોટો પસંદ કરો અથવા સીધું કીબોર્ડ પરથી <strong>Ctrl + V</strong> દબાવી પેસ્ટ કરો
+            </p>
+            <button type="button" id="btn-browse-ocr" class="btn btn-primary" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #38bdf8); border: none;">
+              📁 ફોટો પસંદ કરો
+            </button>
+          </div>
+        ` : `
+          <!-- Analyzed Image & Table Split View -->
+          <div style="display: grid; grid-template-columns: minmax(360px, 480px) 1fr; gap: 20px; align-items: start;">
+            
+            <!-- Left: High-Clarity Viewport -->
+            <div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; align-items: center; justify-content: space-between;">
+                <button id="btn-toggle-box-select" class="btn ${isBoxSelectMode ? 'btn-success' : 'btn-outline'} btn-xs" style="font-weight: 800; font-size: 0.76rem; border-color: ${isBoxSelectMode ? '#10b981' : '#38bdf8'}; color: ${isBoxSelectMode ? '#fff' : '#38bdf8'}; padding: 5px 10px;">
+                  🎯 ${isBoxSelectMode ? 'સિલેક્શન મોડ ચાલુ (ફોટા પર ડ્રેગ કરો)' : 'ફોટા પર વિસ્તાર સિલેક્ટ કરો (Select Box)'}
+                </button>
+                <button id="btn-toggle-invert" class="btn ${invertForOcr ? 'btn-primary' : 'btn-outline'} btn-xs" style="font-weight: 800; font-size: 0.72rem; padding: 5px 10px;">
+                  🌓 ${invertForOcr ? 'સામાન્ય ફોટો' : 'ડાર્ક મોડ ઇન્વર્ટ'}
+                </button>
               </div>
 
-              <!-- List of Topic <---> Views Rows -->
-              <div id="scanned-topics-rows" style="display: flex; flex-direction: column; gap: 10px;">
-                ${(studioData.topVideos && studioData.topVideos.length > 0 ? studioData.topVideos : [{}, {}, {}]).map((vid, idx) => `
-                  <div class="scanned-topic-row" data-idx="${idx}" style="display: grid; grid-template-columns: 1fr 100px 30px; gap: 8px; align-items: center; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px 10px;">
-                    <input type="text" class="form-input font-gu input-top-vid-title" data-idx="${idx}" placeholder="ટોપિક ${idx + 1} નું નામ" value="${vid.title || ''}" style="font-size: 0.82rem; padding: 6px 10px; width: 100%;">
-                    <input type="number" class="form-input input-top-vid-views" data-idx="${idx}" placeholder="સંખ્યા" value="${vid.views48h ? vid.views48h : ''}" style="font-size: 0.82rem; padding: 6px 10px; text-align: right; border-color: #10b981;">
-                    <button class="btn-remove-topic-row" data-idx="${idx}" title="આ રો કાઢી નાખો" style="background: transparent; color: #ef4444; border: none; font-size: 1rem; cursor: pointer; padding: 4px; line-height: 1; border-radius: 4px; display: flex; align-items: center; justify-content: center;">✕</button>
+              <!-- Viewport -->
+              <div style="position: relative; border-radius: 10px; overflow: auto; border: 1.5px solid #38bdf8; background: #020617; max-height: 480px; min-height: 320px; display: flex; align-items: center; justify-content: center; padding: 10px;" id="main-screenshot-viewport">
+                <div id="screenshot-container-rel" style="position: relative; display: inline-block; transform: scale(${imageAdjustments.zoom}) rotate(${imageAdjustments.rotation}deg); transform-origin: center center; transition: transform 0.2s ease;">
+                  <img src="${activePhoto.base64}" id="main-screenshot-img" style="max-width: 100%; height: auto; object-fit: contain; display: block; filter: ${invertForOcr ? 'invert(1) hue-rotate(180deg) ' : ''}brightness(${100 + imageAdjustments.brightness}%) contrast(${100 + imageAdjustments.contrast}%);" alt="${activePhoto.name}">
+                  <div id="screenshot-boxes-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></div>
+                  <canvas id="screenshot-selection-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: crosshair; display: ${isBoxSelectMode ? 'block' : 'none'}; z-index: 10;"></canvas>
+                </div>
+              </div>
+
+              <!-- Clarity Controls -->
+              <div style="background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 12px; margin-top: 12px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                  <div style="display: flex; gap: 4px; align-items: center;">
+                    <button id="btn-zoom-out" class="btn btn-outline btn-xs" style="padding: 2px 7px;">-</button>
+                    <span id="zoom-level-text" style="font-size: 0.74rem; color: #cbd5e1;">${Math.round(imageAdjustments.zoom * 100)}%</span>
+                    <button id="btn-zoom-in" class="btn btn-outline btn-xs" style="padding: 2px 7px;">+</button>
                   </div>
-                `).join('')}
-              </div>
-
-              <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 0.72rem; color: #34d399; font-weight: 700;">✓ લાઈવ ઓટો-સિંક (પ્રોમ્પ્ટ તરત જ અપડેટ થાય છે)</span>
-                <button id="btn-add-topic-row" class="btn btn-outline btn-sm" style="font-size: 0.75rem; padding: 4px 10px; border-color: #38bdf8; color: #38bdf8;">
-                  + નવો ટોપિક ઉમેરો
-                </button>
-              </div>
-            </div>
-
-          </div>
-
-          <!-- RIGHT: Generated ChatGPT Master Prompt Box + ChatGPT Open Icon/Button -->
-          <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1.5px solid rgba(16, 185, 129, 0.45); border-radius: var(--radius-lg); padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.45); display: flex; flex-direction: column; justify-content: space-between; min-height: 580px;">
-            <div>
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span style="font-size: 1.3rem;">📋</span>
-                  <h3 style="font-size: 1.1rem; font-weight: 800; color: #ffffff; margin: 0;">
-                    ChatGPT માટે તૈયાર સંપૂર્ણ સમરી પ્રોમ્પ્ટ
-                  </h3>
+                  <button id="btn-rotate-90" class="btn btn-outline btn-xs" style="color: #38bdf8;">🔄 90° ફેરવો</button>
                 </div>
-                <span class="badge" style="background: rgba(16, 185, 129, 0.25); color: #34d399; font-size: 0.74rem; font-weight: 800; border: 1px solid rgba(16, 185, 129, 0.5);">
-                  ✓ ૧૦૦% ફોટો-ફ્રી પ્રોમ્પ્ટ
-                </span>
+                <button id="btn-apply-and-rescan" class="btn btn-primary btn-sm" style="width: 100%; font-size: 0.8rem; font-weight: 800; background: linear-gradient(135deg, #0284c7, #38bdf8); border: none;">
+                  ⚡ આ એડજસ્ટમેન્ટ સાથે ફરી સ્કેન કરો
+                </button>
               </div>
-
-              <div style="font-size: 0.78rem; color: #94a3b8; margin-bottom: 10px; line-height: 1.4;">
-                આ પ્રોમ્પ્ટમાં તમારા અપલોડ કરેલા ફોટામાંથી તમામ 48 કલાકનો ડેટા આવી ગયો છે. ChatGPT માં કોઈ ફોટો અપલોડ કર્યા વગર ૧૦૦% પરફેક્ટ પરિણામ મળશે.
-              </div>
-
-              <textarea id="chatgpt-master-prompt-area" class="form-input font-gu" style="width: 100%; height: 380px; font-size: 0.82rem; line-height: 1.55; background: #050811; color: #f1f5f9; border: 1.5px solid #10b981; border-radius: 8px; resize: vertical; margin-bottom: 14px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;" readonly>${currentPrompt}</textarea>
             </div>
 
-            <!-- Action Buttons: 1-Click Copy & Direct ChatGPT Button -->
+            <!-- Right: Review Table & Save to Notebook Action -->
             <div>
-              <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                
-                <button id="btn-copy-master-prompt" class="btn btn-success" style="flex: 1; min-width: 200px; font-weight: 800; padding: 12px 18px; font-size: 0.92rem; box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4); display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; border-radius: 8px;">
-                  <span id="copy-master-icon" style="font-size: 1.1rem;">📋</span>
-                  <span id="copy-master-text">૧-ક્લિક પ્રોમ્પ્ટ કોપી કરો</span>
-                </button>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                <div>
+                  <h4 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0 0 2px 0;">
+                    📋 OCR ડેટા રિવ્યૂ ટેબલ
+                  </h4>
+                  <span style="font-size: 0.74rem; color: #94a3b8;">અસલી ફોટા સાથે સરખાવીને ટાઇટલ અને વ્યુઝ ચકાસો</span>
+                </div>
 
-                <a href="https://chatgpt.com" target="_blank" rel="noopener noreferrer" id="btn-open-chatgpt-direct" class="btn" style="background: linear-gradient(135deg, #10a37f, #059669); color: #ffffff; font-weight: 800; padding: 12px 20px; font-size: 0.92rem; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; border-radius: 8px; box-shadow: 0 4px 16px rgba(16, 163, 127, 0.4); border: 1px solid #34d399;" title="પ્રોમ્પ્ટ કોપી કરી સીધું ChatGPT ખોલો">
-                  <span style="font-size: 1.2rem;">⚡</span>
-                  <span>ChatGPT ખોલો ↗</span>
-                </a>
-
+                <div style="display: flex; gap: 8px;">
+                  <button id="btn-save-confirmed-to-notebook" class="btn btn-success btn-sm" style="font-weight: 800; font-size: 0.82rem; display: flex; align-items: center; gap: 6px;">
+                    <span>💾</span> કન્ફર્મ થયેલા નોટબુકમાં ઉમેરો
+                  </button>
+                </div>
               </div>
 
-              <div id="copy-status-notification" style="display: none; margin-top: 10px; background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; border-radius: 6px; padding: 8px 12px; font-size: 0.78rem; color: #a7f3d0; text-align: center;">
-                ✓ સંપૂર્ણ ડેટા પ્રોમ્પ્ટ કોપી થઈ ગયો છે! હવે ChatGPT માં <kbd style="background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 4px; color: #34d399;">Ctrl + V</kbd> દબાવીને પેસ્ટ કરો.
+              <!-- Table -->
+              <div style="overflow-x: auto; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; background: rgba(0,0,0,0.35); margin-bottom: 14px;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem; text-align: left;">
+                  <thead>
+                    <tr style="background: rgba(15, 23, 42, 0.9); border-bottom: 1.5px solid rgba(56, 189, 248, 0.35); color: #38bdf8; font-size: 0.74rem;">
+                      <th style="padding: 8px 6px; width: 55px; text-align: center;">ક્યાં છે?</th>
+                      <th style="padding: 8px 10px;">વિડીયો ટાઇટલ (Video Title)</th>
+                      <th style="padding: 8px 6px; width: 105px; text-align: right;">વ્યુઝ (Views)</th>
+                      <th style="padding: 8px 6px; width: 90px; text-align: center;">OCR ચોકસાઈ</th>
+                      <th style="padding: 8px 6px; width: 105px; text-align: center;">વેરિફિકેશન</th>
+                      <th style="padding: 8px 6px; width: 32px;"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="ocr-review-table-body">
+                    ${filteredVideos.length > 0 ? filteredVideos.map((vid, idx) => {
+                      const conf = Number(vid.confidence) || 75;
+                      const confColor = conf >= 70 ? '#10b981' : (conf >= 50 ? '#f59e0b' : '#ef4444');
+                      const isConfirmed = Boolean(vid.isConfidenceVerified);
+                      const isHl = activeHighlightedIdx === idx;
+
+                      return `
+                        <tr class="ocr-review-row" data-idx="${idx}" style="border-bottom: 1px solid rgba(255,255,255,0.06); background: ${isHl ? 'rgba(245,158,11,0.18)' : (isConfirmed ? 'rgba(16,185,129,0.04)' : 'rgba(245,158,11,0.04)')};">
+                          <td style="padding: 8px 6px; text-align: center;">
+                            <button class="btn btn-outline btn-xs btn-locate-in-photo" data-idx="${idx}" style="font-size: 0.7rem; padding: 2px 6px; border-color: ${isHl ? '#f59e0b' : '#38bdf8'}; color: ${isHl ? '#f59e0b' : '#38bdf8'}; font-weight: 800;">
+                              📍 #${idx + 1}
+                            </button>
+                          </td>
+                          <td style="padding: 8px 10px;">
+                            ${vid.cropSnippet ? `
+                              <div style="margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                                <img src="${vid.cropSnippet}" style="max-height: 24px; max-width: 140px; object-fit: contain; border-radius: 4px; border: 1px solid rgba(56,189,248,0.5);" alt="Snippet">
+                              </div>
+                            ` : ''}
+                            <input type="text" class="form-input font-gu input-row-title" data-idx="${idx}" value="${vid.title || ''}" placeholder="ટાઇટલ લખો" style="width: 100%; font-size: 0.82rem; padding: 6px 8px; font-weight: 700; border-color: ${isConfirmed ? '#10b981' : '#f59e0b'};">
+                          </td>
+                          <td style="padding: 8px 6px;">
+                            <input type="number" class="form-input input-row-views" data-idx="${idx}" value="${vid.views48h !== null && vid.views48h !== undefined ? vid.views48h : ''}" placeholder="વ્યુઝ" style="width: 100%; text-align: right; font-size: 0.82rem; padding: 6px 8px;">
+                          </td>
+                          <td style="padding: 8px 6px; text-align: center;">
+                            <span class="badge" style="font-size: 0.66rem; font-weight: 800; color: ${confColor}; border: 1px solid ${confColor}; background: rgba(0,0,0,0.5);">
+                              ${conf}%
+                            </span>
+                          </td>
+                          <td style="padding: 8px 6px; text-align: center;">
+                            <button class="btn btn-xs btn-toggle-verify" data-idx="${idx}" style="font-size: 0.7rem; padding: 3px 8px; font-weight: 800; border-radius: 6px; cursor: pointer; ${isConfirmed ? 'background: #10b981; color: #fff; border: 1px solid #10b981;' : 'background: rgba(245,158,11,0.2); color: #fbbf24; border: 1px solid #f59e0b;'}">
+                              ${isConfirmed ? '✓ કન્ફર્મ' : 'કન્ફર્મ કરો'}
+                            </button>
+                          </td>
+                          <td style="padding: 8px 6px; text-align: center;">
+                            <button class="btn-remove-review-row" data-idx="${idx}" style="background: transparent; color: #ef4444; border: none; font-size: 1rem; cursor: pointer;">✕</button>
+                          </td>
+                        </tr>
+                      `;
+                    }).join('') : `
+                      <tr>
+                        <td colspan="6" style="text-align: center; padding: 24px; color: #94a3b8;">
+                          કોઈ વિડીયો મળ્યા નથી. કૃપા કરીને ફોટા પર વિસ્તાર ડ્રેગ કરીને સિલેક્ટ કરો.
+                        </td>
+                      </tr>
+                    `}
+                  </tbody>
+                </table>
               </div>
+
+              <!-- ChatGPT Prompt Button from OCR Rows -->
+              <button id="btn-generate-ocr-prompt" class="btn btn-outline btn-sm" style="border-color: #10b981; color: #34d399; font-weight: 800;">
+                🚀 આ સ્કેન કરેલા વિડીયો માટે ChatGPT પ્રોમ્પ્ટ બનાવો
+              </button>
+            </div>
+
           </div>
+        `}
+
+      </div>
+    `;
+  }
+
+  // --- TAB 3: COPY-PASTE IDEAS VIEW ---
+  function renderPasteView() {
+    return `
+      <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1.5px solid rgba(16, 185, 129, 0.35); border-radius: var(--radius-lg); padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.45); max-width: 900px; margin: 0 auto;">
+        
+        <div style="margin-bottom: 18px;">
+          <h3 style="font-size: 1.2rem; font-weight: 800; color: #fff; margin: 0 0 6px 0; display: flex; align-items: center; gap: 8px;">
+            <span>📋</span> ૨. કોપી-પેસ્ટ આઈડિયા નોટબુક
+          </h3>
+          <p style="font-size: 0.84rem; color: #94a3b8; margin: 0; line-height: 1.5;">
+            YouTube, Studio, સમાચાર, સરકારી પરિપત્ર કે ChatGPT માંથી કોપી કરેલું લખાણ અહીં પેસ્ટ કરો. સિસ્ટમ આપમેળે ટાઇટલ, વ્યુઝ, તારીખ અને સોર્સ ઓળખશે. મૂળ લખાણ ૧૦૦% અસલ રીતે સચવાશે.
+          </p>
+        </div>
+
+        <!-- Large Comfortable Textarea -->
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 0.8rem; font-weight: 800; color: #38bdf8; margin-bottom: 6px;">
+            કોપી કરેલું લખાણ અહીં પેસ્ટ કરો (Ctrl + V):
+          </label>
+          <textarea id="paste-raw-textarea" class="form-input font-gu" rows="8" placeholder="દા.ત.&#10;ગુજરાત કર્મચારી પગાર અને DA વધારો ૨૦૨૬ પરિપત્ર&#10;નાણા વિભાગ દ્વારા ૪% મોંઘવારી ભથ્થાનો સત્તાવાર આદેશ...&#10;18,450 views • 2 days ago&#10;https://youtube.com/watch?v=..." style="width: 100%; font-size: 0.88rem; line-height: 1.6; resize: vertical; padding: 12px; background: rgba(0,0,0,0.4);">${pasteRawText}</textarea>
+        </div>
+
+        <!-- Parsed Detection Preview Box (Editable) -->
+        <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 16px; margin-bottom: 18px;">
+          <div style="font-size: 0.82rem; font-weight: 800; color: #34d399; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+            <span>✨</span> સ્માર્ટ ડિટેક્શન (તમે અહીં સુધારી શકો છો):
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 140px; gap: 12px; margin-bottom: 12px;">
+            <div>
+              <label style="display: block; font-size: 0.74rem; color: #cbd5e1; margin-bottom: 4px;">ટાઇટલ (Title):</label>
+              <input type="text" id="paste-title-input" class="form-input font-gu" value="${parsedPasteData.title || ''}" placeholder="મુખ્ય શીર્ષક" style="width: 100%; font-size: 0.86rem; font-weight: 700;">
+            </div>
+            <div>
+              <label style="display: block; font-size: 0.74rem; color: #cbd5e1; margin-bottom: 4px;">વ્યુઝ (Views):</label>
+              <input type="number" id="paste-views-input" class="form-input" value="${parsedPasteData.detectedViews !== null ? parsedPasteData.detectedViews : ''}" placeholder="સંખ્યા" style="width: 100%; font-size: 0.86rem; text-align: right;">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div>
+              <label style="display: block; font-size: 0.74rem; color: #cbd5e1; margin-bottom: 4px;">કેટેગરી:</label>
+              <select id="paste-category-select" class="form-input font-gu" style="width: 100%; font-size: 0.8rem; padding: 6px 10px;">
+                <option value="સરકારી યોજના">સરકારી યોજના</option>
+                <option value="સરકારી ભરતી">સરકારી ભરતી</option>
+                <option value="પરિપત્ર & નિયમ">પરિપત્ર & નિયમ</option>
+                <option value="અન્ય">અન્ય વિષયો</option>
+              </select>
+            </div>
+            <div>
+              <label style="display: block; font-size: 0.74rem; color: #cbd5e1; margin-bottom: 4px;">સોર્સ URL (જો હોય તો):</label>
+              <input type="text" id="paste-url-input" class="form-input" value="${parsedPasteData.detectedUrl || ''}" placeholder="https://..." style="width: 100%; font-size: 0.8rem;">
+            </div>
+          </div>
+
+          <div>
+            <label style="display: block; font-size: 0.74rem; color: #cbd5e1; margin-bottom: 4px;">અંગત નોંધ (Personal Notes):</label>
+            <input type="text" id="paste-notes-input" class="form-input font-gu" placeholder="આ વિષય પર વિડીયો ક્યારે બનાવવો, કયા મહત્વના મુદ્દા આવરી લેવા..." style="width: 100%; font-size: 0.82rem;">
+          </div>
+        </div>
+
+        <!-- Action Button -->
+        <button id="btn-save-paste-idea" class="btn btn-success" style="width: 100%; padding: 12px; font-size: 0.94rem; font-weight: 800; box-shadow: 0 4px 16px rgba(16,185,129,0.35);">
+          💾 આ આઈડિયા નોટબુકમાં સાચવો (Save to Notebook)
+        </button>
+
+      </div>
+    `;
+  }
+
+  // --- TAB 4: DIRECT MANUAL ENTRY VIEW ---
+  function renderManualView() {
+    return `
+      <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1.5px solid rgba(139, 92, 246, 0.35); border-radius: var(--radius-lg); padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.45); max-width: 900px; margin: 0 auto;">
+        
+        <div style="margin-bottom: 18px;">
+          <h3 style="font-size: 1.2rem; font-weight: 800; color: #fff; margin: 0 0 6px 0; display: flex; align-items: center; gap: 8px;">
+            <span>✍️</span> ૩. સીધું નોટબુક લખાણ (Direct Notebook Entry)
+          </h3>
+          <p style="font-size: 0.84rem; color: #94a3b8; margin: 0; line-height: 1.5;">
+            કોઈપણ ફોટો અપલોડ કર્યા વગર સીધા તમારા મનના આઈડિયા, મહત્વપૂર્ણ પોઈન્ટ્સ અને રેફરન્સ લિંક આરામથી નોટબુકમાં લખો:
+          </p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          
+          <!-- Title Input -->
+          <div>
+            <label style="display: block; font-size: 0.82rem; font-weight: 800; color: #38bdf8; margin-bottom: 4px;">
+              આઈડિયા શીર્ષક / ટાઇટલ (Idea Title) *
+            </label>
+            <input type="text" id="manual-title-input" class="form-input font-gu" value="${manualFormData.title}" placeholder="દા.ત. ગુજરાત નવી આંગણવાડી ભરતી ૨૦૨૬ ફોર્મ ભરવાની પ્રક્રિયા" style="width: 100%; font-size: 0.92rem; font-weight: 700; padding: 10px 12px;">
+          </div>
+
+          <!-- Category & Tags -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+              <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">
+                કેટેગરી
+              </label>
+              <select id="manual-category-select" class="form-input font-gu" style="width: 100%; font-size: 0.82rem; padding: 8px 10px;">
+                <option value="સરકારી યોજના" ${manualFormData.category === 'સરકારી યોજના' ? 'selected' : ''}>સરકારી યોજના</option>
+                <option value="સરકારી ભરતી" ${manualFormData.category === 'સરકારી ભરતી' ? 'selected' : ''}>સરકારી ભરતી</option>
+                <option value="પરિપત્ર & નિયમ" ${manualFormData.category === 'પરિપત્ર & નિયમ' ? 'selected' : ''}>પરિપત્ર & નિયમ</option>
+                <option value="અન્ય" ${manualFormData.category === 'અન્ય' ? 'selected' : ''}>અન્ય વિષયો</option>
+              </select>
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">
+                કીવર્ડ્સ / ટેગ્સ (Tags)
+              </label>
+              <input type="text" id="manual-tags-input" class="form-input font-gu" value="${manualFormData.tags}" placeholder="ભરતી, પરિપત્ર, ૨૦૨૬ (અલ્પવિરામથી અલગ કરો)" style="width: 100%; font-size: 0.82rem; padding: 8px 10px;">
+            </div>
+          </div>
+
+          <!-- Description / Points -->
+          <div>
+            <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">
+              સંપૂર્ણ વિગત / મુખ્ય મુદ્દાઓ (Idea Description & Points)
+            </label>
+            <textarea id="manual-desc-textarea" class="form-input font-gu" rows="6" placeholder="આ વિડીયોમાં કઈ માહિતી આપવી છે, શું ખાસ વાત છે, દર્શકો શા માટે જોશે..." style="width: 100%; font-size: 0.88rem; line-height: 1.6; padding: 12px; resize: vertical;">${manualFormData.description}</textarea>
+          </div>
+
+          <!-- Reference Link & Views -->
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
+            <div>
+              <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">
+                સત્તાવાર રેફરન્સ લિંક (જો હોય તો)
+              </label>
+              <input type="text" id="manual-url-input" class="form-input" value="${manualFormData.referenceLinks}" placeholder="https://ojas.gujarat.gov.in/..." style="width: 100%; font-size: 0.82rem; padding: 8px 10px;">
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">
+                અંદાજિત વ્યુઝ (જો ખબર હોય તો)
+              </label>
+              <input type="number" id="manual-views-input" class="form-input" value="${manualFormData.views48h}" placeholder="દા.ત. 15000" style="width: 100%; font-size: 0.82rem; padding: 8px 10px; text-align: right;">
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div>
+            <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">
+              અંગત નોંધ (Personal Notes)
+            </label>
+            <textarea id="manual-notes-textarea" class="form-input font-gu" rows="2" placeholder="શુક્રવારે સાંજે ૬ વાગ્યે અપલોડ કરવો..." style="width: 100%; font-size: 0.84rem; padding: 8px 10px;">${manualFormData.notes}</textarea>
+          </div>
+
+          <!-- Submit Button -->
+          <button id="btn-save-manual-idea" class="btn btn-primary" style="background: linear-gradient(135deg, #7c3aed, #8b5cf6); border: none; font-size: 0.94rem; font-weight: 800; padding: 12px; margin-top: 6px; box-shadow: 0 4px 18px rgba(139,92,246,0.4);">
+            💾 આઈડિયા નોટબુકમાં સાચવો (Save to Notebook)
+          </button>
 
         </div>
 
       </div>
     `;
-
-    attachAnalyzedEvents();
   }
 
-  // --- Initial Upload Event Handling ---
-  function attachInitialEvents() {
-    const dropzone = container.querySelector('#initial-dropzone');
-    const fileInput = container.querySelector('#initial-file-input');
-    const chooseBtn = container.querySelector('#btn-initial-choose-photos');
-    const quickSampleBtn = container.querySelector('#btn-quick-sample-test');
+  // --- EDIT IDEA MODAL HTML ---
+  function renderEditModalHtml(idea) {
+    return `
+      <div class="photo-lightbox-modal" style="display: flex; align-items: center; justify-content: center; z-index: 9999;">
+        <div style="background: #0f172a; border: 1.5px solid #38bdf8; border-radius: 12px; padding: 24px; max-width: 650px; width: 92%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.85);">
+          
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 1.3rem;">✏️</span>
+              <strong style="font-size: 1.1rem; color: #fff;">આઈડિયામાં ફેરફાર કરો (Edit Idea)</strong>
+            </div>
+            <button id="btn-close-edit-modal" style="background: transparent; border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer;">✕</button>
+          </div>
 
-    const triggerFilePicker = (e) => {
-      if (e) {
-        e.preventDefault();
-        e.stopPropagation();
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div>
+              <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">ટાઇટલ *</label>
+              <input type="text" id="edit-modal-title" class="form-input font-gu" value="${idea.title || ''}" style="width: 100%; font-size: 0.88rem; font-weight: 700;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div>
+                <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #38bdf8; margin-bottom: 4px;">📅 તારીખ (Date)</label>
+                <input type="date" id="edit-modal-date" class="form-input" value="${formatDateISO(idea.createdAt) || (new Date().toISOString().slice(0, 10))}" style="width: 100%; font-size: 0.82rem; padding: 6px 10px; background: rgba(0,0,0,0.5); border: 1.5px solid rgba(56,189,248,0.4); border-radius: 6px; color: #fff;">
+              </div>
+
+              <div>
+                <label style="display: block; font-size: 0.76rem; color: #cbd5e1; margin-bottom: 4px;">કેટેગરી</label>
+                <select id="edit-modal-category" class="form-input font-gu" style="width: 100%; font-size: 0.8rem;">
+                  <option value="ડાયરી નોંધ" ${idea.category === 'ડાયરી નોંધ' ? 'selected' : ''}>📔 ડાયરી નોંધ</option>
+                  <option value="સરકારી યોજના" ${idea.category === 'સરકારી યોજના' ? 'selected' : ''}>સરકારી યોજના</option>
+                  <option value="સરકારી ભરતી" ${idea.category === 'સરકારી ભરતી' ? 'selected' : ''}>સરકારી ભરતી</option>
+                  <option value="પરિપત્ર & નિયમ" ${idea.category === 'પરિપત્ર & નિયમ' ? 'selected' : ''}>પરિપત્ર & નિયમ</option>
+                  <option value="અન્ય" ${idea.category === 'અન્ય' ? 'selected' : ''}>અન્ય વિષયો</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 0.76rem; color: #cbd5e1; margin-bottom: 4px;">વ્યુઝ (Views - જો હોય તો)</label>
+              <input type="number" id="edit-modal-views" class="form-input" value="${idea.views48h !== null && idea.views48h !== undefined ? idea.views48h : ''}" placeholder="સંખ્યા" style="width: 100%; font-size: 0.8rem; text-align: right;">
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 0.76rem; color: #cbd5e1; margin-bottom: 4px;">સંપૂર્ણ વિગત / લખાણ (Diary Writing / Description)</label>
+              <textarea id="edit-modal-desc" class="form-input font-gu" rows="5" style="width: 100%; font-size: 0.84rem; line-height: 1.5;">${idea.description || idea.notes || idea.originalText || ''}</textarea>
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 0.76rem; color: #cbd5e1; margin-bottom: 4px;">અંગત નોંધ (Personal Notes)</label>
+              <textarea id="edit-modal-notes" class="form-input font-gu" rows="2" style="width: 100%; font-size: 0.82rem;">${idea.notes || ''}</textarea>
+            </div>
+
+            <div style="font-size: 0.72rem; color: #64748b; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 6px;">
+              <div>🕒 તારીખ: <strong style="color: #94a3b8;">${formatIndianDateTimeDisplay(idea.createdAt)}</strong></div>
+              <div>✏️ આ ફેરફારથી નવો Updated timestamp રેકોર્ડ થશે.</div>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px;">
+              <button id="btn-cancel-edit-modal" class="btn btn-outline btn-sm">રદ કરો</button>
+              <button id="btn-save-edit-modal" class="btn btn-success btn-sm" style="font-weight: 800;">💾 ફેરફાર સાચવો</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    `;
+  }
+
+  // --- READ DIARY FULL MODAL HTML ---
+  function renderReadDiaryModalHtml(idea) {
+    if (!idea) return '';
+    const dateStr = idea.createdAt ? formatIndianDateDisplay(idea.createdAt) : 'તારીખ નથી';
+    const content = (idea.description || idea.notes || idea.originalText || '').trim();
+
+    return `
+      <div class="photo-lightbox-modal" style="display: flex; align-items: center; justify-content: center; z-index: 9999;">
+        <div style="background: #0f172a; border: 1.5px solid #10b981; border-radius: 12px; padding: 24px; max-width: 680px; width: 92%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.85);">
+          
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 1.4rem;">📖</span>
+              <div>
+                <strong style="font-size: 1.1rem; color: #fff; display: block;">${idea.title}</strong>
+                <span style="font-size: 0.74rem; color: #38bdf8;">📅 તારીખ: ${dateStr}</span>
+              </div>
+            </div>
+            <button id="btn-close-read-diary-modal" style="background: transparent; border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer;">✕</button>
+          </div>
+
+          <!-- Full Text Content -->
+          <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; padding: 18px; margin-bottom: 16px; max-height: 400px; overflow-y: auto;">
+            <div class="font-gu" style="font-size: 0.95rem; line-height: 1.8; color: #f1f5f9; white-space: pre-wrap; word-break: break-word;">
+              ${content || '<span style="color: #64748b;">(કોઈ વધારાનું લખાણ નથી)</span>'}
+            </div>
+          </div>
+
+          <!-- Modal Action Buttons -->
+          <div style="display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;">
+            <button id="btn-modal-open-in-diary" class="btn btn-outline btn-sm" style="border-color: #10b981; color: #34d399; font-weight: 800;">
+              ✏️ ડાયરીમાં સુધારો
+            </button>
+            <button id="btn-modal-copy-diary" class="btn btn-outline btn-sm" style="border-color: #38bdf8; color: #38bdf8; font-weight: 800;">
+              📋 લખાણ કોપી કરો
+            </button>
+            <button id="btn-modal-close-read" class="btn btn-primary btn-sm" style="font-weight: 800; background: #334155;">
+              બંધ કરો
+            </button>
+          </div>
+
+        </div>
+      </div>
+    `;
+  }
+
+  // --- CHATGPT MASTER PROMPT MODAL HTML ---
+  function renderChatGptModalHtml(data) {
+    return `
+      <div class="photo-lightbox-modal" style="display: flex; align-items: center; justify-content: center; z-index: 9999;">
+        <div style="background: #0f172a; border: 1.5px solid #10b981; border-radius: 12px; padding: 24px; max-width: 720px; width: 92%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.85);">
+          
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 1.3rem;">🚀</span>
+              <strong style="font-size: 1.1rem; color: #fff;">પસંદ કરેલા ${data.count} આઈડિયા માટે ChatGPT પ્રોમ્પ્ટ</strong>
+            </div>
+            <button id="btn-close-chatgpt-modal" style="background: transparent; border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer;">✕</button>
+          </div>
+
+          <p style="font-size: 0.82rem; color: #94a3b8; margin: 0 0 12px 0;">
+            તમારા પસંદ કરેલા આઈડિયા, સાચા વ્યુઝ, સત્તાવાર તારીખો અને નોંધના આધારે આ પ્રોમ્પ્ટ બન્યો છે. ૧-ક્લિકમાં કોપી કરીને ChatGPT માં પેસ્ટ કરો:
+          </p>
+
+          <textarea id="modal-chatgpt-prompt-text" class="form-input font-gu" rows="12" style="width: 100%; font-size: 0.82rem; line-height: 1.6; background: #050811; color: #f1f5f9; border: 1px solid #10b981; border-radius: 8px; resize: vertical; margin-bottom: 14px;" readonly>${data.prompt}</textarea>
+
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button id="btn-modal-copy-prompt" class="btn btn-success" style="flex: 1; font-weight: 800; padding: 10px;">
+              <span id="modal-copy-icon">📋</span> <span id="modal-copy-label">૧-ક્લિક પ્રોમ્પ્ટ કોપી કરો</span>
+            </button>
+            <a href="https://chatgpt.com" target="_blank" rel="noopener noreferrer" class="btn" style="background: #10a37f; color: #fff; font-weight: 800; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 6px;">
+              <span>⚡</span> ChatGPT ખોલો ↗
+            </a>
+          </div>
+
+        </div>
+      </div>
+    `;
+  }
+
+  // --- ATTACH ALL INTERACTIVE EVENTS ---
+  function attachEvents() {
+    // 1. Sub-Tab Switching (Preserved for legacy callers)
+    container.querySelectorAll('.sub-tab-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const tab = e.currentTarget.getAttribute('data-tab');
+        if (tab) {
+          activeTab = tab;
+          render();
+        }
+      });
+    });
+
+    // Helper to activate topic and advance to Tool 2
+    const proceedWithTopicIdea = async (idea) => {
+      const activeProj = projectState.getActiveProject();
+      const ideasList = projectState.getProjectIdeas(activeProj?.id) || [];
+      const targetIdea = idea || (activeTopicIdeaId ? ideasList.find(i => i.id === activeTopicIdeaId) : null) || ideasList[0];
+
+      if (!targetIdea) {
+        showNoticeToast('કૃપા કરીને પહેલાં કોઈ વિષય ઉમેરો અથવા પસંદ કરો.', 'warning');
+        return;
       }
-      fileInput?.click();
+
+      const topicName = (targetIdea.title || '').trim();
+      activeTopicIdeaId = targetIdea.id;
+      try {
+        await projectState.activateTopicContext(targetIdea.id, topicName, targetIdea);
+        localStorage.setItem('gyan_active_topic_id', targetIdea.id);
+        localStorage.setItem('gyan_active_topic_name', topicName);
+        window.prefillTopic = topicName;
+      } catch (err) {
+        console.warn('[proceedWithTopicIdea]:', err);
+      }
+      showNoticeToast(`✓ "${topicName}" વિષય સાથે આગળ વધી રહ્યા છીએ!`, 'success');
+      navigateTo('slideprompts');
     };
 
-    chooseBtn?.addEventListener('click', triggerFilePicker);
-    dropzone?.addEventListener('click', (e) => {
-      if (e.target !== fileInput && !e.target.closest('#btn-initial-choose-photos')) {
-        triggerFilePicker(e);
+    // Helper to open diary entry into top diary editor
+    const openDiaryEntry = async (idea) => {
+      if (!idea) return;
+      activeDiaryEntryId = idea.id;
+      activeTopicIdeaId = idea.id;
+      diaryDate = formatDateISO(idea.createdAt) || getCurrentIST().dateStr;
+      diaryTitle = idea.title || '';
+      diaryNote = idea.description || idea.notes || idea.originalText || '';
+
+      const topicName = (idea.title || '').trim();
+      if (topicName) {
+        try {
+          await projectState.activateTopicContext(idea.id, topicName, idea);
+          localStorage.setItem('gyan_active_topic_id', idea.id);
+          localStorage.setItem('gyan_active_topic_name', topicName);
+          window.prefillTopic = topicName;
+
+          const raw = localStorage.getItem('gyan_48h_pasted_topics');
+          let list = raw ? JSON.parse(raw) : [];
+          if (!Array.isArray(list)) list = [];
+          if (!list.some(t => t.id === idea.id || (t.title && t.title.trim().toLowerCase() === topicName.toLowerCase()))) {
+            list.unshift({
+              id: idea.id,
+              title: topicName,
+              timestamp: idea.createdAt || new Date().toISOString(),
+              addedToPlanner: false,
+              addedToIdea: true
+            });
+            localStorage.setItem('gyan_48h_pasted_topics', JSON.stringify(list));
+          }
+        } catch (_) {}
       }
+
+      render();
+
+      const diaryBox = container.querySelector('.idea-diary-box');
+      if (diaryBox) {
+        diaryBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        diaryBox.style.boxShadow = '0 0 25px rgba(52, 211, 153, 0.7)';
+        setTimeout(() => {
+          if (diaryBox) diaryBox.style.boxShadow = '0 8px 25px rgba(16,185,129,0.25)';
+        }, 2200);
+      }
+      showNoticeToast(`✓ "${idea.title}" ડાયરીમાં ખૂલી ગયું છે!`, 'info');
+    };
+
+    // Diary Form Handlers (Save, Clear, Date change, New entry)
+    const diaryForm = container.querySelector('#form-idea-diary');
+    const diaryDateInput = container.querySelector('#diary-entry-date');
+    const diaryTitleInput = container.querySelector('#diary-entry-title');
+    const diaryNoteInput = container.querySelector('#diary-entry-note');
+    const diaryClearBtn = container.querySelector('#btn-clear-diary-form');
+
+    diaryDateInput?.addEventListener('change', (e) => {
+      diaryDate = e.target.value;
+      const activeProj = projectState.getActiveProject();
+      const ideas = projectState.getProjectIdeas(activeProj?.id) || [];
+      const match = ideas.find(i => formatDateISO(i.createdAt) === diaryDate);
+      if (match) {
+        openDiaryEntry(match);
+      } else {
+        activeDiaryEntryId = null;
+        diaryTitle = '';
+        diaryNote = '';
+        render();
+        showNoticeToast(`ℹ️ તારીખ ${formatIndianDateDisplay(diaryDate)} માટે નવી નોંધ લખો.`, 'info');
+      }
+    });
+
+    container.querySelector('#btn-new-diary-entry')?.addEventListener('click', () => {
+      activeDiaryEntryId = null;
+      diaryTitle = '';
+      diaryNote = '';
+      diaryDate = getCurrentIST().dateStr;
+      render();
+      const titleInput = container.querySelector('#diary-entry-title');
+      titleInput?.focus();
+      showNoticeToast('✓ નવી ડાયરી નોંધ લખવા માટે બોક્સ તૈયાર છે.', 'info');
+    });
+
+    diaryTitleInput?.addEventListener('input', (e) => {
+      diaryTitle = e.target.value;
+    });
+    diaryNoteInput?.addEventListener('input', (e) => {
+      diaryNote = e.target.value;
+    });
+
+    diaryClearBtn?.addEventListener('click', () => {
+      activeDiaryEntryId = null;
+      diaryTitle = '';
+      diaryNote = '';
+      if (diaryTitleInput) diaryTitleInput.value = '';
+      if (diaryNoteInput) diaryNoteInput.value = '';
+      diaryTitleInput?.focus();
+    });
+
+    diaryForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const rawTitle = (diaryTitleInput?.value || diaryTitle || '').trim();
+      const rawNote = (diaryNoteInput?.value || diaryNote || '').trim();
+      const chosenDate = diaryDateInput?.value || diaryDate || getCurrentIST().dateStr;
+
+      if (!rawTitle && !rawNote) {
+        showNoticeToast('કૃપા કરીને વિષય અથવા લખાણ લખો.', 'error');
+        diaryTitleInput?.focus();
+        return;
+      }
+
+      const title = rawTitle || (rawNote.split('\n')[0].slice(0, 60)) || `નોંધ - ${formatIndianDateDisplay(chosenDate)}`;
+      const now = new Date();
+      const timeStr = now.toTimeString().slice(0, 8);
+      let createdIso = now.toISOString();
+      try {
+        const parsed = new Date(`${chosenDate}T${timeStr}`);
+        if (!isNaN(parsed.getTime())) {
+          createdIso = parsed.toISOString();
+        }
+      } catch (_) {}
+
+      const activeProj = projectState.getActiveProject();
+      const ideas = projectState.getProjectIdeas(activeProj?.id) || [];
+      const existingEntry = activeDiaryEntryId ? ideas.find(i => i.id === activeDiaryEntryId) : null;
+      const entryId = existingEntry ? existingEntry.id : ('diary_' + Date.now());
+
+      const savedEntry = {
+        ...(existingEntry || {}),
+        id: entryId,
+        title,
+        description: rawNote,
+        notes: rawNote,
+        originalText: rawNote,
+        category: 'ડાયરી નોંધ',
+        inputType: 'diary',
+        createdAt: existingEntry ? existingEntry.createdAt : createdIso,
+        updatedAt: now.toISOString(),
+        allowDuplicate: true,
+        views48h: existingEntry?.views48h || null
+      };
+
+      await projectState.saveProjectIdea(savedEntry);
+      activeDiaryEntryId = entryId;
+      activeTopicIdeaId = entryId;
+      diaryTitle = title;
+      diaryNote = rawNote;
+      diaryDate = chosenDate;
+
+      if (activeProj) {
+        activeProj.topicId = entryId;
+        activeProj.topic = title;
+        projectState.saveProjects();
+      }
+      try {
+        localStorage.setItem('gyan_active_topic_id', entryId);
+        localStorage.setItem('gyan_active_topic_name', title);
+        window.prefillTopic = title;
+      } catch (_) {}
+
+      render();
+      showNoticeToast(`✓ "${title}" ડાયરીમાં સચવાઈ ગયું!`, 'success');
+    });
+
+    // Copy Idea / Diary Text Button
+    container.querySelectorAll('.btn-copy-idea-text').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = e.currentTarget.getAttribute('data-id');
+        const activeProj = projectState.getActiveProject();
+        const ideas = projectState.getProjectIdeas(activeProj?.id) || [];
+        const idea = ideas.find(i => i.id === id);
+        if (idea) {
+          const textToCopy = (idea.description || idea.notes || idea.originalText || idea.title || '').trim();
+          if (textToCopy) {
+            copyToClipboard(textToCopy, '📋 લખાણ કોપી થઈ ગયું!', e.currentTarget);
+          }
+        }
+      });
+    });
+
+    // Open In Diary Buttons on Cards
+    container.querySelectorAll('.btn-open-in-diary').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = e.currentTarget.getAttribute('data-id');
+        const activeProj = projectState.getActiveProject();
+        const ideas = projectState.getProjectIdeas(activeProj?.id) || [];
+        const idea = ideas.find(i => i.id === id);
+        if (idea) {
+          openDiaryEntry(idea);
+        }
+      });
+    });
+
+    // Read Full Diary Modal Buttons on Cards
+    container.querySelectorAll('.btn-read-full-diary').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = e.currentTarget.getAttribute('data-id');
+        const activeProj = projectState.getActiveProject();
+        const ideas = projectState.getProjectIdeas(activeProj?.id) || [];
+        const idea = ideas.find(i => i.id === id);
+        if (idea) {
+          readingDiaryIdea = idea;
+          render();
+        }
+      });
+    });
+
+    // Read Diary Modal Event Listeners
+    container.querySelector('#btn-close-read-diary-modal')?.addEventListener('click', () => {
+      readingDiaryIdea = null;
+      render();
+    });
+    container.querySelector('#btn-modal-close-read')?.addEventListener('click', () => {
+      readingDiaryIdea = null;
+      render();
+    });
+    container.querySelector('#btn-modal-open-in-diary')?.addEventListener('click', () => {
+      const idea = readingDiaryIdea;
+      readingDiaryIdea = null;
+      if (idea) openDiaryEntry(idea);
+    });
+    container.querySelector('#btn-modal-copy-diary')?.addEventListener('click', (e) => {
+      if (readingDiaryIdea) {
+        const textToCopy = (readingDiaryIdea.description || readingDiaryIdea.notes || readingDiaryIdea.originalText || readingDiaryIdea.title || '').trim();
+        copyToClipboard(textToCopy, '📋 લખાણ કોપી થઈ ગયું!', e.currentTarget);
+      }
+    });
+
+    // Direct Quick Add Idea Submit
+    const quickAddInput = container.querySelector('#quick-add-idea-title-input');
+    const quickAddBtn = container.querySelector('#btn-quick-add-idea-submit');
+
+    const handleQuickAdd = async () => {
+      const title = (quickAddInput?.value || '').trim();
+      if (!title) {
+        showNoticeToast('કૃપા કરીને આઈડિયાનું ટાઇટલ લખો.', 'error');
+        quickAddInput?.focus();
+        return;
+      }
+
+      const ist = getCurrentIST();
+      const newIdea = {
+        id: 'idea_' + Date.now(),
+        title,
+        category: 'સરકારી યોજના',
+        tags: [],
+        description: '',
+        sourceUrl: '',
+        views48h: null,
+        notes: '',
+        inputType: 'manual',
+        capturedAt: null,
+        sourcePublishedAt: null,
+        createdAt: ist.iso,
+        updatedAt: ist.iso
+      };
+      await projectState.saveProjectIdea(newIdea);
+      activeTopicIdeaId = newIdea.id;
+      // Automatically connect and synchronize this new topic across Tools 1 through 7
+      try {
+        await projectState.activateTopicContext(newIdea.id, newIdea.title, newIdea);
+        localStorage.setItem('gyan_active_topic_id', newIdea.id);
+        localStorage.setItem('gyan_active_topic_name', newIdea.title);
+        window.prefillTopic = newIdea.title;
+      } catch (_) {}
+
+      render();
+      showNoticeToast(`✓ "${newIdea.title}" આઈડિયા ઉમેરાઈ ગયો અને સક્રિય વિષય તરીકે સેટ થયો!`, 'success');
+    };
+
+    quickAddBtn?.addEventListener('click', handleQuickAdd);
+    quickAddInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleQuickAdd();
+      }
+    });
+
+    // Card click: open entry in diary
+    container.querySelectorAll('.idea-notebook-card').forEach(card => {
+      card.addEventListener('click', async (e) => {
+        const id = card.getAttribute('data-id');
+        if (id) {
+          const activeProj = projectState.getActiveProject();
+          const ideas = projectState.getProjectIdeas(activeProj?.id) || [];
+          const idea = ideas.find(i => i.id === id);
+          if (idea) {
+            await openDiaryEntry(idea);
+          }
+        }
+      });
+    });
+
+    // Select button
+    container.querySelectorAll('.btn-set-active-topic').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = e.currentTarget.getAttribute('data-id');
+        if (id) {
+          const activeProj = projectState.getActiveProject();
+          const ideas = projectState.getProjectIdeas(activeProj?.id) || [];
+          const idea = ideas.find(i => i.id === id);
+          if (idea) {
+            await openDiaryEntry(idea);
+          }
+        }
+      });
+    });
+
+    // Proceed from active topic banner
+    container.querySelector('.btn-proceed-selected-topic')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      proceedWithTopicIdea();
+    });
+
+    // Handle "🎬 ૨. Slides બનાવો ➔" Click on any Idea card (Connects Idea to Tool 2-7)
+    container.querySelectorAll('.btn-start-production-idea').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = e.currentTarget.getAttribute('data-id');
+        const activeProj = projectState.getActiveProject();
+        const ideas = projectState.getProjectIdeas(activeProj?.id) || [];
+        const idea = ideas.find(i => i.id === id);
+        if (idea) {
+          await proceedWithTopicIdea(idea);
+        }
+      });
+    });
+
+    // Connected Stepper Bottom Next Button
+    container.querySelector('#ws-btn-bottom-next-topics')?.addEventListener('click', () => {
+      proceedWithTopicIdea();
+    });
+
+    // Quick add buttons on notebook
+    container.querySelector('#btn-quick-add-manual')?.addEventListener('click', () => { activeTab = 'manual'; render(); });
+    container.querySelector('#btn-quick-add-paste')?.addEventListener('click', () => { activeTab = 'paste'; render(); });
+    container.querySelector('#btn-quick-add-ocr')?.addEventListener('click', () => { activeTab = 'ocr'; render(); });
+
+    // 2. Notebook Search & Filters
+    const searchInput = container.querySelector('#notebook-search-input');
+    searchInput?.addEventListener('input', (e) => {
+      searchQuery = e.target.value;
+      render();
+      const el = container.querySelector('#notebook-search-input');
+      if (el) {
+        el.focus();
+        el.setSelectionRange(el.value.length, el.value.length);
+      }
+    });
+
+    container.querySelectorAll('.date-filter-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        dateFilterRange = e.currentTarget.getAttribute('data-range');
+        render();
+      });
+    });
+
+    container.querySelector('#btn-apply-custom-date')?.addEventListener('click', () => {
+      customDateStart = container.querySelector('#custom-date-start')?.value || '';
+      customDateEnd = container.querySelector('#custom-date-end')?.value || '';
+      render();
+    });
+
+    container.querySelector('#filter-source-select')?.addEventListener('change', (e) => {
+      sourceFilter = e.target.value;
+      render();
+    });
+
+    container.querySelector('#filter-category-select')?.addEventListener('change', (e) => {
+      categoryFilter = e.target.value;
+      render();
+    });
+
+    container.querySelector('#sort-order-select')?.addEventListener('change', (e) => {
+      sortOrder = e.target.value;
+      render();
+    });
+
+    container.querySelector('#check-show-archived')?.addEventListener('change', (e) => {
+      showArchived = e.target.checked;
+      render();
+    });
+
+    // 3. Idea Checkbox Selection
+    container.querySelectorAll('.idea-select-checkbox').forEach(cb => {
+      cb.addEventListener('change', (e) => {
+        const id = e.target.getAttribute('data-id');
+        if (e.target.checked) {
+          selectedIdeaIds.add(id);
+        } else {
+          selectedIdeaIds.delete(id);
+        }
+        render();
+      });
+    });
+
+    container.querySelector('#btn-deselect-all-ideas')?.addEventListener('click', () => {
+      selectedIdeaIds.clear();
+      render();
+    });
+
+    // Select All Ideas Toggle
+    container.querySelector('#btn-select-all-ideas')?.addEventListener('click', () => {
+      if (selectedIdeaIds.size === filteredIdeas.length && filteredIdeas.length > 0) {
+        selectedIdeaIds.clear();
+      } else {
+        filteredIdeas.forEach(i => selectedIdeaIds.add(i.id));
+      }
+      render();
+    });
+
+    // Top Navigation to Planner
+    container.querySelector('#btn-goto-planner-from-topics')?.addEventListener('click', () => {
+      safeNavigate('planner');
+    });
+
+    // Transfer selected ideas to Tool #2 Production Planner
+    container.querySelector('#btn-transfer-planner-selected')?.addEventListener('click', async () => {
+      const selected = allIdeas.filter(i => selectedIdeaIds.has(i.id));
+      const list = (selected.length > 0 ? selected : allIdeas.slice(0, 10));
+      if (list.length === 0) {
+        alert('ટ્રાન્સફર કરવા માટે ઓછામાં ઓછો એક આઈડિયા હોવો જરૂરી છે.');
+        return;
+      }
+      try {
+        const btn = container.querySelector('#btn-transfer-planner-selected');
+        if (btn) btn.innerHTML = '<span>⏳</span> ટ્રાન્સફર થઈ રહ્યું છે...';
+        const topicsToBatch = list.map(item => ({
+          topicName: item.title || item.topic || item.topicName,
+          notes: item.description || '',
+          sourcePeriod: 'Last 48 Hours',
+          priority: 'HIGH'
+        }));
+        await api.batchAddCentralTopics(topicsToBatch);
+        await refreshPlannerTopics();
+        showNoticeToast(`🎉 સફળતાપૂર્વક ${topicsToBatch.length} વિષયો Production Planner માં મોકલાઈ ગયા!`, 'success');
+        safeNavigate('planner');
+      } catch (err) {
+        alert('Production Planner માં ટ્રાન્સફર કરવામાં ભૂલ: ' + err.message);
+      }
+    });
+
+    // Single Idea Card Add to Planner
+    container.querySelectorAll('.btn-add-card-to-planner').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = e.currentTarget.getAttribute('data-id');
+        const activeProj = projectState.getActiveProject();
+        const ideas = projectState.getProjectIdeas(activeProj.id) || [];
+        const item = ideas.find(i => i.id === id);
+        if (!item) return;
+
+        try {
+          btn.disabled = true;
+          btn.innerText = 'ઉમેરાય છે...';
+          const res = await api.addCentralTopic({
+            topicName: item.title,
+            notes: item.description || '',
+            sourcePeriod: 'Last 48 Hours',
+            priority: 'HIGH'
+          });
+          plannerTopicsSet.add((item.title || '').trim().toLowerCase());
+          showNoticeToast(`✓ "${item.title.slice(0, 30)}..." Tool #2 Planner માં ઉમેરાયું! (ID: ${res.topic?.topicId || ''})`, 'success');
+          render();
+        } catch (err) {
+          alert('પ્લાનરમાં ઉમેરવામાં ભૂલ: ' + err.message);
+          btn.disabled = false;
+        }
+      });
+    });
+    container.querySelector('#btn-generate-selected-chatgpt')?.addEventListener('click', () => {
+      const activeProj = projectState.getActiveProject();
+      const ideas = projectState.getProjectIdeas(activeProj.id) || [];
+      const selected = ideas.filter(i => selectedIdeaIds.has(i.id));
+
+      if (selected.length === 0) {
+        showNoticeToast('કૃપા કરીને ઓછામાં ઓછો ૧ આઈડિયા સિલેક્ટ કરો.', 'info');
+        return;
+      }
+
+      const prompt = generatePromptForSelectedIdeas(selected);
+      chatGptModalData = { prompt, count: selected.length };
+      render();
+    });
+
+    // 4. Idea Card Operations: Edit, Duplicate, Archive, Delete
+    container.querySelectorAll('.btn-edit-idea').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-id');
+        const activeProj = projectState.getActiveProject();
+        const ideas = projectState.getProjectIdeas(activeProj.id) || [];
+        editingIdea = ideas.find(i => i.id === id);
+        render();
+      });
+    });
+
+    container.querySelectorAll('.btn-duplicate-idea').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = e.currentTarget.getAttribute('data-id');
+        await projectState.duplicateProjectIdea(id);
+        render();
+        showNoticeToast('✓ આઈડિયાની નકલ બની ગઈ!', 'success');
+      });
+    });
+
+    container.querySelectorAll('.btn-archive-idea').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = e.currentTarget.getAttribute('data-id');
+        const activeProj = projectState.getActiveProject();
+        const ideas = projectState.getProjectIdeas(activeProj.id) || [];
+        const item = ideas.find(i => i.id === id);
+        if (item) {
+          await projectState.archiveProjectIdea(id, !item.isArchived);
+          render();
+          showNoticeToast(item.isArchived ? '✓ આઈડિયા રીસ્ટોર થયો!' : '✓ આઈડિયા આર્કાઇવ થયો!', 'info');
+        }
+      });
+    });
+
+    container.querySelectorAll('.btn-delete-idea').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = e.currentTarget.getAttribute('data-id');
+        const activeProj = projectState.getActiveProject();
+        const ideas = projectState.getProjectIdeas(activeProj.id) || [];
+        const item = ideas.find(i => i.id === id);
+        if (!item) return;
+
+        if (confirm(`શું તમે ખરેખર "${item.title || 'આ આઈડિયા'}" ડિલીટ કરવા માંગો છો?`)) {
+          await projectState.deleteProjectIdea(id);
+          selectedIdeaIds.delete(id);
+          render();
+          showNoticeToast('🗑️ આઈડિયા ડિલીટ કરી દેવામાં આવ્યો.', 'info');
+        }
+      });
+    });
+
+    // 5. Copy-Paste Tab Events
+    const pasteArea = container.querySelector('#paste-raw-textarea');
+    pasteArea?.addEventListener('input', (e) => {
+      pasteRawText = e.target.value;
+      parsedPasteData = parsePastedIdeaText(pasteRawText);
+
+      const titleEl = container.querySelector('#paste-title-input');
+      const viewsEl = container.querySelector('#paste-views-input');
+      const urlEl = container.querySelector('#paste-url-input');
+
+      if (titleEl && parsedPasteData.title) titleEl.value = parsedPasteData.title;
+      if (viewsEl && parsedPasteData.detectedViews !== null) viewsEl.value = parsedPasteData.detectedViews;
+      if (urlEl && parsedPasteData.detectedUrl) urlEl.value = parsedPasteData.detectedUrl;
+    });
+
+    container.querySelector('#btn-save-paste-idea')?.addEventListener('click', async () => {
+      const title = (container.querySelector('#paste-title-input')?.value || parsedPasteData.title || '').trim();
+      if (!title) {
+        showNoticeToast('કૃપા કરીને આઈડિયાનું ટાઇટલ લખો.', 'error');
+        return;
+      }
+
+      const viewsVal = container.querySelector('#paste-views-input')?.value;
+      const parsedViews = viewsVal ? parseInt(viewsVal, 10) : parsedPasteData.detectedViews;
+      const category = container.querySelector('#paste-category-select')?.value || 'સરકારી યોજના';
+      const sourceUrl = container.querySelector('#paste-url-input')?.value || parsedPasteData.detectedUrl || '';
+      const notes = container.querySelector('#paste-notes-input')?.value || '';
+
+      const ist = getCurrentIST();
+      await projectState.saveProjectIdea({
+        id: 'idea_' + Date.now(),
+        title,
+        description: parsedPasteData.description || pasteRawText,
+        originalText: pasteRawText,
+        inputType: 'paste',
+        category,
+        views48h: isNaN(parsedViews) ? null : parsedViews,
+        source: parsedPasteData.detectedSource || 'Copy-Paste',
+        sourceUrl,
+        notes,
+        tags: parsedPasteData.tags || [],
+        capturedAt: null,
+        sourcePublishedAt: parsedPasteData.detectedDate || null,
+        createdAt: ist.iso,
+        updatedAt: ist.iso
+      });
+
+      pasteRawText = '';
+      parsedPasteData = { title: '', description: '', originalText: '', detectedViews: null, detectedDate: null, detectedUrl: '', detectedSource: 'Copy-Paste', tags: [] };
+      activeTab = 'notebook';
+      render();
+      showNoticeToast('✓ કોપી-પેસ્ટ આઈડિયા નોટબુકમાં સચવાઈ ગયો!', 'success');
+    });
+
+    // 6. Direct Manual Tab Events
+    container.querySelector('#btn-save-manual-idea')?.addEventListener('click', async () => {
+      const title = (container.querySelector('#manual-title-input')?.value || '').trim();
+      if (!title) {
+        showNoticeToast('કૃપા કરીને આઈડિયા શીર્ષક લખો.', 'error');
+        return;
+      }
+
+      const category = container.querySelector('#manual-category-select')?.value || 'સરકારી યોજના';
+      const tagsStr = container.querySelector('#manual-tags-input')?.value || '';
+      const tags = tagsStr.split(/[,،]+/).map(t => t.trim()).filter(Boolean);
+      const description = container.querySelector('#manual-desc-textarea')?.value || '';
+      const refUrl = container.querySelector('#manual-url-input')?.value || '';
+      const viewsVal = container.querySelector('#manual-views-input')?.value;
+      const views48h = viewsVal ? parseInt(viewsVal, 10) : null;
+      const notes = container.querySelector('#manual-notes-textarea')?.value || '';
+
+      const ist = getCurrentIST();
+      await projectState.saveProjectIdea({
+        id: 'idea_' + Date.now(),
+        title,
+        category,
+        tags,
+        description,
+        sourceUrl: refUrl,
+        views48h: isNaN(views48h) ? null : views48h,
+        notes,
+        inputType: 'manual',
+        capturedAt: null,
+        sourcePublishedAt: null,
+        createdAt: ist.iso,
+        updatedAt: ist.iso
+      });
+
+      manualFormData = { title: '', category: 'સરકારી યોજના', tags: '', description: '', views48h: '', referenceLinks: '', notes: '' };
+      activeTab = 'notebook';
+      render();
+      showNoticeToast('✓ નવો આઈડિયા તમારી નોટબુકમાં સચવાઈ ગયો!', 'success');
+    });
+
+    // 7. OCR Tab Events
+    const dropzone = container.querySelector('#ocr-main-dropzone');
+    const fileInput = container.querySelector('#ocr-file-input');
+    const browseBtn = container.querySelector('#btn-browse-ocr');
+
+    const triggerOcrPicker = () => fileInput?.click();
+    browseBtn?.addEventListener('click', triggerOcrPicker);
+    dropzone?.addEventListener('click', (e) => {
+      if (e.target !== fileInput && !e.target.closest('#btn-browse-ocr')) triggerOcrPicker();
     });
 
     fileInput?.addEventListener('change', (e) => {
@@ -473,39 +2062,247 @@ ${topVideosFormatted}
       }
     });
 
-    dropzone?.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      dropzone.style.borderColor = '#10b981';
-      dropzone.style.background = 'rgba(16, 185, 129, 0.15)';
+    container.querySelector('#btn-upload-new-ocr-photo')?.addEventListener('click', () => {
+      uploadedScreenshots = [];
+      hasAnalyzed = false;
+      isAnalyzing = false;
+      render();
     });
 
-    dropzone?.addEventListener('dragleave', (e) => {
-      e.preventDefault();
-      dropzone.style.borderColor = '#38bdf8';
-      dropzone.style.background = 'rgba(15, 23, 42, 0.95)';
+    // Save verified OCR rows to Project Idea Notebook
+    container.querySelector('#btn-save-confirmed-to-notebook')?.addEventListener('click', async () => {
+      const rows = studioData.topVideos || [];
+      const validRows = rows.filter(r => r.title && r.title.trim());
+
+      if (validRows.length === 0) {
+        showNoticeToast('કોઈ માન્ય વિડીયો ટાઇટલ નથી.', 'error');
+        return;
+      }
+
+      const ist = getCurrentIST();
+      let count = 0;
+      for (const row of validRows) {
+        await projectState.saveProjectIdea({
+          id: row.id || ('idea_' + Date.now() + '_' + count),
+          title: row.title,
+          views48h: row.views48h || null,
+          category: 'સરકારી યોજના',
+          inputType: 'ocr',
+          cropSnippet: row.cropSnippet || '',
+          bbox: row.bbox || null,
+          confidenceScore: row.confidence || 75,
+          isConfidenceVerified: true,
+          capturedAt: studioData.capturedAt || ist.iso,
+          sourcePublishedAt: row.sourcePublishedAt || studioData.sourcePublishedAt || null,
+          createdAt: ist.iso,
+          updatedAt: ist.iso
+        });
+        count++;
+      }
+
+      activeTab = 'notebook';
+      render();
+      showNoticeToast(`✓ ${count} OCR આઈડિયા તમારી નોટબુકમાં ઉમેરાઈ ગયા!`, 'success');
     });
 
-    dropzone?.addEventListener('drop', (e) => {
-      e.preventDefault();
-      dropzone.style.borderColor = '#38bdf8';
-      dropzone.style.background = 'rgba(15, 23, 42, 0.95)';
-      processUploadedFiles(e.dataTransfer.files);
+    // OCR review table edits
+    container.querySelectorAll('.input-row-title').forEach(input => {
+      input.addEventListener('input', (e) => {
+        const idx = parseInt(e.target.getAttribute('data-idx'), 10);
+        if (studioData.topVideos[idx]) {
+          studioData.topVideos[idx].title = e.target.value;
+          autoSave.trigger();
+        }
+      });
     });
 
-    // Quick Sample Test (fills demo image so user can test workflow without file)
-    quickSampleBtn?.addEventListener('click', () => {
-      uploadedScreenshots = [{
-        name: 'youtube_studio_48h_realtime.png',
-        size: '184.2 KB',
-        base64: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="180" viewBox="0 0 300 180"><rect width="300" height="180" fill="%230f172a"/><text x="150" y="80" fill="%2338bdf8" font-size="16" text-anchor="middle" font-family="sans-serif">YouTube Studio 48h</text><text x="150" y="110" fill="%2310b981" font-size="22" font-weight="bold" text-anchor="middle" font-family="sans-serif">24,850 Views</text></svg>'
-      }];
+    container.querySelectorAll('.input-row-views').forEach(input => {
+      input.addEventListener('input', (e) => {
+        const idx = parseInt(e.target.getAttribute('data-idx'), 10);
+        if (studioData.topVideos[idx]) {
+          const val = e.target.value ? parseInt(e.target.value, 10) : null;
+          studioData.topVideos[idx].views48h = isNaN(val) ? null : val;
+          autoSave.trigger();
+        }
+      });
+    });
+
+    container.querySelectorAll('.btn-toggle-verify').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(e.currentTarget.getAttribute('data-idx'), 10);
+        if (studioData.topVideos[idx]) {
+          studioData.topVideos[idx].isConfidenceVerified = !studioData.topVideos[idx].isConfidenceVerified;
+          render();
+          autoSave.trigger();
+        }
+      });
+    });
+
+    container.querySelectorAll('.btn-remove-review-row').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(e.currentTarget.getAttribute('data-idx'), 10);
+        if (studioData.topVideos[idx]) {
+          studioData.topVideos.splice(idx, 1);
+          render();
+          autoSave.trigger();
+        }
+      });
+    });
+
+    container.querySelector('#btn-generate-ocr-prompt')?.addEventListener('click', () => {
+      const valid = studioData.topVideos.filter(v => v.title);
+      if (valid.length === 0) return;
+      const prompt = generatePromptForSelectedIdeas(valid);
+      chatGptModalData = { prompt, count: valid.length };
+      render();
+    });
+
+    // Box select mode toggle & Invert toggle
+    container.querySelector('#btn-toggle-box-select')?.addEventListener('click', () => {
+      isBoxSelectMode = !isBoxSelectMode;
+      render();
+    });
+
+    container.querySelector('#btn-toggle-invert')?.addEventListener('click', () => {
+      invertForOcr = !invertForOcr;
+      render();
+    });
+
+    // Zoom & Rotate in OCR View
+    container.querySelector('#btn-zoom-in')?.addEventListener('click', () => {
+      imageAdjustments.zoom = Math.min(2.5, Number((imageAdjustments.zoom + 0.2).toFixed(1)));
+      const img = container.querySelector('#main-screenshot-img');
+      const text = container.querySelector('#zoom-level-text');
+      if (img) img.style.transform = `scale(${imageAdjustments.zoom}) rotate(${imageAdjustments.rotation}deg)`;
+      if (text) text.textContent = `${Math.round(imageAdjustments.zoom * 100)}%`;
+    });
+
+    container.querySelector('#btn-zoom-out')?.addEventListener('click', () => {
+      imageAdjustments.zoom = Math.max(0.6, Number((imageAdjustments.zoom - 0.2).toFixed(1)));
+      const img = container.querySelector('#main-screenshot-img');
+      const text = container.querySelector('#zoom-level-text');
+      if (img) img.style.transform = `scale(${imageAdjustments.zoom}) rotate(${imageAdjustments.rotation}deg)`;
+      if (text) text.textContent = `${Math.round(imageAdjustments.zoom * 100)}%`;
+    });
+
+    container.querySelector('#btn-rotate-90')?.addEventListener('click', () => {
+      imageAdjustments.rotation = (imageAdjustments.rotation + 90) % 360;
+      const img = container.querySelector('#main-screenshot-img');
+      if (img) img.style.transform = `scale(${imageAdjustments.zoom}) rotate(${imageAdjustments.rotation}deg)`;
+    });
+
+    container.querySelector('#btn-apply-and-rescan')?.addEventListener('click', () => {
       startAnalysisProcess();
     });
 
-    // Clipboard paste on container (Ctrl + V)
+    // Locate Box on Photo
+    container.querySelectorAll('.btn-locate-in-photo').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(e.currentTarget.getAttribute('data-idx'), 10);
+        activeHighlightedIdx = idx;
+        updateBoxesOverlay();
+        const boxes = container.querySelectorAll('.screenshot-detected-box');
+        if (boxes && boxes[idx]) {
+          boxes[idx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      });
+    });
+
+    // Setup OCR Canvas Overlays if in OCR tab with photo
+    if (activeTab === 'ocr' && uploadedScreenshots.length > 0) {
+      updateBoxesOverlay();
+      if (isBoxSelectMode) {
+        setupSelectionCanvas();
+      }
+    }
+
+    // 8. Edit Idea Modal Events
+    container.querySelector('#btn-close-edit-modal')?.addEventListener('click', () => { editingIdea = null; render(); });
+    container.querySelector('#btn-cancel-edit-modal')?.addEventListener('click', () => { editingIdea = null; render(); });
+
+    container.querySelector('#btn-save-edit-modal')?.addEventListener('click', async () => {
+      if (!editingIdea) return;
+      const title = (container.querySelector('#edit-modal-title')?.value || '').trim();
+      if (!title) {
+        showNoticeToast('ટાઇટલ ખાલી ન હોઈ શકે.', 'error');
+        return;
+      }
+
+      const chosenDate = container.querySelector('#edit-modal-date')?.value;
+      let updatedCreatedAt = editingIdea.createdAt;
+      if (chosenDate) {
+        try {
+          const timePart = editingIdea.createdAt ? new Date(editingIdea.createdAt).toTimeString().slice(0, 8) : new Date().toTimeString().slice(0, 8);
+          const parsed = new Date(`${chosenDate}T${timePart}`);
+          if (!isNaN(parsed.getTime())) {
+            updatedCreatedAt = parsed.toISOString();
+          }
+        } catch (_) {}
+      }
+
+      const category = container.querySelector('#edit-modal-category')?.value || 'સરકારી યોજના';
+      const viewsVal = container.querySelector('#edit-modal-views')?.value;
+      const views48h = viewsVal ? parseInt(viewsVal, 10) : null;
+      const description = container.querySelector('#edit-modal-desc')?.value || '';
+      const notes = container.querySelector('#edit-modal-notes')?.value || '';
+
+      await projectState.saveProjectIdea({
+        ...editingIdea,
+        title,
+        category,
+        views48h: isNaN(views48h) ? null : views48h,
+        description,
+        notes: notes || description,
+        originalText: description || editingIdea.originalText,
+        createdAt: updatedCreatedAt,
+        updatedAt: new Date().toISOString()
+      });
+
+      editingIdea = null;
+      render();
+      showNoticeToast('✓ આઈડિયામાં ફેરફાર સેવ થઈ ગયો!', 'success');
+    });
+
+    // 9. ChatGPT Modal Events
+    container.querySelector('#btn-close-chatgpt-modal')?.addEventListener('click', () => { chatGptModalData = null; render(); });
+    container.querySelector('#btn-modal-copy-prompt')?.addEventListener('click', (e) => {
+      const text = container.querySelector('#modal-chatgpt-prompt-text')?.value || '';
+      copyToClipboard(text, '📋 ChatGPT પ્રોમ્પ્ટ સફળતાપૂર્વક કોપી થયો!', e.currentTarget);
+      const label = container.querySelector('#modal-copy-label');
+      const icon = container.querySelector('#modal-copy-icon');
+      if (label) label.textContent = '✓ કોપી થઈ ગયો!';
+      if (icon) icon.textContent = '✅';
+      setTimeout(() => {
+        if (label) label.textContent = '૧-ક્લિક પ્રોમ્પ્ટ કોપી કરો';
+        if (icon) icon.textContent = '📋';
+      }, 2500);
+    });
+
+    // 10. Global & Banner Events
+    container.querySelector('#btn-back-to-projects-banner')?.addEventListener('click', () => navigateTo('projects'));
+    container.querySelector('#btn-goto-step2-banner')?.addEventListener('click', () => {
+      proceedWithTopicIdea();
+    });
+
+    container.querySelector('#btn-firebase-signin')?.addEventListener('click', async () => {
+      try {
+        await firebaseService.signInWithGoogle();
+        render();
+      } catch (err) {
+        alert('Google Sign-In Error: ' + (err.message || err));
+      }
+    });
+
+    container.querySelector('#btn-firebase-signout')?.addEventListener('click', async () => {
+      await firebaseService.signOutUser();
+      render();
+    });
+
+    // Global Clipboard Paste Handler (Ctrl + V)
     container.onpaste = (e) => {
       const items = e.clipboardData?.items;
       if (!items) return;
+
       const imageFiles = [];
       for (let i = 0; i < items.length; i++) {
         if (items[i].type.indexOf('image') !== -1) {
@@ -513,131 +2310,15 @@ ${topVideosFormatted}
           if (file) imageFiles.push(file);
         }
       }
+
       if (imageFiles.length > 0) {
+        activeTab = 'ocr';
         processUploadedFiles(imageFiles);
       }
     };
-
-    // Project banner buttons
-    container.querySelector('#btn-back-to-projects-banner')?.addEventListener('click', () => navigateTo('projects'));
-    container.querySelector('#btn-goto-step2-banner')?.addEventListener('click', () => navigateTo('slideprompts'));
   }
 
-  // Parse numbers from strings like "24,850", "24.8K", "1.5M", "520", etc.
-  function parseMetricNumber(raw) {
-    if (!raw) return 0;
-    const clean = String(raw).trim().toLowerCase();
-    let num = 0;
-    if (clean.endsWith('m')) {
-      num = Math.round(parseFloat(clean.replace('m', '')) * 1000000);
-    } else if (clean.endsWith('k')) {
-      num = Math.round(parseFloat(clean.replace('k', '')) * 1000);
-    } else {
-      num = parseInt(clean.replace(/,/g, '').replace(/\s+/g, ''), 10);
-    }
-    return isNaN(num) ? 0 : num;
-  }
-
-  // Client-Side OCR & Image Scanning Helper
-  async function analyzeImageWithOcr(base64Image) {
-    const ocrResult = {
-      views48h: 0,
-      views60m: 0,
-      topVideos: [],
-      rawText: ''
-    };
-
-    if (!base64Image) return ocrResult;
-
-    try {
-      // 1. Create offscreen canvas to scale and optimize image for OCR
-      const img = new Image();
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-        img.src = base64Image;
-      });
-
-      const maxDim = 1200;
-      let width = img.naturalWidth || img.width;
-      let height = img.naturalHeight || img.height;
-      if (width > maxDim || height > maxDim) {
-        if (width > height) {
-          height = Math.round((height * maxDim) / width);
-          width = maxDim;
-        } else {
-          width = Math.round((width * maxDim) / height);
-          height = maxDim;
-        }
-      }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, width, height);
-      const optimizedBase64 = canvas.toDataURL('image/jpeg', 0.88);
-
-      // 2. Run Tesseract OCR if available
-      if (window.Tesseract && typeof window.Tesseract.recognize === 'function') {
-        const ocrPromise = window.Tesseract.recognize(optimizedBase64, 'eng');
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('OCR Timeout')), 6000));
-        const res = await Promise.race([ocrPromise, timeoutPromise]);
-        const text = res?.data?.text || '';
-        ocrResult.rawText = text;
-
-        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-        const fullText = lines.join(' ');
-
-        // A. Find 48-Hour Numbers
-        const numMatches = fullText.match(/\b(?:\d{1,3}(?:,\d{3})+|\d{4,8}|\d+(?:\.\d+)?[kKmM])\b/g) || [];
-        const parsedNums = numMatches.map(m => parseMetricNumber(m)).filter(n => n > 50 && n < 50000000);
-
-        const p48Match = fullText.match(/(?:48\s*h(?:ours?)?|realtime|views)[^\d]{0,25}(\d[\d,.]*\s*[kKmM]?)/i);
-        if (p48Match && p48Match[1]) {
-          ocrResult.views48h = parseMetricNumber(p48Match[1]);
-        } else if (parsedNums.length > 0) {
-          ocrResult.views48h = Math.max(...parsedNums);
-        }
-
-        // B. Find 60-Minute Numbers
-        const p60Match = fullText.match(/(?:60\s*m(?:in(?:utes?)?)?)[^\d]{0,25}(\d[\d,.]*\s*[kKmM]?)/i);
-        if (p60Match && p60Match[1]) {
-          ocrResult.views60m = parseMetricNumber(p60Match[1]);
-        } else if (parsedNums.length > 1) {
-          const smaller = parsedNums.filter(n => n < (ocrResult.views48h || 100000) && n > 10);
-          if (smaller.length > 0) {
-            ocrResult.views60m = smaller[0];
-          }
-        }
-
-        // C. Find Candidate Titles
-        const ignoredWords = ['youtube', 'studio', 'analytics', 'realtime', 'overview', 'content', 'audience', 'research', 'views', 'subscribers', 'hours', 'minutes', 'publish', 'monetization', 'earn'];
-        const candidateTitles = lines.filter(line => {
-          if (line.length < 8) return false;
-          const lower = line.toLowerCase();
-          const isIgnored = ignoredWords.some(w => lower === w || lower.startsWith(w + ' '));
-          if (isIgnored) return false;
-          if (/^[\d\s,.:\-+%/]+$/.test(line)) return false;
-          return true;
-        });
-
-        if (candidateTitles.length > 0) {
-          ocrResult.topVideos = candidateTitles.slice(0, 4).map((title, idx) => ({
-            title: title.replace(/^[\d.)\s-]+/, '').trim(),
-            views48h: Math.round((ocrResult.views48h || 12000) * (idx === 0 ? 0.38 : idx === 1 ? 0.24 : 0.15)),
-            hourlyVelocity: `+${Math.max(20, Math.round((ocrResult.views60m || 400) * (idx === 0 ? 0.45 : idx === 1 ? 0.28 : 0.15)))} views/hr`,
-            source: idx === 0 ? 'YouTube Search (68%)' : idx === 1 ? 'Browse Features (55%)' : 'Suggested Videos (40%)'
-          }));
-        }
-      }
-    } catch (err) {
-      console.warn('[Topics OCR Engine Notice]:', err.message);
-    }
-
-    return ocrResult;
-  }
-
+  // --- OCR FILE UPLOAD AND PROCESSING ENGINE ---
   function processUploadedFiles(files) {
     if (!files || files.length === 0) return;
     const validFiles = Array.from(files).filter(f => 
@@ -656,91 +2337,19 @@ ${topVideosFormatted}
         const rawData = e.target.result;
         const img = new Image();
         img.onload = () => {
-          // Downscale to max 1280px for high OCR accuracy + lightweight cloud payload
-          let width = img.naturalWidth || img.width || 800;
-          let height = img.naturalHeight || img.height || 600;
-          const maxDim = 1280;
-          if (width > maxDim || height > maxDim) {
-            if (width > height) {
-              height = Math.round((height * maxDim) / width);
-              width = maxDim;
-            } else {
-              width = Math.round((width * maxDim) / height);
-              height = maxDim;
-            }
-          }
-
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-
-          // Highly compressed JPEG (~80-120KB instead of 25MB)
-          const optimizedJpeg = canvas.toDataURL('image/jpeg', 0.85);
-
-          // Contrast inversion for dark mode screenshots
-          let ocrDataUrl = optimizedJpeg;
-          try {
-            const imgData = ctx.getImageData(0, 0, width, height);
-            const data = imgData.data;
-            let sum = 0;
-            const step = Math.max(4, Math.floor(data.length / 5000) * 4);
-            let count = 0;
-            for (let i = 0; i < data.length; i += step) {
-              sum += (data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114);
-              count++;
-            }
-            const avg = sum / (count || 1);
-            if (avg < 115) {
-              for (let i = 0; i < data.length; i += 4) {
-                data[i] = 255 - data[i];
-                data[i+1] = 255 - data[i+1];
-                data[i+2] = 255 - data[i+2];
-              }
-              ctx.putImageData(imgData, 0, 0);
-              ocrDataUrl = canvas.toDataURL('image/jpeg', 0.85);
-            }
-          } catch (prepErr) {
-            console.warn('[Image Preprocessing Notice]:', prepErr);
-          }
-
-          uploadedScreenshots.push({
-            name: file.name,
-            size: (file.size / 1024).toFixed(1) + ' KB',
-            base64: optimizedJpeg,
-            ocrBase64: ocrDataUrl
-          });
-
-          loaded++;
-          if (loaded === validFiles.length) {
-            startAnalysisProcess();
-          }
-        };
-
-        img.onerror = () => {
           uploadedScreenshots.push({
             name: file.name,
             size: (file.size / 1024).toFixed(1) + ' KB',
             base64: rawData,
-            ocrBase64: rawData
+            rawImage: img
           });
           loaded++;
           if (loaded === validFiles.length) {
             startAnalysisProcess();
           }
         };
-
         img.src = rawData;
       };
-
-      reader.onerror = () => {
-        loaded++;
-        if (loaded === validFiles.length && uploadedScreenshots.length > 0) {
-          startAnalysisProcess();
-        }
-      };
-
       reader.readAsDataURL(file);
     });
   }
@@ -749,86 +2358,70 @@ ${topVideosFormatted}
     isAnalyzing = true;
     render();
 
+    const istNow = getCurrentIST();
+    studioData.capturedAt = istNow.iso;
+
     try {
-      // 1. Client-Side OCR attempt if browser Tesseract is available
-      let clientOcr = { views48h: 0, views60m: 0, topVideos: [] };
-      if (uploadedScreenshots[0] && uploadedScreenshots[0].ocrBase64) {
-        try {
-          clientOcr = await analyzeImageWithOcr(uploadedScreenshots[0].ocrBase64);
-          console.log('[Client OCR Result]:', clientOcr);
-        } catch (cErr) {
-          console.warn('[Client OCR Notice]:', cErr.message);
-        }
+      let payloadImg = uploadedScreenshots[0]?.base64;
+      if (uploadedScreenshots[0]?.rawImage) {
+        const adjustedCanvas = processImageAdjustments(uploadedScreenshots[0].rawImage, {
+          rotation: imageAdjustments.rotation,
+          brightness: imageAdjustments.brightness,
+          contrast: imageAdjustments.contrast,
+          sharpen: imageAdjustments.sharpen,
+          invertForOcr: invertForOcr
+        });
+        payloadImg = adjustedCanvas.toDataURL('image/jpeg', 0.92);
       }
 
-      // 2. Server-side API with timeout race (6.5s)
       let res = null;
       try {
-        const payload = uploadedScreenshots.map(img => img.ocrBase64 || img.base64);
-        const apiPromise = api.analyze48hScreenshot(payload, 'all');
-        const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 6500));
-        res = await Promise.race([apiPromise, timeoutPromise]);
-        console.log('[Server Screenshot Analysis Response]:', res);
+        res = await api.analyze48hScreenshot([payloadImg], 'all');
       } catch (apiErr) {
         console.warn('[Server Screenshot Analysis Notice]:', apiErr.message);
       }
 
-      let topVideos = [];
-      let views48h = 0;
-      let views60m = 0;
+      let detectedVideos = [];
+      let views48h = null;
+      let detectedDate = null;
 
       if (res && res.topVideos && Array.isArray(res.topVideos) && res.topVideos.length > 0) {
-        topVideos = res.topVideos;
-        views48h = res.detectedViews48h || 0;
-        views60m = res.detectedViews60m || 0;
-      } else if (clientOcr && clientOcr.topVideos && clientOcr.topVideos.length > 0) {
-        topVideos = clientOcr.topVideos;
-        views48h = clientOcr.views48h || 0;
-        views60m = clientOcr.views60m || 0;
+        detectedVideos = res.topVideos;
+        views48h = res.detectedViews48h || null;
+        if (res.detectedDate) detectedDate = res.detectedDate;
       }
 
-      // 3. Fallback: If OCR found no titles (e.g. photo was too blurry or chart-only)
-      if (!topVideos || topVideos.length === 0) {
-        const activeProj = projectState.getActiveProject();
-        const mainTopic = (activeProj && activeProj.topic && activeProj.topic.trim())
-          ? activeProj.topic
-          : 'સરકારી કર્મચારી ૭મું પગાર પંચ મોંઘવારી ભથ્થું (DA) પરિપત્ર';
+      studioData.sourcePublishedAt = detectedDate;
+      studioData.views48h = views48h;
 
-        topVideos = [
-          { title: mainTopic, views48h: 24850 },
-          { title: 'ગુજરાત નવી સરકારી ભરતી ૨૦૨૬ ફોર્મ ભરવાની તારીખ અને લાયકાત', views48h: 18400 },
-          { title: 'આંગણવાડી સુપરવાઈઝર અને વર્કર નવી જાહેરાત પરિપત્ર', views48h: 12600 },
-          { title: 'પીએમ કિસાન યોજના ૧૯મો હપ્તો ₹૨,૦૦૦ સત્તાવાર લિસ્ટ', views48h: 8900 }
-        ];
-        views48h = 64750;
-        views60m = 480;
-      }
+      if (detectedVideos && detectedVideos.length > 0) {
+        studioData.topVideos = detectedVideos.map((v, i) => {
+          const title = typeof v === 'string' ? v : (v.title || '');
+          const vViews = typeof v === 'object' && v.views48h ? Number(v.views48h) : null;
+          const conf = (v && typeof v.confidence === 'number') ? v.confidence : 75;
+          const isVerified = Boolean(v && v.isConfidenceVerified);
 
-      studioData.topVideos = topVideos.map(v => ({
-        title: typeof v === 'string' ? v : (v.title || ''),
-        views48h: typeof v === 'object' && v.views48h ? Number(v.views48h) : 0
-      })).filter(v => v.title);
-
-      const sumViews = studioData.topVideos.reduce((acc, v) => acc + (Number(v.views48h) || 0), 0);
-      studioData.views48h = views48h || sumViews || 24850;
-      studioData.views60m = views60m || 350;
-
-      // 4. Save top topic to projectState so steps 2 (Slide), 3 (Script), 4 (Voice) inherit it
-      if (studioData.topVideos.length > 0) {
-        const topTopic = studioData.topVideos[0].title;
-        projectState.setTopic(topTopic, getChatGPTMasterPrompt());
+          return {
+            id: 'idea_' + Date.now() + '_' + i,
+            title,
+            views48h: vViews,
+            views60m: null,
+            confidence: conf,
+            isConfidenceVerified: isVerified,
+            cropSnippet: v.cropSnippet || '',
+            bbox: v.bbox || null,
+            capturedAt: istNow.iso,
+            sourcePublishedAt: v.sourcePublishedAt || detectedDate || null,
+            createdAt: istNow.iso,
+            updatedAt: istNow.iso
+          };
+        }).filter(v => v.title);
+      } else {
+        studioData.topVideos = [];
       }
     } catch (err) {
       console.warn('[Topics Analysis Error Handled]:', err.message);
-      const activeProj = projectState.getActiveProject();
-      const mainTopic = (activeProj && activeProj.topic) ? activeProj.topic : 'ગુજરાત કર્મચારી પગાર અને DA વધારો ૨૦૨૬ પરિપત્ર';
-      studioData.topVideos = [
-        { title: mainTopic, views48h: 24850 },
-        { title: 'આંગણવાડી સુપરવાઈઝર નવી ભરતી ૨૦૨૬ જાહેરાત', views48h: 18200 },
-        { title: 'પીએમ કિસાન યોજના ૧૯મો હપ્તો ₹૨,૦૦૦ સત્તાવાર', views48h: 11400 }
-      ];
-      studioData.views48h = 54450;
-      studioData.views60m = 350;
+      studioData.topVideos = [];
     }
 
     isAnalyzing = false;
@@ -836,267 +2429,196 @@ ${topVideosFormatted}
     render();
   }
 
-  // --- Post-Analysis Event Handling ---
-  function attachAnalyzedEvents() {
-    const promptArea = container.querySelector('#chatgpt-master-prompt-area');
-    const copyBtn = container.querySelector('#btn-copy-master-prompt');
-    const copyText = container.querySelector('#copy-master-text');
-    const copyIcon = container.querySelector('#copy-master-icon');
-    const openChatgpt = container.querySelector('#btn-open-chatgpt-direct');
-    const notif = container.querySelector('#copy-status-notification');
+  // Visual Bounding Boxes Overlay on Image Viewport
+  function updateBoxesOverlay() {
+    const overlay = container.querySelector('#screenshot-boxes-overlay');
+    const img = container.querySelector('#main-screenshot-img');
+    if (!overlay || !img) return;
 
-    function updatePromptView() {
-      if (promptArea) {
-        promptArea.value = getChatGPTMasterPrompt();
-      }
+    overlay.innerHTML = '';
+    const nw = img.naturalWidth;
+    const nh = img.naturalHeight;
+    if (!nw || !nh) {
+      img.onload = () => updateBoxesOverlay();
+      return;
     }
 
-    // Reset button (Upload new photo from scratch)
-    container.querySelector('#btn-upload-new-photo')?.addEventListener('click', () => {
-      uploadedScreenshots = [];
-      hasAnalyzed = false;
-      isAnalyzing = false;
-      render();
-    });
+    const dw = img.clientWidth || img.offsetWidth;
+    const dh = img.clientHeight || img.offsetHeight;
+    const rx = dw / nw;
+    const ry = dh / nh;
 
-    // Photo Lightbox Zoom Modal
-    function openPhotoLightbox(imgSrc, title) {
-      const modal = document.createElement('div');
-      modal.className = 'photo-lightbox-modal';
-      modal.innerHTML = `
-        <div class="photo-lightbox-header">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 1.3rem;">📸</span>
-            <strong style="font-size: 1.05rem;">${title || 'YouTube Studio 48-Hour Realtime Analytics Screenshot'}</strong>
-          </div>
-          <button id="lightbox-close-btn" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: #fff; width: 36px; height: 36px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: 900;">✕</button>
-        </div>
-        <div class="photo-lightbox-body">
-          <img src="${imgSrc}" alt="Zoomed Screenshot">
-        </div>
-        <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 10px 16px; margin-top: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; font-size: 0.84rem; color: #cbd5e1;">
-          <div>
-            <span style="color: #34d399; font-weight: 800;">✓ ફોટામાંથી સ્કેન થયેલ:</span> 48 કલાકના વ્યુઝ: <strong>${Number(studioData.views48h).toLocaleString('en-IN')}</strong> • 60 મિનિટ ઝડપ: <strong>${Number(studioData.views60m).toLocaleString('en-IN')}/hr</strong>
-          </div>
-          <div style="color: #94a3b8; font-size: 0.76rem;">(ESC કી દબાવીને અથવા ✕ ક્લિક કરીને બંધ કરો)</div>
-        </div>
+    (studioData.topVideos || []).forEach((vid, idx) => {
+      if (!vid.bbox) return;
+      const { x0, y0, x1, y1 } = vid.bbox;
+      const bx = Math.round(x0 * rx);
+      const by = Math.round(y0 * ry);
+      const bw = Math.max(24, Math.round((x1 - x0) * rx));
+      const bh = Math.max(18, Math.round((y1 - y0) * ry));
+
+      const isHl = (activeHighlightedIdx === idx);
+      const boxEl = document.createElement('div');
+      boxEl.className = 'screenshot-detected-box';
+      boxEl.style.cssText = `
+        position: absolute;
+        left: ${bx}px;
+        top: ${by}px;
+        width: ${bw}px;
+        height: ${bh}px;
+        border: 2px solid ${isHl ? '#f59e0b' : '#38bdf8'};
+        background: ${isHl ? 'rgba(245, 158, 11, 0.4)' : 'rgba(56, 189, 248, 0.18)'};
+        border-radius: 4px;
+        pointer-events: auto;
+        cursor: pointer;
+        box-shadow: ${isHl ? '0 0 16px rgba(245, 158, 11, 0.9)' : '0 0 6px rgba(56, 189, 248, 0.4)'};
+        transition: all 0.15s ease;
+        z-index: ${isHl ? 6 : 2};
       `;
-      document.body.appendChild(modal);
 
-      const close = () => {
-        modal.remove();
-        document.removeEventListener('keydown', onKey);
-      };
-      const onKey = (e) => {
-        if (e.key === 'Escape') close();
-      };
-      document.addEventListener('keydown', onKey);
-      modal.querySelector('#lightbox-close-btn')?.addEventListener('click', close);
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal || e.target.classList.contains('photo-lightbox-body')) close();
-      });
-    }
-
-    container.querySelector('#btn-zoom-main-photo')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const firstImg = uploadedScreenshots[0];
-      if (firstImg) openPhotoLightbox(firstImg.base64, firstImg.name);
-    });
-
-    container.querySelector('#main-screenshot-card')?.addEventListener('click', () => {
-      const firstImg = uploadedScreenshots[0];
-      if (firstImg) openPhotoLightbox(firstImg.base64, firstImg.name);
-    });
-
-    // Multi-photo thumbnail click switches main preview
-    container.querySelectorAll('.photo-preview-item').forEach(item => {
-      item.addEventListener('click', (e) => {
-        if (e.target.closest('.btn-remove-screenshot')) return;
-        const idx = parseInt(e.currentTarget.getAttribute('data-idx'), 10);
-        if (!isNaN(idx) && uploadedScreenshots[idx]) {
-          const selected = uploadedScreenshots[idx];
-          const mainImg = container.querySelector('#main-screenshot-img');
-          if (mainImg) mainImg.src = selected.base64;
-        }
-      });
-    });
-
-    // Add more photos
-    const moreInput = container.querySelector('#more-file-input');
-    container.querySelector('#btn-add-more-photos')?.addEventListener('click', () => moreInput?.click());
-    moreInput?.addEventListener('change', (e) => {
-      if (e.target.files && e.target.files.length > 0) {
-        processUploadedFiles(e.target.files);
-        moreInput.value = '';
-      }
-    });
-
-    // Metric Inputs Live Update
-    const inViews48 = container.querySelector('#input-views-48h');
-    const inViews60 = container.querySelector('#input-views-60m');
-    const inSearchQ = container.querySelector('#input-search-queries');
-
-    inViews48?.addEventListener('input', (e) => {
-      studioData.views48h = parseInt(e.target.value, 10) || 0;
-      updatePromptView();
-    });
-
-    inViews60?.addEventListener('input', (e) => {
-      studioData.views60m = parseInt(e.target.value, 10) || 0;
-      updatePromptView();
-    });
-
-    function syncLiveTotals() {
-      const activeVideos = (studioData.topVideos || []).filter(v => v && v.title && v.title.trim());
-      const sum = activeVideos.reduce((acc, v) => acc + (Number(v.views48h) || 0), 0);
-      if (sum > 0) studioData.views48h = sum;
-
-      const stripViews = container.querySelector('#status-strip-views');
-      if (stripViews) stripViews.textContent = (Number(studioData.views48h) || 0).toLocaleString('en-IN');
-      const stripCount = container.querySelector('#status-strip-count');
-      if (stripCount) stripCount.textContent = `${activeVideos.length} ટોપિક્સ`;
-
-      const hlViews = container.querySelector('#highlight-total-views');
-      if (hlViews) hlViews.textContent = (Number(studioData.views48h) || 0).toLocaleString('en-IN');
-      const hlCount = container.querySelector('#highlight-total-count');
-      if (hlCount) hlCount.textContent = `${activeVideos.length} વિડીયો`;
-
-      updatePromptView();
-    }
-
-    container.querySelectorAll('.input-top-vid-title').forEach(input => {
-      input.addEventListener('input', (e) => {
-        const idx = parseInt(e.target.getAttribute('data-idx'), 10);
-        if (!studioData.topVideos[idx]) {
-          studioData.topVideos[idx] = { title: '', views48h: 0 };
-        }
-        studioData.topVideos[idx].title = e.target.value;
-        syncLiveTotals();
-      });
-    });
-
-    container.querySelectorAll('.input-top-vid-views').forEach(input => {
-      input.addEventListener('input', (e) => {
-        const idx = parseInt(e.target.getAttribute('data-idx'), 10);
-        if (!studioData.topVideos[idx]) {
-          studioData.topVideos[idx] = { title: '', views48h: 0 };
-        }
-        studioData.topVideos[idx].views48h = parseInt(e.target.value, 10) || 0;
-        syncLiveTotals();
-      });
-    });
-
-    // Add new topic row dynamically
-    container.querySelector('#btn-add-topic-row')?.addEventListener('click', () => {
-      const rowsContainer = container.querySelector('#scanned-topics-rows');
-      if (!rowsContainer) return;
-      const newIdx = studioData.topVideos.length;
-      studioData.topVideos.push({ title: '', views48h: 0 });
-      const newRow = document.createElement('div');
-      newRow.className = 'scanned-topic-row';
-      newRow.dataset.idx = newIdx;
-      newRow.style = 'display: grid; grid-template-columns: 1fr 100px 30px; gap: 8px; align-items: center; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px 10px;';
-      newRow.innerHTML = `
-        <input type="text" class="form-input font-gu input-top-vid-title" data-idx="${newIdx}" placeholder="ટોપિક ${newIdx + 1} નું નામ" value="" style="font-size: 0.82rem; padding: 6px 10px; width: 100%;">
-        <input type="number" class="form-input input-top-vid-views" data-idx="${newIdx}" placeholder="સંખ્યા" value="" style="font-size: 0.82rem; padding: 6px 10px; text-align: right; border-color: #10b981;">
-        <button class="btn-remove-topic-row" data-idx="${newIdx}" title="આ રો કાઢી નાખો" style="background: transparent; color: #ef4444; border: none; font-size: 1rem; cursor: pointer; padding: 4px; line-height: 1; border-radius: 4px; display: flex; align-items: center; justify-content: center;">✕</button>
+      boxEl.innerHTML = `
+        <span style="position: absolute; top: -18px; left: 0; background: ${isHl ? '#f59e0b' : '#0284c7'}; color: #fff; font-size: 10px; font-weight: 800; padding: 1px 5px; border-radius: 3px; white-space: nowrap; pointer-events: none;">
+          #${idx + 1}
+        </span>
       `;
-      rowsContainer.appendChild(newRow);
 
-      const titleInput = newRow.querySelector('.input-top-vid-title');
-      const viewsInput = newRow.querySelector('.input-top-vid-views');
-
-      titleInput?.addEventListener('input', (e) => {
-        studioData.topVideos[newIdx].title = e.target.value;
-        syncLiveTotals();
-      });
-
-      viewsInput?.addEventListener('input', (e) => {
-        studioData.topVideos[newIdx].views48h = parseInt(e.target.value, 10) || 0;
-        syncLiveTotals();
-      });
-
-      titleInput?.focus();
-    });
-
-    // Remove topic row click handler
-    container.addEventListener('click', (e) => {
-      const delBtn = e.target.closest('.btn-remove-topic-row');
-      if (delBtn) {
-        const row = delBtn.closest('.scanned-topic-row');
-        const idx = parseInt(row?.getAttribute('data-idx') || delBtn.getAttribute('data-idx'), 10);
-        if (!isNaN(idx) && studioData.topVideos[idx]) {
-          studioData.topVideos.splice(idx, 1);
-          row.remove();
-          // Re-index remaining rows
-          container.querySelectorAll('.scanned-topic-row').forEach((r, i) => {
-            r.dataset.idx = i;
-            r.querySelector('.input-top-vid-title')?.setAttribute('data-idx', i);
-            r.querySelector('.input-top-vid-views')?.setAttribute('data-idx', i);
-            r.querySelector('.btn-remove-topic-row')?.setAttribute('data-idx', i);
-          });
-          syncLiveTotals();
-        }
-      }
-    });
-
-    // Remove photo thumbnail
-    container.querySelectorAll('.btn-remove-screenshot').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const idx = parseInt(e.currentTarget.getAttribute('data-idx'), 10);
-        if (!isNaN(idx)) {
-          uploadedScreenshots.splice(idx, 1);
-          if (uploadedScreenshots.length === 0) {
-            hasAnalyzed = false;
-          }
-          render();
+      boxEl.title = `રો #${idx + 1}: ${vid.title || 'વિડીયો'}`;
+      boxEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        activeHighlightedIdx = idx;
+        updateBoxesOverlay();
+        const row = container.querySelector(`.ocr-review-row[data-idx="${idx}"]`);
+        if (row) {
+          row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          row.querySelector('.input-row-title')?.focus();
         }
       });
+
+      overlay.appendChild(boxEl);
     });
+  }
 
-    // 1-Click Copy Master Prompt
-    copyBtn?.addEventListener('click', (e) => {
-      const prompt = promptArea?.value || getChatGPTMasterPrompt();
-      copyToClipboard(prompt, '📋 ૪૮ કલાકની સંપૂર્ણ સમરી સાથેનો ChatGPT પ્રોમ્પ્ટ કોપી થઈ ગયો! હવે ChatGPT માં Ctrl+V પેસ્ટ કરો ✓', e.currentTarget);
-      if (copyText) copyText.textContent = '✓ પ્રોમ્પ્ટ કોપી થઈ ગયો!';
-      if (copyIcon) copyIcon.textContent = '✅';
-      if (notif) notif.style.display = 'block';
+  // Interactive Drag-to-Crop Canvas Setup
+  function setupSelectionCanvas() {
+    const canvas = container.querySelector('#screenshot-selection-canvas');
+    const img = container.querySelector('#main-screenshot-img');
+    if (!canvas || !img) return;
 
-      setTimeout(() => {
-        if (copyText) copyText.textContent = '૧-ક્લિક પ્રોમ્પ્ટ કોપી કરો';
-        if (copyIcon) copyIcon.textContent = '📋';
-      }, 2500);
-    });
+    const dw = img.clientWidth || img.offsetWidth;
+    const dh = img.clientHeight || img.offsetHeight;
+    if (!dw || !dh) {
+      img.onload = () => setupSelectionCanvas();
+      return;
+    }
+    canvas.width = dw;
+    canvas.height = dh;
 
-    // When clicking "ChatGPT ખોલો ↗", also auto-copy prompt
-    openChatgpt?.addEventListener('click', () => {
-      const prompt = promptArea?.value || getChatGPTMasterPrompt();
-      navigator.clipboard?.writeText(prompt);
-      if (notif) {
-        notif.textContent = '🚀 સંપૂર્ણ ડેટા પ્રોમ્પ્ટ કોપી થઈ ગયો છે! ChatGPT માં જઈને ફક્ત Ctrl+V પેસ્ટ કરો.';
-        notif.style.display = 'block';
-      }
-    });
+    const ctx = canvas.getContext('2d');
+    let isDrawing = false;
+    let startX = 0, startY = 0;
+    let currX = 0, currY = 0;
 
-    // Container onpaste
-    container.onpaste = (e) => {
-      const items = e.clipboardData?.items;
-      if (!items) return;
-      const imageFiles = [];
-      for (let i = 0; i < items.length; i++) {
-        if (items[i].type.indexOf('image') !== -1) {
-          const file = items[i].getAsFile();
-          if (file) imageFiles.push(file);
-        }
-      }
-      if (imageFiles.length > 0) {
-        processUploadedFiles(imageFiles);
-      }
+    canvas.onmousedown = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      startX = e.clientX - rect.left;
+      startY = e.clientY - rect.top;
+      isDrawing = true;
     };
 
-    // Project banner buttons
-    container.querySelector('#btn-back-to-projects-banner')?.addEventListener('click', () => navigateTo('projects'));
-    container.querySelector('#btn-goto-step2-banner')?.addEventListener('click', () => navigateTo('slideprompts'));
+    canvas.onmousemove = (e) => {
+      if (!isDrawing) return;
+      const rect = canvas.getBoundingClientRect();
+      currX = e.clientX - rect.left;
+      currY = e.clientY - rect.top;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 3]);
+      ctx.fillStyle = 'rgba(16, 185, 129, 0.25)';
+      const rx = Math.min(startX, currX);
+      const ry = Math.min(startY, currY);
+      const rw = Math.abs(currX - startX);
+      const rh = Math.abs(currY - startY);
+      ctx.fillRect(rx, ry, rw, rh);
+      ctx.strokeRect(rx, ry, rw, rh);
+    };
+
+    canvas.onmouseup = async (e) => {
+      if (!isDrawing) return;
+      isDrawing = false;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const rx = Math.min(startX, currX);
+      const ry = Math.min(startY, currY);
+      const rw = Math.abs(currX - startX);
+      const rh = Math.abs(currY - startY);
+
+      if (rw < 15 || rh < 15) return;
+
+      const nw = img.naturalWidth;
+      const nh = img.naturalHeight;
+      const scaleX = nw / canvas.width;
+      const scaleY = nh / canvas.height;
+
+      const natCrop = {
+        x: Math.round(rx * scaleX),
+        y: Math.round(ry * scaleY),
+        width: Math.round(rw * scaleX),
+        height: Math.round(rh * scaleY)
+      };
+
+      const croppedCanvas = processImageAdjustments(uploadedScreenshots[0]?.rawImage || img, {
+        cropRect: natCrop,
+        rotation: 0,
+        brightness: 20,
+        contrast: 35,
+        sharpen: true,
+        invertForOcr: true
+      });
+
+      const croppedBase64 = croppedCanvas.toDataURL('image/jpeg', 0.95);
+      showNoticeToast('⚡ સિલેક્ટ કરેલ બોક્સ સ્કેન થઈ રહ્યું છે...', 'info');
+
+      try {
+        const ocrRes = await api.analyze48hScreenshot([croppedBase64], 'all');
+        let foundTitle = '';
+        let foundViews = null;
+
+        if (ocrRes && ocrRes.topVideos && ocrRes.topVideos.length > 0) {
+          foundTitle = ocrRes.topVideos[0].title || '';
+          foundViews = ocrRes.topVideos[0].views48h || null;
+        }
+
+        if (!foundTitle && ocrRes && ocrRes.rawText) {
+          const lines = ocrRes.rawText.split('\n').map(s => s.trim()).filter(Boolean);
+          foundTitle = lines.find(l => l.length > 3) || '';
+        }
+
+        const ist = getCurrentIST();
+        const newIdx = studioData.topVideos.length;
+        studioData.topVideos.push({
+          id: 'idea_' + Date.now(),
+          title: foundTitle || 'પસંદ કરેલ વિડીયો ટાઇટલ',
+          views48h: foundViews,
+          confidence: foundTitle ? 95 : 65,
+          isConfidenceVerified: true,
+          cropSnippet: croppedBase64,
+          bbox: { x0: natCrop.x, y0: natCrop.y, x1: natCrop.x + natCrop.width, y1: natCrop.y + natCrop.height },
+          capturedAt: ist.iso,
+          sourcePublishedAt: null,
+          createdAt: ist.iso,
+          updatedAt: ist.iso
+        });
+
+        activeHighlightedIdx = newIdx;
+        isBoxSelectMode = false;
+        render();
+        autoSave.trigger();
+        showNoticeToast(`🎯 રો #${newIdx + 1} સફળતાપૂર્વક સ્કેન થયો!`, 'success');
+      } catch (cropErr) {
+        console.warn('[Crop OCR Notice]:', cropErr.message);
+      }
+    };
   }
 
   // Initial render

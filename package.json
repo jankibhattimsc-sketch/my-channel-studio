@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server/app.js",
     "dev": "node --watch server/app.js",
-    "test": "node --test test/app.test.js"
+    "test": "node --test test/app.test.js test/phase2_upgrades.test.js test/smart_idea_notebook.test.js test/project_workspace_isolation.test.js test/presentation_file_open_preview.test.js test/master_connected_workflow.test.js test/ppt_script_audio_connection.test.js test/original_pdf_voice_studio.test.js test/advanced_voiceover_sync.test.js test/ai_voice_cleaner_enhancer.test.js test/podcast_voice_isolation.test.js test/chatgpt_saved_script_exact_audio.test.js test/script_persistence_database.test.js test/critical_final_script_persistence.test.js test/phase1_slide_identity_mapping.test.js test/chatgpt_final_script_voice_studio_sync.test.js test/continuous_full_script_voice_studio.test.js test/voice_based_slide_sync_demo.test.js test/phase1_slidewise_voice_recorder.test.js test/master_script_connected_voice_studio.test.js test/critical_bug_fix_script_slide_audio.test.js test/exact_slidewise_script_generation.test.js test/voice_enhancer_audio_editing_studio.test.js test/ai_studio_voice_enhancer_loudness.test.js test/phase2_connect_slide_recordings_pdf.test.js test/clean_slide_audio_ui.test.js test/live_slide_audio_recording_selection.test.js test/slide_audio_enhanced_preview.test.js test/voice_video_studio_merge.test.js test/audio_video_preview_perfect_sound.test.js test/slide_voice_studio_render_fix.test.js test/video_creation_tool_upgrade.test.js test/phase3_video_clip_editor.test.js test/folder_notebook_timestamp.test.js test/custom_slide_clip_combiner.test.js test/step6_thumbnail_step7_seo.test.js test/live_record_new_pdf_sync.test.js test/pdf_upload_script_flow_sync.test.js test/topic_production_planner.test.js test/connected_workflow_topic_id.test.js test/topic_adaptive_audience_prompt.test.js test/video_render_fresh_audio_priority.test.js test/video_share_functionality.test.js test/video_editor_audio_enhance_slidewise_editing.test.js test/topic_isolation_across_all_tools.test.js test/audio_recording_and_video_editor_separate_pages.test.js test/live_screen_chatgpt_script_paste_speak.test.js test/tool5_live_recorder_clipwise_video.test.js test/audio_save_clip_display_fix.test.js test/slide_prompt_topic_isolation.test.js test/slide5_fresh_audio_priority_and_truncation_fix.test.js test/tool4_videoeditor_loud_clear_audio.test.js test/slidewise_audio_timeline_and_silence_editing.test.js test/slidewise_audio_and_edited_slide_unified_display.test.js test/preview_audio_speed_and_volume_controls.test.js test/notebooklm_direct_search_slide_deck_prompt.test.js test/full_video_display_and_exact_whatsapp_share.test.js test/video_title_and_creation_timestamp_display.test.js test/topic_net_research_and_auto_slide_creator.test.js test/full_video_no_background_overlap_audio.test.js test/topic_pdf_upload_retention_fix.test.js test/pdf_slide_screen_display_and_navigation_guarantee.test.js test/any_topic_pdf_upload_and_retention_guarantee.test.js test/multi_page_pdf_slide_navigation_and_flip_guarantee.test.js test/tool2_pastetopics.test.js test/topic_seamless_pipeline_sync.test.js test/youtube_studio_48h_dashboard_redesign.test.js test/screenshot_prompt_highest_views_best_earning.test.js test/chatgpt_content_search_and_slidewise_prompt.test.js test/in_app_realistic_photo_slide_tool.test.js"
   },
   "keywords": [],
   "author": "",
@@ -16,7 +16,9 @@
     "cors": "^2.8.6",
     "dotenv": "^18.0.8",
     "express": "^5.3.0",
+    "ffmpeg-static": "^5.3.0",
     "googleapis": "^187.0.0",
+    "localtunnel": "^2.0.2",
     "openai": "^7.42.0",
     "pdf-parse": "^2.4.5",
     "rss-parser": "^3.13.0",

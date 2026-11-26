@@ -1,9 +1,11 @@
 import { api } from '../api.js';
-import { copyToClipboard } from '../utils/clipboard.js';
+import { copyToClipboard, showNoticeToast } from '../utils/clipboard.js';
+import { openFolderNotebookModal } from '../utils/folderNotebookModal.js';
 import { projectState } from '../utils/projectState.js';
 import { cleanGujaratiPhoneticsClient } from '../utils/voiceActorHelper.js';
 import { LiveAudioRecorder, enhanceAudioBuffer } from '../utils/audioRecorderEnhancer.js';
 import { mountTeleprompterStudio } from '../components/teleprompterStudio.js';
+import { mountSlideVoiceStudio } from '../components/slideVoiceStudio.js?v=99.0';
 
 export const AUDIO_TONE_PROMPT = "Read the following Gujarati government job news in a warm, natural, conversational voice, like an experienced news presenter, not a fake TV-anchor voice. Start with an enthusiastic, clear voice to grab attention. For recruitment news: be optimistic, energetic and encouraging, with slight emphasis on number of vacancies, eligibility and last date. For salary hike/DA/allowance news: be happy, excited and reassuring, and say amounts, percentages and effective dates clearly and slightly slower. When mentioning last dates, warnings or important notices: become a little serious and urgent. End with a warm, friendly closing. Keep a medium pace with natural pauses at commas and full stops. Pronounce English words like DA, GPSC, OJAS clearly. Read only the script text below exactly as written, do not add or remove any words, and do not read these instructions aloud.";
 
@@ -13,7 +15,7 @@ export async function renderMyVoice(container, navigateTo) {
   try {
     const raw = localStorage.getItem('gyan_yatra_voice_settings');
     if (raw) savedSettings = JSON.parse(raw);
-  } catch (_) {}
+  } catch (_) { }
 
   let selectedProfile = savedSettings.profileId;
   if (!selectedProfile || selectedProfile === 'anchor-swara-female' || selectedProfile === 'google-wavenet-female' || selectedProfile === 'edge-dhwani') {
@@ -26,8 +28,8 @@ export async function renderMyVoice(container, navigateTo) {
   let currentAudioPlayer = null;
 
   // Retrieve project state & active selected thumbnail
-  const project = (projectState && typeof projectState.getProject === 'function') 
-    ? projectState.getProject() 
+  const project = (projectState && typeof projectState.getProject === 'function')
+    ? projectState.getProject()
     : (projectState?.project || {});
 
   // Pre-configured high-impact Gujarati thumbnail concepts if none in state
@@ -56,9 +58,19 @@ export async function renderMyVoice(container, navigateTo) {
   ];
 
   // Active selected thumbnail state
-  let activeThumb = (project && project.thumbnail && project.thumbnail.dalleShortPrompt) 
-    ? project.thumbnail 
-    : presetConcepts[0];
+  const curTopicLower = (project.topic || project.name || '').toLowerCase();
+  let defaultConceptIdx = 0;
+  if (curTopicLower.includes('આંગણવાડી') || curTopicLower.includes('anganwadi') || curTopicLower.includes('તેડાગર')) {
+    defaultConceptIdx = 1;
+  } else if (curTopicLower.includes('કિસાન') || curTopicLower.includes('kisan') || curTopicLower.includes('મોદી')) {
+    defaultConceptIdx = 2;
+  } else if (curTopicLower.includes('da') || curTopicLower.includes('મોંઘવારી') || curTopicLower.includes('પગાર')) {
+    defaultConceptIdx = 0;
+  }
+
+  let activeThumb = (project && project.thumbnail && project.thumbnail.dalleShortPrompt && (project.thumbnail.title === project.topic || project.thumbnail.gujaratiWords))
+    ? project.thumbnail
+    : presetConcepts[defaultConceptIdx];
 
   // 4 Topic-Specific Script Frameworks ("જે તે સ્ક્રિપ્ટને રિલેટેડ જ ઢાંચામાં ઢળી જાય તેવી સ્ક્રિપ્ટ")
   let selectedFramework = 'breaking';
@@ -131,14 +143,20 @@ export async function renderMyVoice(container, navigateTo) {
     <!-- Project Context Header -->
     <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-lg); padding: 14px 20px; margin-bottom: 18px; box-shadow: 0 8px 25px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
       <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-        <button id="btn-back-to-projects-voice" class="btn btn-outline btn-sm" style="font-weight: 700;">← બધા પ્રોજેક્ટ્સ</button>
+        <button id="btn-back-to-projects-voice" class="btn btn-outline btn-sm" style="font-weight: 700;">← બધા ફોલ્ડર્સ</button>
         <button id="btn-prev-script-voice" class="btn btn-secondary btn-sm" style="font-weight: 700;">← ૩. Script</button>
-        <span style="font-size: 0.85rem; color: #38bdf8; font-weight: 800;">📁 પ્રોજેક્ટ: ${project.topic || project.name || 'મારો પ્રોજેક્ટ'}</span>
+        <span style="font-size: 0.85rem; color: #38bdf8; font-weight: 800; background: rgba(56,189,248,0.12); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(56,189,248,0.3);">
+          📁 ફોલ્ડર: <span id="hdr-folder-name-voice">${project.folderName || 'મુખ્ય ફોલ્ડર'}</span>
+        </span>
+        <button id="btn-rename-folder-voice" class="btn btn-outline btn-xs" style="font-size: 0.75rem; padding: 3px 8px;">✏️ Rename</button>
+        <button id="btn-open-folder-notebook-voice" class="btn btn-outline btn-xs" style="font-size: 0.75rem; padding: 3px 8px; border-color: #8b5cf6; color: #c4b5fd; font-weight: 700;">📝 નોટબુક</button>
       </div>
       <div style="display: flex; align-items: center; gap: 8px;">
-        <span class="badge badge-green" style="font-size: 0.72rem; font-weight: 800;">✓ Auto-Saved</span>
-        <button id="btn-next-to-editing-voice" class="btn btn-primary btn-sm" style="font-weight: 800; background: #f59e0b; border: none; padding: 6px 14px;">
-          ૫. Editing (એડિટિંગ) →
+        <button id="btn-save-voice-now" class="btn btn-success btn-sm" style="font-weight: 800; background: #ec4899; border: none; padding: 6px 14px;">
+          💾 ઓડિયો સેવ કરો
+        </button>
+        <button id="btn-next-to-editing-voice" class="btn btn-primary btn-sm" style="font-weight: 800; background: #38bdf8; color: #0f172a; border: none; padding: 6px 14px;">
+          ૫. સ્લાઇડ ક્લિપ જોડાણ (Clip Combiner) ➔
         </button>
       </div>
     </div>
@@ -152,43 +170,46 @@ export async function renderMyVoice(container, navigateTo) {
           </div>
           <div>
             <h2 style="font-size: 1.35rem; font-weight: 800; margin: 0; color: #fff; line-height: 1.3;">
-              ૪. મારો અવાજ / વૉઇસ સ્ટુડિયો & થંબનેલ સેન્ટર
+              ૪. સ્લાઇડ ઓડિયો રેકોર્ડર (Live Audio Recording Studio)
             </h2>
             <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 3px 0 0 0;">
-              ભાવ સાથે ગુજરાતી વાણી • બાજુમાં પસંદ કરેલ ૧૬:૯ થંબનેલ અને AI પ્રોમ્પ્ટ
+              પ્રેઝન્ટેશન સ્લાઇડ્સ સામે રાખીને સ્લાઇડ-બાય-સ્લાઇડ અવાજ રેકોર્ડ કરો • પ્રોજેક્ટ સાથે સંપૂર્ણ કનેક્ટેડ
             </p>
           </div>
         </div>
 
         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-          <a href="https://www.canva.com/create/youtube-thumbnails/" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm" style="border: 1.5px solid #06b6d4; color: #67e8f9; font-weight: 700; background: rgba(6,182,212,0.15); display: inline-flex; align-items: center; gap: 6px; text-decoration: none; padding: 6px 14px; border-radius: 8px;" title="Canva માં ૧૬:૯ થંબનેલ બનાવો">
-            <span>🎨</span> Canva ખોલો ↗
-          </a>
-          <button id="btn-import-script" class="btn btn-outline btn-sm" style="border-color: #a855f7; color: #c084fc; font-weight: 700; padding: 6px 12px; font-size: 0.78rem;">
-            <span>📝</span> ૩. સ્ક્રિપ્ટ લાવો
+          <button id="btn-goto-step3-script" class="btn btn-outline btn-sm" style="font-weight: 700; border-color: rgba(255,255,255,0.25); color: #cbd5e1; cursor: pointer;">
+            ← ૩. Script (PDF & સ્ક્રિપ્ટ)
           </button>
-          <button id="btn-goto-step5-seo" class="btn btn-primary btn-sm" style="background: linear-gradient(135deg, #10b981, #059669); border: none; font-weight: 700; padding: 6px 12px; font-size: 0.78rem;">
-            <span>🖼️</span> આગળ વધો: ૫. થંબનેલ ➔
+          <button id="btn-goto-step9-video-editor" class="btn btn-primary btn-sm" style="background: linear-gradient(135deg, #10b981, #059669); border: none; font-weight: 800; padding: 7px 16px; font-size: 0.82rem; display: inline-flex; align-items: center; gap: 6px;">
+            <span>🎬</span> ૫. Video Editor (ક્લિપ જોડાણ) ➔
           </button>
         </div>
       </div>
     </div>
 
-    <!-- View Switcher for Mobile & Desktop ("અવાજ ની બાજુ માં થંબનેઇલ") -->
-    <div style="display: flex; gap: 8px; margin-bottom: 16px; background: rgba(15, 23, 42, 0.7); padding: 6px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08); align-items: center; justify-content: flex-start; overflow-x: auto;">
-      <button id="view-mode-split" class="btn btn-sm btn-primary" style="font-weight: 700; font-size: 0.78rem; padding: 6px 14px; white-space: nowrap;">
-        <span>👥</span> બાજુ-બાજુમાં (Voice & Thumbnail Split)
+    <!-- View Switcher for Slide & Voice Studio, AI Voice, Thumbnail -->
+    <div style="display: none !important;" aria-hidden="true">
+      <button id="view-mode-slide-voice" class="btn btn-sm btn-primary" style="font-weight: 800; font-size: 0.82rem; padding: 7px 16px; white-space: nowrap; background: linear-gradient(135deg, #0284c7, #2563eb); border: none; box-shadow: 0 4px 12px rgba(2,132,199,0.35);">
+        <span>🎬</span> ૧. સ્લાઇડ સામે બોલો & પિચ ટ્યુનિંગ (Slide & Voice Studio) ⭐
       </button>
-      <button id="view-mode-voice" class="btn btn-sm btn-outline" style="font-weight: 700; font-size: 0.78rem; padding: 6px 14px; white-space: nowrap;">
-        <span>🎙️</span> ફક્ત અવાજ (Voice Studio)
+      <button id="view-mode-split" class="btn btn-sm btn-outline" style="font-weight: 700; font-size: 0.78rem; padding: 7px 14px; white-space: nowrap;">
+        <span>👥</span> ૨. અવાજ & થંબનેલ (Voice & Thumbnail)
       </button>
-      <button id="view-mode-thumb" class="btn btn-sm btn-outline" style="font-weight: 700; font-size: 0.78rem; padding: 6px 14px; white-space: nowrap;">
-        <span>🎨</span> ફક્ત થંબનેલ & પ્રોમ્પ્ટ (Thumbnail & Prompt)
+      <button id="view-mode-voice" class="btn btn-sm btn-outline" style="font-weight: 700; font-size: 0.78rem; padding: 7px 14px; white-space: nowrap;">
+        <span>🎙️</span> ૩. AI વોઇસ એન્કર (Neural Voices)
+      </button>
+      <button id="view-mode-thumb" class="btn btn-sm btn-outline" style="font-weight: 700; font-size: 0.78rem; padding: 7px 14px; white-space: nowrap;">
+        <span>🎨</span> ૪. ફક્ત થંબનેલ & પ્રોમ્પ્ટ
       </button>
     </div>
 
+    <!-- MOUNT CONTAINER FOR SLIDE & LIVE VOICEOVER STUDIO ("slide ane aeni same boli sku ane e j ppt pn khule") -->
+    <div id="slide-voice-studio-mount" style="margin-bottom: 24px;"></div>
+
     <!-- Responsive Main Grid: Left (Voice Studio) & Right (Selected Thumbnail & Prompt) -->
-    <div id="voice-thumb-grid" style="display: grid; grid-template-columns: 1fr 380px; gap: 20px; margin-bottom: 30px;">
+    <div id="voice-thumb-grid" style="display: none; grid-template-columns: 1fr 380px; gap: 20px; margin-bottom: 30px;">
       
       <!-- ========================================================================= -->
       <!-- LEFT COLUMN: VOICE PROFILES, SCRIPT & AUDIO GENERATOR                    -->
@@ -574,9 +595,9 @@ export async function renderMyVoice(container, navigateTo) {
           <!-- Quick Concept Switcher Buttons -->
           <div style="display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap;">
             <span style="font-size: 0.72rem; color: var(--text-muted); align-self: center; margin-right: 2px;">કોન્સેપ્ટ:</span>
-            <button class="btn btn-sm btn-outline thumb-concept-switch active" data-concept="0" style="padding: 2px 7px; font-size: 0.7rem;">#૧ DA/પગાર</button>
-            <button class="btn btn-sm btn-outline thumb-concept-switch" data-concept="1" style="padding: 2px 7px; font-size: 0.7rem;">#૨ આંગણવાડી</button>
-            <button class="btn btn-sm btn-outline thumb-concept-switch" data-concept="2" style="padding: 2px 7px; font-size: 0.7rem;">#૩ પીએમ કિસાન</button>
+            <button class="btn btn-sm btn-outline thumb-concept-switch ${defaultConceptIdx === 0 ? 'active' : ''}" data-concept="0" style="padding: 2px 7px; font-size: 0.7rem;">#૧ DA/પગાર</button>
+            <button class="btn btn-sm btn-outline thumb-concept-switch ${defaultConceptIdx === 1 ? 'active' : ''}" data-concept="1" style="padding: 2px 7px; font-size: 0.7rem;">#૨ આંગણવાડી</button>
+            <button class="btn btn-sm btn-outline thumb-concept-switch ${defaultConceptIdx === 2 ? 'active' : ''}" data-concept="2" style="padding: 2px 7px; font-size: 0.7rem;">#૩ પીએમ કિસાન</button>
           </div>
 
           <!-- Realistic 16:9 Thumbnail Visual Preview Card (Pure White #FFFFFF Background) -->
@@ -604,7 +625,7 @@ export async function renderMyVoice(container, navigateTo) {
               <!-- Bold High-Contrast Text (Right) -->
               <div style="flex: 1; min-width: 0;">
                 <div id="preview-bold-text" style="font-size: 0.95rem; font-weight: 900; color: #0f2b5c; line-height: 1.25; font-family: 'Noto Sans Gujarati', sans-serif;">
-                  ${activeThumb.gujaratiWords || '૫૦% DA મંજૂર! ખાતામાં આવશે ₹15,000 થી ₹45,000'}
+                  ${activeThumb.gujaratiWords || (project.topic ? project.topic.split(/\s+/).slice(0, 5).join(' ') : 'સત્તાવાર પરિપત્ર અને સંપૂર્ણ વિશ્લેષણ')}
                 </div>
                 <div style="font-size: 0.68rem; color: #b91c1c; font-weight: 800; margin-top: 3px;">
                   ★ લાઈવ પરિપત્ર સાથે ખુલાસો
@@ -667,6 +688,30 @@ export async function renderMyVoice(container, navigateTo) {
       </div>
     </div>
 
+    <!-- CONNECTED WORKFLOW STEPPER BAR (TOOLS 1 TO 7 JOODAN) -->
+    <div class="card workspace-bottom-stepper" style="background: rgba(15, 23, 42, 0.95); border: 1.5px solid rgba(139, 92, 246, 0.35); border-radius: 12px; padding: 14px 20px; margin-top: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.4);">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 1.4rem;">🔗</span>
+        <div>
+          <div style="font-size: 0.78rem; color: #c4b5fd; font-weight: 700;">
+            વિડીયો વર્કફ્લો જોડાણ: <strong>પગલું ૪ / ૭</strong>
+          </div>
+          <div style="font-weight: 800; font-size: 0.95rem; color: #ffffff;">
+            ૪. Live Audio (સ્લાઇડ ઓડિયો રેકોર્ડર)
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <button id="ws-btn-bottom-prev-voice" class="btn btn-outline btn-sm" style="font-weight: 700; border-color: rgba(255,255,255,0.25); color: #cbd5e1; cursor: pointer;">
+          ← પાછલું પગલું: ૩. Script
+        </button>
+        <button id="ws-btn-bottom-next-voice" class="btn btn-primary btn-sm" style="font-weight: 900; background: linear-gradient(135deg, #10b981, #059669); border: none; padding: 10px 20px; border-radius: 8px; box-shadow: 0 4px 14px rgba(16,185,129,0.4); display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+          આગળનું પગલું: ૫. Video Editor (ક્લિપ જોડાણ) →
+        </button>
+      </div>
+    </div>
+
     <!-- Responsive Style Helper for MyVoice Screen -->
     <style>
       @media (max-width: 860px) {
@@ -687,7 +732,7 @@ export async function renderMyVoice(container, navigateTo) {
   if (savedVoiceScript && scriptTextarea) {
     scriptTextarea.value = savedVoiceScript;
   } else if (curVoiceProj?.script?.sections?.length > 0 && scriptTextarea) {
-    scriptTextarea.value = curVoiceProj.script.sections.map(s => `${s.sectionName || ''}:\n${s.content || ''}`).join('\n\n');
+    scriptTextarea.value = curVoiceProj.script.sections.map(s => `${s.sectionName || ''}:\n${s.scriptText || s.content || ''}`).join('\n\n');
   }
 
   function updateCounters() {
@@ -698,6 +743,28 @@ export async function renderMyVoice(container, navigateTo) {
     estTimeSpan.textContent = `${estSec}s (~${(estSec / 60).toFixed(1)} મિનિટ)`;
   }
   updateCounters();
+
+  // --- Mount Slide & Live Voiceover Studio ("slide ane aeni same boli sku ane e j ppt pn khule") ---
+  const slideVoiceMount = document.getElementById('slide-voice-studio-mount');
+  let slideVoiceStudioInstance = null;
+  if (slideVoiceMount) {
+    slideVoiceStudioInstance = mountSlideVoiceStudio(slideVoiceMount, {
+      navigateTo,
+      onSave: ({ audioUrl }) => {
+        const pCard = document.getElementById('generated-player-card');
+        const mPlayer = document.getElementById('main-audio-player');
+        const dlBtn = document.getElementById('btn-download-audio');
+        if (pCard) pCard.style.display = 'block';
+        if (mPlayer) {
+          mPlayer.src = audioUrl;
+          mPlayer.load();
+        }
+        if (dlBtn) {
+          dlBtn.href = audioUrl;
+        }
+      }
+    });
+  }
 
   // --- Mount Teleprompter & Live Recording Studio ---
   const voiceTpMount = document.getElementById('myvoice-teleprompter-mount');
@@ -764,7 +831,7 @@ export async function renderMyVoice(container, navigateTo) {
           `).join('');
         }
       }
-    } catch (_) {}
+    } catch (_) { }
   }
 
   // Toggle Prosody Map Visibility
@@ -787,7 +854,7 @@ export async function renderMyVoice(container, navigateTo) {
       if (projectState && typeof projectState.setScriptText === 'function') {
         projectState.setScriptText(scriptTextarea.value);
       }
-    } catch (_) {}
+    } catch (_) { }
   });
 
   // Load user's saved script or project script
@@ -805,7 +872,7 @@ export async function renderMyVoice(container, navigateTo) {
   setTimeout(runScriptAnalysis, 200);
 
   // Import Script Button
-  document.getElementById('btn-import-script').addEventListener('click', () => {
+  document.getElementById('btn-import-script')?.addEventListener('click', () => {
     const p = (projectState && typeof projectState.getProject === 'function') ? projectState.getProject() : project;
     if (p?.script?.sections && p.script.sections.length > 0) {
       scriptTextarea.value = p.script.sections.map(s => s.content || s.text).join('\n\n');
@@ -816,57 +883,93 @@ export async function renderMyVoice(container, navigateTo) {
     }
   });
 
+  // Connected Workflow 1 to 7 Navigation Listeners
+  document.getElementById('btn-goto-step3-script')?.addEventListener('click', () => {
+    navigateTo('scriptwriter');
+  });
+  document.getElementById('ws-btn-bottom-prev-voice')?.addEventListener('click', () => {
+    navigateTo('scriptwriter');
+  });
+  document.getElementById('ws-btn-bottom-next-voice')?.addEventListener('click', () => {
+    navigateTo('videoeditor');
+  });
+
   // Thumbnail Studio cross navigation
   document.getElementById('btn-goto-thumb-page')?.addEventListener('click', () => {
     navigateTo('thumbnails');
+  });
+  document.getElementById('btn-goto-step9-video-editor')?.addEventListener('click', () => {
+    navigateTo('videoeditor');
   });
   document.getElementById('btn-goto-thumbnails-full')?.addEventListener('click', () => {
     navigateTo('thumbnails');
   });
 
-  // View Mode Switcher Handlers (Split vs Voice Only vs Thumbnail Only)
+  // View Mode Switcher Handlers (Slide-Voice vs Split vs Voice Only vs Thumbnail Only)
+  const mountSlideStudio = document.getElementById('slide-voice-studio-mount');
   const colVoice = document.getElementById('col-voice-studio');
   const colThumb = document.getElementById('col-thumb-studio');
   const gridContainer = document.getElementById('voice-thumb-grid');
+  const btnModeSlideVoice = document.getElementById('view-mode-slide-voice');
   const btnModeSplit = document.getElementById('view-mode-split');
   const btnModeVoice = document.getElementById('view-mode-voice');
   const btnModeThumb = document.getElementById('view-mode-thumb');
 
   function setVoiceViewMode(mode) {
-    [btnModeSplit, btnModeVoice, btnModeThumb].forEach(b => {
+    [btnModeSlideVoice, btnModeSplit, btnModeVoice, btnModeThumb].forEach(b => {
       if (b) {
         b.classList.remove('btn-primary');
         b.classList.add('btn-outline');
       }
     });
 
-    if (mode === 'voice') {
+    if (mode === 'slide-voice') {
+      btnModeSlideVoice?.classList.remove('btn-outline');
+      btnModeSlideVoice?.classList.add('btn-primary');
+      if (mountSlideStudio) mountSlideStudio.style.display = 'block';
+      if (gridContainer) gridContainer.style.display = 'none';
+      if (slideVoiceStudioInstance) slideVoiceStudioInstance.refresh();
+    } else if (mode === 'voice') {
       btnModeVoice?.classList.remove('btn-outline');
       btnModeVoice?.classList.add('btn-primary');
+      if (mountSlideStudio) mountSlideStudio.style.display = 'none';
+      if (gridContainer) {
+        gridContainer.style.display = 'grid';
+        gridContainer.style.gridTemplateColumns = '1fr';
+      }
       if (colVoice) colVoice.style.display = 'block';
       if (colThumb) colThumb.style.display = 'none';
-      if (gridContainer) gridContainer.style.gridTemplateColumns = '1fr';
     } else if (mode === 'thumb') {
       btnModeThumb?.classList.remove('btn-outline');
       btnModeThumb?.classList.add('btn-primary');
+      if (mountSlideStudio) mountSlideStudio.style.display = 'none';
+      if (gridContainer) {
+        gridContainer.style.display = 'grid';
+        gridContainer.style.gridTemplateColumns = '1fr';
+      }
       if (colVoice) colVoice.style.display = 'none';
       if (colThumb) colThumb.style.display = 'block';
-      if (gridContainer) gridContainer.style.gridTemplateColumns = '1fr';
     } else {
       // Split / Side-by-side
       btnModeSplit?.classList.remove('btn-outline');
       btnModeSplit?.classList.add('btn-primary');
-      if (colVoice) colVoice.style.display = 'block';
-      if (colThumb) colThumb.style.display = 'block';
+      if (mountSlideStudio) mountSlideStudio.style.display = 'none';
       if (gridContainer) {
+        gridContainer.style.display = 'grid';
         gridContainer.style.gridTemplateColumns = window.innerWidth > 860 ? '1fr 380px' : '1fr';
       }
+      if (colVoice) colVoice.style.display = 'block';
+      if (colThumb) colThumb.style.display = 'block';
     }
   }
 
+  btnModeSlideVoice?.addEventListener('click', () => setVoiceViewMode('slide-voice'));
   btnModeSplit?.addEventListener('click', () => setVoiceViewMode('split'));
   btnModeVoice?.addEventListener('click', () => setVoiceViewMode('voice'));
   btnModeThumb?.addEventListener('click', () => setVoiceViewMode('thumb'));
+
+  // Default to Slide & Voice Studio ("slide ane aeni same boli sku ane e j ppt pn khule")
+  setVoiceViewMode('slide-voice');
 
   // Quick Copy Thumbnail Prompt from Banner
   document.getElementById('btn-quick-copy-thumb-prompt')?.addEventListener('click', (e) => {
@@ -1014,12 +1117,12 @@ export async function renderMyVoice(container, navigateTo) {
     if (voiceTpStudio) voiceTpStudio.setScriptText(scriptTextarea.value);
     try {
       localStorage.setItem('gyan_yatra_custom_user_script', scriptTextarea.value);
-    } catch (_) {}
+    } catch (_) { }
     copyToClipboard('', `✨ સ્ક્રિપ્ટ "${fw.name}" ના વાસ્તવિક ઢાંચામાં ઢળી ગઈ છે! ✓`);
   });
 
   // Clean Phonetics Button
-  document.getElementById('btn-clean-phonetics').addEventListener('click', () => {
+  document.getElementById('btn-clean-phonetics')?.addEventListener('click', () => {
     if (scriptTextarea.value.trim()) {
       scriptTextarea.value = cleanGujaratiPhoneticsClient(scriptTextarea.value);
       updateCounters();
@@ -1029,7 +1132,7 @@ export async function renderMyVoice(container, navigateTo) {
   });
 
   // Clear Script Button
-  document.getElementById('btn-clear-script').addEventListener('click', () => {
+  document.getElementById('btn-clear-script')?.addEventListener('click', () => {
     scriptTextarea.value = '';
     updateCounters();
     if (voiceTpStudio) voiceTpStudio.setScriptText('');
@@ -1106,8 +1209,8 @@ export async function renderMyVoice(container, navigateTo) {
 
   // Toggle API Settings Box
   const apiBox = document.getElementById('api-settings-box');
-  document.getElementById('btn-toggle-api-settings').addEventListener('click', () => {
-    apiBox.style.display = apiBox.style.display === 'none' ? 'block' : 'none';
+  document.getElementById('btn-toggle-api-settings')?.addEventListener('click', () => {
+    if (apiBox) apiBox.style.display = apiBox.style.display === 'none' ? 'block' : 'none';
   });
 
   // Save Settings
@@ -1116,18 +1219,18 @@ export async function renderMyVoice(container, navigateTo) {
       profileId: selectedProfile,
       emotion: selectedEmotion,
       speed: selectedSpeed,
-      apiKey: document.getElementById('input-google-api-key').value.trim(),
-      customVoiceId: document.getElementById('input-custom-voice-id').value.trim()
+      apiKey: (document.getElementById('input-google-api-key')?.value || '').trim(),
+      customVoiceId: (document.getElementById('input-custom-voice-id')?.value || '').trim()
     };
     try {
       localStorage.setItem('gyan_yatra_voice_settings', JSON.stringify(toSave));
-    } catch (_) {}
+    } catch (_) { }
   }
 
-  document.getElementById('btn-save-voice-settings').addEventListener('click', () => {
+  document.getElementById('btn-save-voice-settings')?.addEventListener('click', () => {
     saveLocalSettings();
     copyToClipboard('', 'વોઇસ સેટિંગ્સ સફળતાપૂર્વક સાચવવામાં આવ્યા! 💾');
-    apiBox.style.display = 'none';
+    if (apiBox) apiBox.style.display = 'none';
   });
 
   // Generate Voice Audio Button (FIXED WITH /api/voice/generate)
@@ -1151,7 +1254,7 @@ export async function renderMyVoice(container, navigateTo) {
           btnDownloadAudio.download = `${(curVoiceProj?.name || 'my_voice').replace(/[\s/\\?%*:|"<>]+/g, '_')}_Audio.wav`;
         }
       }
-    } catch (_) {}
+    } catch (_) { }
   })();
 
   generateBtn.addEventListener('click', async () => {
@@ -1193,7 +1296,7 @@ export async function renderMyVoice(container, navigateTo) {
         const cacheBusterUrl = res.audioUrl + (res.audioUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
         mainAudioPlayer.src = cacheBusterUrl;
         mainAudioPlayer.load();
-        mainAudioPlayer.play().catch(() => {});
+        mainAudioPlayer.play().catch(() => { });
         btnDownloadAudio.href = cacheBusterUrl;
         btnDownloadAudio.setAttribute('download', res.filename);
 
@@ -1249,7 +1352,7 @@ export async function renderMyVoice(container, navigateTo) {
             playerCard.style.display = 'block';
             playerTitle.textContent = b.dataset.url.split('/').pop();
             mainAudioPlayer.src = b.dataset.url;
-            mainAudioPlayer.play().catch(() => {});
+            mainAudioPlayer.play().catch(() => { });
             btnDownloadAudio.href = b.dataset.url;
             btnDownloadAudio.setAttribute('download', b.dataset.url.split('/').pop());
           });
@@ -1280,11 +1383,37 @@ export async function renderMyVoice(container, navigateTo) {
     copyToClipboard(promptText, '🎨 થંબનેલ AI પ્રોમ્પ્ટ કોપી થઈ ગયો! Canva માં પેસ્ટ કરો ↗', e.currentTarget);
   });
 
-  document.getElementById('btn-refresh-library').addEventListener('click', loadAudioLibrary);
+  document.getElementById('btn-refresh-library')?.addEventListener('click', loadAudioLibrary);
   loadAudioLibrary();
 
   // Navigation Banner Buttons
   container.querySelector('#btn-back-to-projects-voice')?.addEventListener('click', () => navigateTo('projects'));
   container.querySelector('#btn-prev-script-voice')?.addEventListener('click', () => navigateTo('scriptwriter'));
-  container.querySelector('#btn-next-to-editing-voice')?.addEventListener('click', () => navigateTo('editing'));
+  container.querySelector('#btn-next-to-editing-voice')?.addEventListener('click', () => navigateTo('videoeditor'));
+
+  // Save Voice to Folder Button
+  container.querySelector('#btn-save-voice-now')?.addEventListener('click', () => {
+    const curP = projectState.getActiveProject();
+    showNoticeToast(`✅ ઓડિયો "${curP?.folderName || 'મુખ્ય ફોલ્ડર'}" માં સફળતાપૂર્વક સાચવાઈ ગયો છે! ✓`, 'success');
+  });
+
+  // Open Folder Notebook from Voice tool
+  container.querySelector('#btn-open-folder-notebook-voice')?.addEventListener('click', () => {
+    const curP = projectState.getActiveProject();
+    openFolderNotebookModal({ folderId: curP?.folderId || 'f_default', folderName: curP?.folderName || '📁 મુખ્ય ફોલ્ડર' });
+  });
+
+  // Rename Folder from Voice tool
+  container.querySelector('#btn-rename-folder-voice')?.addEventListener('click', () => {
+    const curP = projectState.getActiveProject();
+    if (!curP) return;
+    const curFId = curP.folderId || 'f_default';
+    const newName = prompt(`"${curP.folderName || 'આ ફોલ્ડર'}" નું નવું નામ આપો:`, curP.folderName || '');
+    if (newName && newName.trim()) {
+      projectState.renameFolder(curFId, newName.trim());
+      const labelEl = container.querySelector('#hdr-folder-name-voice');
+      if (labelEl) labelEl.textContent = newName.trim();
+      showNoticeToast(`✓ ફોલ્ડરનું નામ બદલીને "${newName.trim()}" થયું!`, 'success');
+    }
+  });
 }

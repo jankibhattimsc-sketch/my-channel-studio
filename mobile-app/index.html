@@ -1,0 +1,1664 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Gyan Yatra YouTube Studio — Mobile Application Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Noto+Sans+Gujarati:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-purple: #7C3AED;
+      --primary-blue: #2563EB;
+      --accent-gradient: linear-gradient(135deg, #7C3AED 0%, #2563EB 100%);
+      --accent-light: #F3E8FF;
+      --accent-blue-light: #EFF6FF;
+      --yt-red: #FF0000;
+      --bg-main: #FFFFFF;
+      --bg-canvas: #F8FAFC;
+      --card-bg: #FFFFFF;
+      --card-border: #E2E8F0;
+      --text-dark: #0F172A;
+      --text-secondary: #475569;
+      --text-muted: #94A3B8;
+      --radius-card: 16px;
+      --radius-button: 10px;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+      --shadow-card: 0 4px 16px -2px rgba(124, 58, 237, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+      --shadow-card-hover: 0 10px 24px -4px rgba(124, 58, 237, 0.16), 0 4px 8px -2px rgba(0, 0, 0, 0.06);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: #0F172A;
+      font-family: 'Noto Sans Gujarati', 'Outfit', system-ui, -apple-system, sans-serif;
+      color: var(--text-dark);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 10px 40px;
+      overflow-x: hidden;
+    }
+
+    /* Emulator Top Switcher Bar */
+    .emulator-top-bar {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      background: #1E293B;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 10px 18px;
+      margin-bottom: 20px;
+      color: #F8FAFC;
+    }
+
+    .emulator-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .emulator-brand svg {
+      width: 26px;
+      height: 26px;
+      fill: #FF0000;
+    }
+
+    .emulator-brand h2 {
+      font-size: 0.96rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+
+    .device-switcher {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #0F172A;
+      padding: 4px;
+      border-radius: 10px;
+      border: 1px solid #334155;
+    }
+
+    .device-btn {
+      background: transparent;
+      border: none;
+      color: #94A3B8;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .device-btn.active {
+      background: var(--accent-gradient);
+      color: #FFFFFF;
+      box-shadow: 0 2px 8px rgba(124, 58, 237, 0.4);
+    }
+
+    /* Hardware Phone Shell */
+    .phone-container {
+      position: relative;
+      width: 390px;
+      height: 844px;
+      background: #000000;
+      border-radius: 48px;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 0 10px #1E293B, 0 0 0 12px #334155;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Screen Frame Inside Phone */
+    .mobile-screen-frame {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: #FFFFFF;
+      border-radius: 38px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Android Status Bar */
+    .mobile-status-bar {
+      height: 28px;
+      background: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #0F172A;
+      position: relative;
+      z-index: 50;
+      flex-shrink: 0;
+    }
+
+    .camera-punch-hole {
+      position: absolute;
+      left: 50%;
+      top: 6px;
+      transform: translateX(-50%);
+      width: 13px;
+      height: 13px;
+      background: #000000;
+      border-radius: 50%;
+      box-shadow: inset 0 0 2px rgba(255, 255, 255, 0.3);
+      z-index: 60;
+    }
+
+    /* App Header (Studio Style) */
+    .mobile-app-header {
+      background: #FFFFFF;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1.5px solid #F1F5F9;
+      position: relative;
+      z-index: 40;
+      flex-shrink: 0;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-hamburger {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0F172A;
+      border-radius: 8px;
+      transition: background 0.15s;
+    }
+
+    .btn-hamburger:hover {
+      background: #F1F5F9;
+    }
+
+    .app-brand-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .yt-icon-box {
+      width: 28px;
+      height: 20px;
+      background: #FF0000;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(255, 0, 0, 0.3);
+    }
+
+    .yt-icon-box svg {
+      width: 12px;
+      height: 12px;
+      fill: #FFFFFF;
+      margin-left: 2px;
+    }
+
+    .app-brand-text {
+      line-height: 1.15;
+    }
+
+    .app-brand-text h1 {
+      font-size: 0.95rem;
+      font-weight: 900;
+      color: #0F172A;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+    }
+
+    .app-brand-text span {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--primary-purple);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-header-icon {
+      position: relative;
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #334155;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-header-icon:hover {
+      background: var(--accent-light);
+      color: var(--primary-purple);
+      border-color: #DDD6FE;
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      width: 16px;
+      height: 16px;
+      background: #EF4444;
+      color: #FFFFFF;
+      border-radius: 50%;
+      font-size: 0.62rem;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #FFFFFF;
+    }
+
+    /* App Body Scroll Container */
+    .mobile-app-body {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      background: #FAFCFF;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Home View Container */
+    .view-container {
+      display: none;
+      flex-direction: column;
+      padding: 16px 14px 24px;
+      min-height: 100%;
+    }
+
+    .view-container.active {
+      display: flex;
+    }
+
+    /* Channel Quick Summary Card */
+    .channel-hero-card {
+      background: linear-gradient(135deg, #7C3AED 0%, #2563EB 100%);
+      border-radius: 18px;
+      padding: 16px 18px;
+      color: #FFFFFF;
+      margin-bottom: 16px;
+      box-shadow: 0 6px 20px rgba(124, 58, 237, 0.25);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .channel-hero-card::after {
+      content: '';
+      position: absolute;
+      right: -20px;
+      bottom: -20px;
+      width: 100px;
+      height: 100px;
+      background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .hero-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .channel-avatar-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .channel-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.8);
+      background: #FFFFFF;
+      object-fit: cover;
+    }
+
+    .channel-meta h3 {
+      font-size: 0.95rem;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+
+    .channel-meta p {
+      font-size: 0.72rem;
+      opacity: 0.9;
+    }
+
+    .channel-stats-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(8px);
+      border-radius: 12px;
+      padding: 8px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    .stat-pill {
+      text-align: center;
+    }
+
+    .stat-pill .val {
+      font-size: 0.85rem;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+
+    .stat-pill .lbl {
+      font-size: 0.65rem;
+      opacity: 0.85;
+    }
+
+    .stat-divider {
+      width: 1px;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Section Title */
+    .section-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 4px 2px 14px;
+    }
+
+    .section-title {
+      font-size: 0.98rem;
+      font-weight: 900;
+      color: #0F172A;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .section-title span {
+      color: var(--primary-purple);
+    }
+
+    .section-subtitle {
+      font-size: 0.72rem;
+      color: #64748B;
+      font-weight: 700;
+    }
+
+    /* 2-COLUMN FEATURE GRID (STRICTLY AS REQUESTED) */
+    .features-two-col-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .feature-card {
+      background: #FFFFFF;
+      border: 1.5px solid var(--card-border);
+      border-radius: var(--radius-card);
+      padding: 14px 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 118px;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: var(--shadow-card);
+      text-decoration: none;
+      color: inherit;
+      user-select: none;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-card-hover);
+      border-color: #C4B5FD;
+    }
+
+    .feature-card:active {
+      transform: scale(0.97);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .card-icon-bubble {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .card-badge {
+      font-size: 0.62rem;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 999px;
+      letter-spacing: 0.02em;
+    }
+
+    .card-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .card-title {
+      font-size: 0.92rem;
+      font-weight: 900;
+      color: #0F172A;
+      line-height: 1.25;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-title .arrow {
+      font-size: 0.8rem;
+      color: #94A3B8;
+      transition: transform 0.2s;
+    }
+
+    .feature-card:hover .card-title .arrow {
+      transform: translateX(3px);
+      color: var(--primary-purple);
+    }
+
+    .card-desc {
+      font-size: 0.72rem;
+      color: #64748B;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+
+    /* Distinct Gradient Colors for the 10 Cards */
+    .card-1 .card-icon-bubble { background: #EEF2FF; color: #4F46E5; }
+    .card-1 .card-badge { background: #EEF2FF; color: #4F46E5; }
+
+    .card-2 .card-icon-bubble { background: #F0FDF4; color: #16A34A; }
+    .card-2 .card-badge { background: #DCFCE7; color: #15803D; }
+
+    .card-3 .card-icon-bubble { background: #FEF3C7; color: #D97706; }
+    .card-3 .card-badge { background: #FEF3C7; color: #B45309; }
+
+    .card-4 .card-icon-bubble { background: #F3E8FF; color: #7C3AED; }
+    .card-4 .card-badge { background: #F3E8FF; color: #7C3AED; }
+
+    .card-5 .card-icon-bubble { background: #FEE2E2; color: #DC2626; }
+    .card-5 .card-badge { background: #FEE2E2; color: #B91C1C; }
+
+    .card-6 .card-icon-bubble { background: #FCE7F3; color: #DB2777; }
+    .card-6 .card-badge { background: #FCE7F3; color: #BE185D; }
+
+    .card-7 .card-icon-bubble { background: #E0F2FE; color: #0284C7; }
+    .card-7 .card-badge { background: #E0F2FE; color: #0369A1; }
+
+    .card-8 .card-icon-bubble { background: #E0E7FF; color: #3B82F6; }
+    .card-8 .card-badge { background: #DBEAFE; color: #1D4ED8; }
+
+    .card-9 .card-icon-bubble { background: #F5F3FF; color: #8B5CF6; }
+    .card-9 .card-badge { background: #EDE9FE; color: #6D28D9; }
+
+    .card-10 .card-icon-bubble { background: #FFF1F2; color: #E11D48; }
+    .card-10 .card-badge { background: #FFE4E6; color: #BE123C; }
+
+    /* Bottom Navigation Bar */
+    .mobile-bottom-nav {
+      height: 58px;
+      background: #FFFFFF;
+      border-top: 1.5px solid #F1F5F9;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 10px;
+      position: relative;
+      z-index: 40;
+      flex-shrink: 0;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      color: #94A3B8;
+      font-size: 0.68rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      background: none;
+      padding: 6px 12px;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .nav-item.active {
+      color: var(--primary-purple);
+    }
+
+    .nav-item svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+
+    /* Android System Navigation Bar (Gesture Pill) */
+    .android-system-bar {
+      height: 20px;
+      background: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    .system-gesture-pill {
+      width: 100px;
+      height: 4px;
+      background: #CBD5E1;
+      border-radius: 999px;
+    }
+
+    /* Screen Views Detail Pages Styling */
+    .screen-header-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1.5px solid #F1F5F9;
+    }
+
+    .btn-screen-back {
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      color: #0F172A;
+      font-size: 0.82rem;
+      font-weight: 800;
+      padding: 7px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+
+    .btn-screen-back:hover {
+      background: #F1F5F9;
+    }
+
+    .screen-tag {
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--accent-light);
+      color: var(--primary-purple);
+    }
+
+    .detail-card {
+      background: #FFFFFF;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .detail-card h3 {
+      font-size: 1rem;
+      font-weight: 900;
+      color: #0F172A;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .detail-card p {
+      font-size: 0.82rem;
+      color: #64748B;
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+
+    .mobile-input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid #CBD5E1;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-family: inherit;
+      outline: none;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+    }
+
+    .mobile-input:focus {
+      border-color: var(--primary-purple);
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+    }
+
+    .mobile-btn {
+      width: 100%;
+      background: var(--accent-gradient);
+      color: #FFFFFF;
+      border: none;
+      font-size: 0.86rem;
+      font-weight: 800;
+      padding: 11px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+      transition: all 0.2s;
+    }
+
+    .mobile-btn:active {
+      transform: scale(0.98);
+    }
+
+    .mobile-btn-outline {
+      background: #FFFFFF;
+      color: var(--primary-purple);
+      border: 1.5px solid var(--primary-purple);
+      box-shadow: none;
+    }
+
+    /* Slide-out Drawer */
+    .mobile-drawer-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .mobile-drawer-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .mobile-drawer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 290px;
+      background: #FFFFFF;
+      z-index: 101;
+      transform: translateX(-100%);
+      transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 10px 0 30px rgba(0, 0, 0, 0.25);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .mobile-drawer.open {
+      transform: translateX(0);
+    }
+
+    .drawer-header {
+      background: var(--accent-gradient);
+      padding: 24px 18px 18px;
+      color: #FFFFFF;
+    }
+
+    .drawer-user {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .drawer-user img {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      border: 2px solid #FFFFFF;
+      object-fit: cover;
+    }
+
+    .drawer-menu-list {
+      list-style: none;
+      padding: 12px 8px;
+    }
+
+    .drawer-menu-item {
+      padding: 10px 14px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: #1E293B;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .drawer-menu-item:hover {
+      background: #F8FAFC;
+      color: var(--primary-purple);
+    }
+
+    .drawer-menu-item.active {
+      background: var(--accent-light);
+      color: var(--primary-purple);
+    }
+
+    /* Notification Sheet */
+    .notification-sheet {
+      position: absolute;
+      top: 60px;
+      right: 14px;
+      width: 280px;
+      background: #FFFFFF;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+      z-index: 95;
+      padding: 14px;
+      display: none;
+      animation: dropIn 0.2s ease-out;
+    }
+
+    .notification-sheet.open {
+      display: block;
+    }
+
+    @keyframes dropIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Toast in Mobile */
+    .mobile-toast {
+      position: absolute;
+      bottom: 74px;
+      left: 20px;
+      right: 20px;
+      background: #0F172A;
+      color: #FFFFFF;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+      z-index: 120;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Preview Device Switcher -->
+  <header class="emulator-top-bar">
+    <div class="emulator-brand">
+      <svg viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+      <div>
+        <h2>Gyan Yatra YouTube Studio — Mobile App Preview</h2>
+        <p style="font-size: 0.72rem; color: #94A3B8;">તમારો લાઇવ એન્ડ્રોઇડ એપ પ્રિવ્યુ • Real Interactive 10-Feature Experience</p>
+      </div>
+    </div>
+
+    <div class="device-switcher">
+      <button class="device-btn active" data-w="390" data-h="844">📱 Pixel 7 (390×844)</button>
+      <button class="device-btn" data-w="412" data-h="915">📱 Galaxy S23 (412×915)</button>
+      <button class="device-btn" data-w="360" data-h="800">📱 Compact (360×800)</button>
+    </div>
+  </header>
+
+  <!-- Hardware Android Phone Frame -->
+  <main class="phone-container" id="phoneContainer">
+    <div class="mobile-screen-frame">
+
+      <!-- Status Bar -->
+      <div class="mobile-status-bar">
+        <span id="statusBarClock">09:41</span>
+        <div class="camera-punch-hole"></div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span>5G</span>
+          <span>📶</span>
+          <span>🔋 100%</span>
+        </div>
+      </div>
+
+      <!-- App Header -->
+      <header class="mobile-app-header">
+        <div class="header-left">
+          <button class="btn-hamburger" id="btnToggleDrawer" aria-label="Open Menu">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          </button>
+          <div class="app-brand-title">
+            <div class="yt-icon-box">
+              <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+            <div class="app-brand-text">
+              <h1>Gyan Yatra</h1>
+              <span>YouTube Studio</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <button class="btn-header-icon" id="btnNotification" aria-label="Notifications">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+            <span class="notification-badge">3</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Scrollable App Body -->
+      <div class="mobile-app-body">
+
+        <!-- ========================================== -->
+        <!-- VIEW 0: HOME SCREEN (10 FEATURE CARDS GRID) -->
+        <!-- ========================================== -->
+        <section class="view-container active" id="view-home">
+          
+          <!-- Section Title -->
+          <div class="section-header-row">
+            <h2 class="section-title">
+              <span>⚡</span> સ્ટુડિયો ટૂલ્સ (Studio Features)
+            </h2>
+            <span class="section-subtitle">૧૦ સંપૂર્ણ ટૂલ્સ</span>
+          </div>
+
+          <!-- 2-COLUMN GRID (EXACT ORDER AS REQUESTED) -->
+          <div class="features-two-col-grid">
+            
+            <!-- 1. Video Idea -->
+            <div class="feature-card card-1" data-target="screen-video-idea">
+              <div class="card-top">
+                <div class="card-icon-bubble">💡</div>
+                <span class="card-badge">AI Research</span>
+              </div>
+              <div class="card-content">
+                <div class="card-title">
+                  <span>Video Idea</span>
+                  <span class="arrow">→</span>
+                </div>
+                <div class="card-desc">૪૮ કલાક ટ્રેન્ડ્સ & ૪-૫ સબ-ટોપિક્સ</div>
+              </div>
+            </div>
+
+            <!-- 2. Slide બનાવો -->
+            <div class="feature-card card-2" data-target="screen-slide-bnavo">
+              <div class="card-top">
+                <div class="card-icon-bubble">📑</div>
+                <span class="card-badge">Slide Deck</span>
+              </div>
+              <div class="card-content">
+                <div class="card-title">
+                  <span>Slide બનાવો</span>
+                  <span class="arrow">→</span>
+                </div>
+                <div class="card-desc">PDF & NotebookLM સ્લાઇડ્સ</div>
+              </div>
+            </div>
+
+            <!-- 3. Script લખો -->
+            <div class="feature-card card-3" data-target="screen-script-lakho">
+              <div class="card-top">
+                <div class="card-icon-bubble">📝</div>
+                <span class="card-badge">Full Script</span>
+              </div>
+              <div class="card-content">
+                <div class="card-title">
+                  <span>Script લખો</span>
+                  <span class="arrow">→</span>
+                </div>
+                <div class="card-desc">૪ વિભાગ ગુજરાતી વિડીયો સ્ક્રિપ્ટ</div>
+              </div>
+            </div>
+
+            <!-- 4. Voice બનાવો -->
+            <div class="feature-card card-4" data-target="screen-voice-bnavo">
+              <div class="card-top">
+                <div class="card-icon-bubble">🎙️</div>
+                <span class="card-badge">Voice Studio</span>
+              </div>
+              <div class="card-content">
+                <div class="card-title">
+                  <span>Voice બનાવો</span>
+                  <span class="arrow">→</span>
+                </div>
+                <div class="card-desc">સ્લાઇડ-વાઇઝ ઓડિયો રેકોર્ડર</div>
+              </div>
+            </div>
+
+            <!-- 5. Video Editing -->
+            <div class="feature-card card-5" data-target="screen-video-editing">
+              <div class="card-top">
+                <div class="card-icon-bubble">🎬</div>
+                <span class="card-badge">1080p MP4</span>
+              </div>
+              <div class="card-content">
+                <div class="card-title">
+                  <span>Video Editing</span>
+                  <span class="arrow">→</span>
+                </div>
+                <div class="card-desc">૫-સ્ટેપ વિડીયો પ્રોડક્શન એડિટર</div>
+              </div>
+            </div>
+
+            <!-- 6. Thumbnail -->
+            <div class="feature-card card-6" data-target="screen-thumbnail">
+              <div class="card-top">
+                <div class="card-icon-bubble">🖼️</div>
+                <span class="card-badge">High CTR</span>
+              </div>
+              <div class="card-content">
+                <div class="card-title">
+                  <span>Thumbnail</span>
+                  <span class="arrow">→</span>
+                </div>
+                <div class="card-desc">હાઇ-ક્લિક થંબનેલ & કલર કોન્સેપ્ટ</div>
+              </div>
+            </div>
+
+            <!-- 7. SEO & Tags -->
+            <div class="feature-card card-7" data-target="screen-seo-tags">
+              <div class="card-top">
+                <div class="card-icon-bubble">🏷️</div>
+                <span class="card-badge">Rank #1</span>
+              </div>
+              <div class="card-content">
+                <div class="card-title">
+                  <span>SEO & Tags</span>
+                  <span class="arrow">→</span>
+                </div>
+                <div class="card-desc">ટાઇટલ, ડિસ્ક્રિપ્શન & વાયરલ ટેગ્સ</div>
+              </div>
+            </div>
+
+            <!-- 8. Facebook Upload -->
+            <div class="feature-card card-8" data-target="screen-facebook-upload">
+              <div class="card-top">
+                <div class="card-icon-bubble">📱</div>
+                <span class="card-badge">Meta Creator</span>
+              </div>
+              <div class="card-content">
+                <div class="card-title">
+                  <span>Facebook Upload</span>
+                  <span class="arrow">→</span>
+                </div>
+                <div class="card-desc">૧:૧ & ૧૬:૯ વિડીયો પબ્લિશિંગ</div>
+              </div>
+            </div>
+
+            <!-- 9. YouTube Community -->
+            <div class="feature-card card-9" data-target="screen-youtube-community">
+              <div class="card-top">
+                <div class="card-icon-bubble">💬</div>
+                <span class="card-badge">Community</span>
+              </div>
+              <div class="card-content">
+                <div class="card-title">
+                  <span>YouTube Community</span>
+                  <span class="arrow">→</span>
+                </div>
+                <div class="card-desc">પોલ, ક્વિઝ & દર્શક એંગેજમેન્ટ</div>
+              </div>
+            </div>
+
+            <!-- 10. YouTube Shorts Upload -->
+            <div class="feature-card card-10" data-target="screen-youtube-shorts">
+              <div class="card-top">
+                <div class="card-icon-bubble">⚡</div>
+                <span class="card-badge">Shorts 9:16</span>
+              </div>
+              <div class="card-content">
+                <div class="card-title">
+                  <span>YouTube Shorts Upload</span>
+                  <span class="arrow">→</span>
+                </div>
+                <div class="card-desc">૬૦ સેકન્ડ વાયરલ વર્ટિકલ શોર્ટ્સ</div>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SCREEN 1: VIDEO IDEA                       -->
+        <!-- ========================================== -->
+        <section class="view-container" id="screen-video-idea">
+          <div class="screen-header-bar">
+            <button class="btn-screen-back" data-back="view-home">← હોમ પર જાઓ</button>
+            <span class="screen-tag">ટૂલ ૧: Video Idea</span>
+          </div>
+
+          <div class="detail-card">
+            <h3>💡 ૪૮ કલાક સ્ક્રીનશોટ એનાલિસિસ</h3>
+            <p>તમારા યુટ્યુબ સ્ટુડિયોના ૪૮ કલાકના સ્ક્રીનશોટ પરથી ૫ શ્રેષ્ઠ કમાણી વાળા વાયરલ વિષયો મેળવો.</p>
+            <button class="mobile-btn" id="btnRunIdeaDirect">
+              <span>⚡</span> ૫ શ્રેષ્ઠ કમાણી વાળા વિષયો શોધો
+            </button>
+          </div>
+
+          <div class="detail-card">
+            <h3>🎯 ૪-૫ સબ-ટોપિક્સ એક્સપ્લોરર</h3>
+            <p>કોઈપણ એક વિષય લખો અને તેના ૪ થી ૫ વિડીયો વિષયો શોધો:</p>
+            <input type="text" id="mInputSubtopic" class="mobile-input" value="આંગણવાડી પગાર વધારો હાઈકોર્ટ ચુકાદો" placeholder="તમારો વિષય લખો..." />
+            <button class="mobile-btn mobile-btn-outline" id="btnSearchSubtopicsMobile">
+              <span>🔍</span> ૪-૫ વિષયો જનરેટ કરો
+            </button>
+            <div id="mSubtopicsResultList" style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;"></div>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SCREEN 2: SLIDE બનાવો                      -->
+        <!-- ========================================== -->
+        <section class="view-container" id="screen-slide-bnavo">
+          <div class="screen-header-bar">
+            <button class="btn-screen-back" data-back="view-home">← હોમ પર જાઓ</button>
+            <span class="screen-tag">ટૂલ ૨: Slide બનાવો</span>
+          </div>
+
+          <div class="detail-card">
+            <h3>📑 NotebookLM & ChatGPT Slide Prompts</h3>
+            <p>વાસ્તવિક ફોટા સાથે પ્રોફેશનલ સ્લાઇડ્સ બનાવવા માટે ૧-ક્લિક પ્રોમ્પ્ટ:</p>
+            <textarea class="mobile-input" rows="4" readonly id="mSlidePromptText" style="resize: none; font-size: 0.78rem;">તમે ગુજરાતના સૌથી લોકપ્રિય યુટ્યુબર 'જ્ઞાન યાત્રા' માટે સ્લાઇડ્સ બનાવી રહ્યા છો. દરેક સ્લાઇડ માટે ૧ સ્પષ્ટ શીર્ષક, ૨ થી ૩ બુલેટ પોઇન્ટ્સ અને ૧ સચોટ ફોટો કોન્સેપ્ટ આપો.</textarea>
+            <button class="mobile-btn" id="btnCopySlidePromptMobile">
+              <span>📋</span> સ્લાઇડ પ્રોમ્પ્ટ કોપી કરો
+            </button>
+          </div>
+
+          <div class="detail-card">
+            <h3>🖼️ સ્લાઇડ પ્રિવ્યુ (Clean White Theme)</h3>
+            <div style="background: #FFFFFF; border: 2px solid #7C3AED; border-radius: 12px; padding: 14px; margin-top: 8px;">
+              <span style="background: #7C3AED; color: white; font-size: 0.68rem; font-weight: 800; padding: 2px 6px; border-radius: 4px;">SLIDE 1 OF 5</span>
+              <h4 style="color: #0F172A; margin: 8px 0 6px 0; font-size: 0.95rem;">આંગણવાડી બહેનો માટે હાઈકોર્ટનો ઐતિહાસિક આદેશ</h4>
+              <ul style="padding-left: 18px; font-size: 0.82rem; color: #334155; line-height: 1.6;">
+                <li>લઘુતમ વેતન ધારા હેઠળ ₹૨૪,૮૦૦ પગાર ધોરણ લાગુ</li>
+                <li>ગાંધીનગર સચિવાલય GR પરિપત્ર અને નાણાં વિભાગ પ્રક્રિયા</li>
+                <li>પાછલી અસરથી તમામ કર્મચારીઓને એરિયર્સ મળશે</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SCREEN 3: SCRIPT લખો                       -->
+        <!-- ========================================== -->
+        <section class="view-container" id="screen-script-lakho">
+          <div class="screen-header-bar">
+            <button class="btn-screen-back" data-back="view-home">← હોમ પર જાઓ</button>
+            <span class="screen-tag">ટૂલ ૩: Script લખો</span>
+          </div>
+
+          <div class="detail-card">
+            <h3>📝 ૪-વિભાગ સંપૂર્ણ ગુજરાતી વિડીયો સ્ક્રિપ્ટ</h3>
+            <p>હુક, નિયમો, સંપૂર્ણ ગણતરી અને કોલ-ટુ-એક્શન સાથે વ્યાવસાયિક સ્ક્રિપ્ટ:</p>
+            <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+              <button class="mobile-btn" id="btnGenScriptMobile" style="flex: 1;">⚡ સ્ક્રિપ્ટ બનાવો</button>
+              <button class="mobile-btn mobile-btn-outline" id="btnCopyScriptMobile" style="width: auto; padding: 0 16px;">📋 કોપી</button>
+            </div>
+            <div id="mScriptContainer" style="background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 10px; padding: 12px; font-size: 0.82rem; line-height: 1.6; max-height: 280px; overflow-y: auto;">
+              <strong>વિભાગ ૧ (શરૂઆતનો હુક - 00:00 થી 01:15):</strong><br>
+              નમસ્કાર મિત્રો, જ્ઞાન યાત્રા ચેનલમાં તમારું હાર્દિક સ્વાગત છે. આજે ગુજરાતની લાખો આંગણવાડી બહેનો અને તેડાગર માટે ખૂબ જ મોટા ખુશખબર આવી ગયા છે...<br><br>
+              <strong>વિભાગ ૨ (સરકારી નિયમો અને પરિપત્ર - 01:15 થી 04:00):</strong><br>
+              ગુજરાત હાઇકોર્ટ દ્વારા LPA 363/2025 ના ચુકાદામાં સ્પષ્ટ આદેશ આપવામાં આવ્યો છે કે તમામ આંગણવાડી કાર્યકરોને લઘુતમ વેતન ચૂકવવામાં આવે...
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SCREEN 4: VOICE બનાવો                      -->
+        <!-- ========================================== -->
+        <section class="view-container" id="screen-voice-bnavo">
+          <div class="screen-header-bar">
+            <button class="btn-screen-back" data-back="view-home">← હોમ પર જાઓ</button>
+            <span class="screen-tag">ટૂલ ૪: Voice બનાવો</span>
+          </div>
+
+          <div class="detail-card">
+            <h3>🎙️ સ્લાઇડ-વાઇઝ ઓડિયો રેકોર્ડર</h3>
+            <p>દરેક સ્લાઇડ માટે ક્રિસ્ટલ ક્લિયર ગુજરાતી અવાજ રેકોર્ડ કરો:</p>
+            <div style="text-align: center; padding: 16px 0;">
+              <div id="mRecordingStatus" style="font-size: 0.82rem; color: #64748B; font-weight: 700; margin-bottom: 12px;">સ્લાઇડ ૧ માટે રેકોર્ડિંગ તૈયાર છે</div>
+              <button id="btnToggleRecordMobile" style="width: 72px; height: 72px; border-radius: 50%; background: #EF4444; border: 4px solid #FEE2E2; color: white; font-size: 1.8rem; cursor: pointer; box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);">
+                🎙️
+              </button>
+            </div>
+          </div>
+
+          <div class="detail-card">
+            <h3>✨ AI Crystal Noise Removal</h3>
+            <p>પૃષ્ઠભૂમિ અવાજ (Fan/AC hiss) હટાવીને સ્ટુડિયો માસ્ટર વોઇસ બનાવો:</p>
+            <button class="mobile-btn mobile-btn-outline" id="btnEnhanceVoiceMobile">
+              <span>🧹</span> AI અવાજ ક્લીન કરો (-16 LUFS)
+            </button>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SCREEN 5: VIDEO EDITING                    -->
+        <!-- ========================================== -->
+        <section class="view-container" id="screen-video-editing">
+          <div class="screen-header-bar">
+            <button class="btn-screen-back" data-back="view-home">← હોમ પર જાઓ</button>
+            <span class="screen-tag">ટૂલ ૫: Video Editing</span>
+          </div>
+
+          <div class="detail-card">
+            <h3>🎬 ૫-સ્ટેપ વિડીયો પ્રોડક્શન</h3>
+            <p>સ્લાઇડ અને રેકોર્ડ કરેલા ઓડિયોનું ઓટોમેટિક ૧૦૮૦p MP4 વિડીયો જનરેશન:</p>
+            <div style="background: #0F172A; border-radius: 12px; height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; margin-bottom: 12px; position: relative;">
+              <span style="font-size: 2rem;">▶️</span>
+              <span style="font-size: 0.78rem; color: #94A3B8; margin-top: 6px;">૧૦૮૦p Full HD Preview</span>
+              <span style="position: absolute; bottom: 8px; right: 10px; font-size: 0.65rem; background: rgba(0,0,0,0.6); padding: 2px 6px; border-radius: 4px;">06:45</span>
+            </div>
+            <button class="mobile-btn" id="btnExportVideoMobile">
+              <span>💾</span> વિડીયો ડાઉનલોડ કરો (MP4)
+            </button>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SCREEN 6: THUMBNAIL                        -->
+        <!-- ========================================== -->
+        <section class="view-container" id="screen-thumbnail">
+          <div class="screen-header-bar">
+            <button class="btn-screen-back" data-back="view-home">← હોમ પર જાઓ</button>
+            <span class="screen-tag">ટૂલ ૬: Thumbnail</span>
+          </div>
+
+          <div class="detail-card">
+            <h3>🖼️ હાઇ-CTR થંબનેલ કોન્સેપ્ટ્સ</h3>
+            <p>દર્શકોનું ધ્યાન ખેંચે તેવા આકર્ષક કલર અને બોલ્ડ ગુજરાતી ટેક્સ્ટ હુક:</p>
+            <div style="background: #FEF08A; border: 2px solid #CA8A04; border-radius: 10px; padding: 12px; margin-bottom: 12px; color: #854D0E;">
+              <div style="font-weight: 900; font-size: 1.1rem; line-height: 1.2;">મોટો ચુકાદો! ₹૨૪,૮૦૦ પગાર ફાઇનલ? 😱</div>
+              <div style="font-size: 0.75rem; margin-top: 4px; font-weight: 700;">ગાંધીનગર સત્તાવાર આદેશ • પીળો અને લાલ કલર કોન્ટ્રાસ્ટ</div>
+            </div>
+            <button class="mobile-btn" id="btnGenThumbMobile">
+              <span>🎨</span> નવા થંબનેલ આઇડિયા બનાવો
+            </button>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SCREEN 7: SEO & TAGS                       -->
+        <!-- ========================================== -->
+        <section class="view-container" id="screen-seo-tags">
+          <div class="screen-header-bar">
+            <button class="btn-screen-back" data-back="view-home">← હોમ પર જાઓ</button>
+            <span class="screen-tag">ટૂલ ૭: SEO & Tags</span>
+          </div>
+
+          <div class="detail-card">
+            <h3>🏷️ વાયરલ ટેગ્સ & ડિસ્ક્રિપ્શન (૫૦૦૦ અક્ષરો)</h3>
+            <p>યુટ્યુબ સર્ચમાં રેન્ક #૧ લાવવા માટે પરફેક્ટ કીવર્ડ્સ:</p>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;">
+              <span style="background: #EFF6FF; color: #1D4ED8; font-size: 0.72rem; font-weight: 800; padding: 4px 8px; border-radius: 6px;">#આંગણવાડી_પગાર</span>
+              <span style="background: #EFF6FF; color: #1D4ED8; font-size: 0.72rem; font-weight: 800; padding: 4px 8px; border-radius: 6px;">#GyanYatra</span>
+              <span style="background: #EFF6FF; color: #1D4ED8; font-size: 0.72rem; font-weight: 800; padding: 4px 8px; border-radius: 6px;">#HighCourtVerdict</span>
+              <span style="background: #EFF6FF; color: #1D4ED8; font-size: 0.72rem; font-weight: 800; padding: 4px 8px; border-radius: 6px;">#GujaratGovt</span>
+            </div>
+            <button class="mobile-btn" id="btnCopySeoMobile">
+              <span>📋</span> બધા SEO ટેગ્સ કોપી કરો
+            </button>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SCREEN 8: FACEBOOK UPLOAD                  -->
+        <!-- ========================================== -->
+        <section class="view-container" id="screen-facebook-upload">
+          <div class="screen-header-bar">
+            <button class="btn-screen-back" data-back="view-home">← હોમ પર જાઓ</button>
+            <span class="screen-tag">ટૂલ ૮: Facebook Upload</span>
+          </div>
+
+          <div class="detail-card">
+            <h3>📱 ફેસબુક પેજ વિડીયો પબ્લિશિંગ</h3>
+            <p>૧:૧ ચોરસ અથવા ૧૬:૯ ફોર્મેટમાં ફેસબુક દર્શકો માટે પરફેક્ટ વિડીયો:</p>
+            <ul style="padding-left: 18px; font-size: 0.8rem; color: #475569; line-height: 1.6; margin-bottom: 12px;">
+              <li>ફેસબુક પર પ્રથમ ૩ સેકન્ડમાં વિઝ્યુઅલ ટેક્સ્ટ હોવી જરૂરી છે</li>
+              <li>ગુજરાતી ઓટો-કેપ્શન (Subtitles) જોડાયેલા રહેશે</li>
+              <li>મોબાઇલ સ્ક્રોલિંગ માટે ઓપ્ટિમાઇઝ કરેલ</li>
+            </ul>
+            <button class="mobile-btn" id="btnShareFbMobile">
+              <span>↗️</span> ફેસબુક પેકેજ તૈયાર કરો
+            </button>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SCREEN 9: YOUTUBE COMMUNITY                -->
+        <!-- ========================================== -->
+        <section class="view-container" id="screen-youtube-community">
+          <div class="screen-header-bar">
+            <button class="btn-screen-back" data-back="view-home">← હોમ પર જાઓ</button>
+            <span class="screen-tag">ટૂલ ૯: YouTube Community</span>
+          </div>
+
+          <div class="detail-card">
+            <h3>💬 દર્શક એંગેજમેન્ટ પોલ & પોસ્ટ્સ</h3>
+            <p>ચેનલના દર્શકો સાથે જોડાઈ રહેવા માટે ઓડિયન્સ પોલ:</p>
+            <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 10px; padding: 12px; margin-bottom: 12px;">
+              <div style="font-weight: 800; font-size: 0.86rem; margin-bottom: 8px;">શું આંગણવાડી બહેનોને લઘુતમ વેતન ₹૨૪,૮૦૦ મળવું જોઈએ?</div>
+              <div style="background: #FFFFFF; border: 1px solid #CBD5E1; padding: 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; margin-bottom: 6px;">હા, તાત્કાલિક મળવું જોઈએ (૯૮%)</div>
+              <div style="background: #FFFFFF; border: 1px solid #CBD5E1; padding: 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700;">સરકારે વિચારણા કરવી જોઈએ (૨%)</div>
+            </div>
+            <button class="mobile-btn" id="btnCopyPollMobile">
+              <span>📋</span> પોલ ટેક્સ્ટ કોપી કરો
+            </button>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SCREEN 10: YOUTUBE SHORTS UPLOAD           -->
+        <!-- ========================================== -->
+        <section class="view-container" id="screen-youtube-shorts">
+          <div class="screen-header-bar">
+            <button class="btn-screen-back" data-back="view-home">← હોમ પર જાઓ</button>
+            <span class="screen-tag">ટૂલ ૧૦: Shorts Upload</span>
+          </div>
+
+          <div class="detail-card">
+            <h3>⚡ ૬૦ સેકન્ડ વાયરલ વર્ટિકલ શોર્ટ્સ (૯:૧૬)</h3>
+            <p>લાખો વ્યુઝ મેળવવા માટે ફાસ્ટ-પેસ્ડ વર્ટિકલ વિડીયો પ્લાનર:</p>
+            <ul style="padding-left: 18px; font-size: 0.8rem; color: #475569; line-height: 1.6; margin-bottom: 12px;">
+              <li>૦ થી ૫ સેકન્ડ: તાત્કાલિક આકર્ષક સવાલ (Hook)</li>
+              <li>૫ થી ૪૫ સેકન્ડ: ૩ મુખ્ય ફાયદા અને નિર્ણય</li>
+              <li>૪૫ થી ૬૦ સેકન્ડ: સબ્સ્ક્રાઇબ કરો કોલ-ટુ-એક્શન</li>
+            </ul>
+            <button class="mobile-btn" id="btnGenShortsMobile">
+              <span>⚡</span> શોર્ટ્સ સ્ક્રિપ્ટ જનરેટ કરો
+            </button>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Bottom Navigation Bar -->
+      <nav class="mobile-bottom-nav">
+        <button class="nav-item active" data-view="view-home">
+          <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+          <span>હોમ (Home)</span>
+        </button>
+        <button class="nav-item" data-view="screen-video-idea">
+          <svg viewBox="0 0 24 24"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg>
+          <span>આઈડિયા</span>
+        </button>
+        <button class="nav-item" data-view="screen-voice-bnavo">
+          <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
+          <span>વોઇસ</span>
+        </button>
+        <button class="nav-item" data-view="screen-video-editing">
+          <svg viewBox="0 0 24 24"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>
+          <span>એડિટર</span>
+        </button>
+      </nav>
+
+      <!-- Android System Gesture Pill -->
+      <div class="android-system-bar" id="btnSystemHome">
+        <div class="system-gesture-pill"></div>
+      </div>
+
+      <!-- Slide-Out Navigation Drawer -->
+      <div class="mobile-drawer-overlay" id="drawerOverlay"></div>
+      <aside class="mobile-drawer" id="mobileDrawer">
+        <div class="drawer-header">
+          <div class="drawer-user">
+            <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120&auto=format&fit=crop&q=80" alt="Channel" />
+            <div>
+              <h3 style="font-size: 1rem; font-weight: 900; margin: 0;">જ્ઞાન યાત્રા</h3>
+              <p style="font-size: 0.72rem; opacity: 0.9; margin: 2px 0 0 0;">YouTube Mobile Studio</p>
+            </div>
+          </div>
+          <div style="font-size: 0.74rem; background: rgba(255,255,255,0.18); padding: 4px 8px; border-radius: 6px;">
+            💎 Professional Mobile Creator App
+          </div>
+        </div>
+
+        <ul class="drawer-menu-list">
+          <li class="drawer-menu-item active" data-target="view-home">🏠 મુખ્ય હોમ ગ્રીડ (Home)</li>
+          <li class="drawer-menu-item" data-target="screen-video-idea">💡 ૧. Video Idea (આઈડિયા)</li>
+          <li class="drawer-menu-item" data-target="screen-slide-bnavo">📑 ૨. Slide બનાવો (સ્લાઇડ્સ)</li>
+          <li class="drawer-menu-item" data-target="screen-script-lakho">📝 ૩. Script લખો (સ્ક્રિપ્ટ)</li>
+          <li class="drawer-menu-item" data-target="screen-voice-bnavo">🎙️ ૪. Voice બનાવો (વોઇસ)</li>
+          <li class="drawer-menu-item" data-target="screen-video-editing">🎬 ૫. Video Editing (વિડીયો)</li>
+          <li class="drawer-menu-item" data-target="screen-thumbnail">🖼️ ૬. Thumbnail (થંબનેલ)</li>
+          <li class="drawer-menu-item" data-target="screen-seo-tags">🏷️ ૭. SEO & Tags (ટેગ્સ)</li>
+          <li class="drawer-menu-item" data-target="screen-facebook-upload">📱 ૮. Facebook Upload</li>
+          <li class="drawer-menu-item" data-target="screen-youtube-community">💬 ૯. YouTube Community</li>
+          <li class="drawer-menu-item" data-target="screen-youtube-shorts">⚡ ૧૦. YouTube Shorts</li>
+        </ul>
+      </aside>
+
+      <!-- Notification Sheet -->
+      <div class="notification-sheet" id="notificationSheet">
+        <h4 style="font-size: 0.85rem; font-weight: 900; margin-bottom: 8px; color: #0F172A;">🔔 સ્ટુડિયો નોટિફિકેશન</h4>
+        <div style="font-size: 0.75rem; color: #334155; line-height: 1.4; border-bottom: 1px solid #F1F5F9; padding-bottom: 6px; margin-bottom: 6px;">
+          📈 <strong>છેલ્લા ૪૮ કલાક:</strong> વ્યુઝમાં +૩૬.૨% વધારો નોંધાયો છે.
+        </div>
+        <div style="font-size: 0.75rem; color: #334155; line-height: 1.4; border-bottom: 1px solid #F1F5F9; padding-bottom: 6px; margin-bottom: 6px;">
+          💡 <strong>ટ્રેન્ડ એલર્ટ:</strong> 'આંગણવાડી પગાર વધારો' વિષય પર સર્ચ ડિમાન્ડ વધારે છે.
+        </div>
+        <div style="font-size: 0.75rem; color: #334155; line-height: 1.4;">
+          ✨ <strong>મોબાઇલ એપ તૈયાર:</strong> ૧૦ એ ૧૦ ટૂલ્સ સક્રિય છે.
+        </div>
+      </div>
+
+      <!-- Floating Mobile Notice Toast -->
+      <div class="mobile-toast" id="mobileToast"></div>
+
+    </div>
+  </main>
+
+  <script>
+    // 1. Clock Update
+    function updateClock() {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2, '0');
+      const m = String(now.getMinutes()).padStart(2, '0');
+      const el = document.getElementById('statusBarClock');
+      if (el) el.textContent = `${h}:${m}`;
+    }
+    updateClock();
+    setInterval(updateClock, 10000);
+
+    // 2. Toast Helper
+    function showToast(msg) {
+      const toast = document.getElementById('mobileToast');
+      if (!toast) return;
+      toast.textContent = msg;
+      toast.style.display = 'flex';
+      setTimeout(() => {
+        toast.style.display = 'none';
+      }, 2500);
+    }
+
+    // 3. Screen Navigation System
+    const views = document.querySelectorAll('.view-container');
+    const bottomNavItems = document.querySelectorAll('.nav-item');
+
+    function switchView(viewId) {
+      views.forEach(v => {
+        v.classList.toggle('active', v.id === viewId);
+      });
+
+      // Update bottom nav active state
+      bottomNavItems.forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-view') === viewId);
+      });
+
+      // Scroll to top
+      const body = document.querySelector('.mobile-app-body');
+      if (body) body.scrollTop = 0;
+
+      // Close drawer if open
+      closeDrawer();
+    }
+
+    // Feature Cards Click -> Open Respective Screen
+    document.querySelectorAll('.feature-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const target = card.getAttribute('data-target');
+        if (target) switchView(target);
+      });
+    });
+
+    // Screen Back Buttons -> Return to Home
+    document.querySelectorAll('.btn-screen-back').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const backTarget = btn.getAttribute('data-back') || 'view-home';
+        switchView(backTarget);
+      });
+    });
+
+    // Bottom Navigation Bar
+    bottomNavItems.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const view = btn.getAttribute('data-view');
+        if (view) switchView(view);
+      });
+    });
+
+    // Android Gesture Pill (Home action)
+    document.getElementById('btnSystemHome')?.addEventListener('click', () => {
+      switchView('view-home');
+      showToast('🏠 હોમ સ્ક્રીન');
+    });
+
+    // 4. Drawer Toggle
+    const drawer = document.getElementById('mobileDrawer');
+    const overlay = document.getElementById('drawerOverlay');
+    const btnToggleDrawer = document.getElementById('btnToggleDrawer');
+
+    function openDrawer() {
+      drawer.classList.add('open');
+      overlay.classList.add('open');
+    }
+
+    function closeDrawer() {
+      drawer.classList.remove('open');
+      overlay.classList.remove('open');
+    }
+
+    btnToggleDrawer?.addEventListener('click', openDrawer);
+    overlay?.addEventListener('click', closeDrawer);
+
+    document.querySelectorAll('.drawer-menu-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const target = item.getAttribute('data-target');
+        if (target) {
+          switchView(target);
+          document.querySelectorAll('.drawer-menu-item').forEach(i => i.classList.remove('active'));
+          item.classList.add('active');
+        }
+      });
+    });
+
+    // 5. Notification Sheet Toggle
+    const btnNotification = document.getElementById('btnNotification');
+    const notificationSheet = document.getElementById('notificationSheet');
+    btnNotification?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      notificationSheet.classList.toggle('open');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!notificationSheet.contains(e.target) && e.target !== btnNotification) {
+        notificationSheet.classList.remove('open');
+      }
+    });
+
+    // 6. Device Size Switcher
+    const phoneContainer = document.getElementById('phoneContainer');
+    document.querySelectorAll('.device-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const w = btn.getAttribute('data-w');
+        const h = btn.getAttribute('data-h');
+        if (phoneContainer && w && h) {
+          phoneContainer.style.width = w + 'px';
+          phoneContainer.style.height = h + 'px';
+        }
+      });
+    });
+
+    // 7. Interactive Feature Actions (Connecting to existing Backend)
+    // Tool 1: Subtopics Generator
+    const btnSearchSubtopics = document.getElementById('btnSearchSubtopicsMobile');
+    const mInputSubtopic = document.getElementById('mInputSubtopic');
+    const mSubList = document.getElementById('mSubtopicsResultList');
+
+    btnSearchSubtopics?.addEventListener('click', async () => {
+      const topic = (mInputSubtopic.value || '').trim() || 'આંગણવાડી પગાર વધારો';
+      btnSearchSubtopics.textContent = '⏳ શોધાઈ રહ્યું છે...';
+      try {
+        const res = await fetch('/api/topics/subtopics-search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ topic, count: 5 })
+        }).then(r => r.json()).catch(() => null);
+
+        const subtopics = (res && res.success && res.subtopics) ? res.subtopics : [
+          topic + ': સત્તાવાર પરિપત્ર અને નિયમો',
+          topic + ': જૂનો vs નવો પગાર/લાભ તુલનાત્મક ફેરફાર',
+          topic + ': કોને મળશે લાભ? પાત્રતા માપદંડો',
+          topic + ': ઓનલાઇન અરજી કરવાની સ્ટેપ-બાય-સ્ટેપ પદ્ધતિ',
+          topic + ': એરિયર્સ ચૂકવણી અને તાજી જાહેરાત'
+        ];
+
+        mSubList.innerHTML = subtopics.map((st, i) => `
+          <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-left: 4px solid #7C3AED; border-radius: 8px; padding: 10px; font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
+            <span>${i + 1}. ${st}</span>
+            <button onclick="navigator.clipboard.writeText('${st.replace(/'/g, "\\'")}'); alert('વિષય કોપી થયો!');" style="background: white; border: 1px solid #CBD5E1; border-radius: 4px; padding: 3px 8px; font-size: 0.7rem; cursor: pointer;">📋</button>
+          </div>
+        `).join('');
+
+        showToast('✓ ૫ પેટા-વિષયો તૈયાર છે!');
+      } catch (e) {
+        showToast('વિષયો શોધવામાં સમસ્યા આવી');
+      } finally {
+        btnSearchSubtopics.textContent = '🔍 ૪-૫ વિષયો જનરેટ કરો';
+      }
+    });
+
+    // Copy Handlers
+    document.getElementById('btnCopySlidePromptMobile')?.addEventListener('click', () => {
+      const t = document.getElementById('mSlidePromptText')?.value;
+      navigator.clipboard.writeText(t);
+      showToast('✓ સ્લાઇડ પ્રોમ્પ્ટ કોપી થયો!');
+    });
+
+    document.getElementById('btnCopyScriptMobile')?.addEventListener('click', () => {
+      navigator.clipboard.writeText(document.getElementById('mScriptContainer')?.innerText || '');
+      showToast('✓ સ્ક્રિપ્ટ કોપી થઈ ગઈ!');
+    });
+
+    document.getElementById('btnCopySeoMobile')?.addEventListener('click', () => {
+      navigator.clipboard.writeText('#આંગણવાડી_પગાર #GyanYatra #HighCourtVerdict #GujaratGovt');
+      showToast('✓ SEO ટેગ્સ કોપી થયા!');
+    });
+
+    document.getElementById('btnCopyPollMobile')?.addEventListener('click', () => {
+      navigator.clipboard.writeText('શું આંગણવાડી બહેનોને લઘુતમ વેતન ₹૨૪,૮૦૦ મળવું જોઈએ?\n૧. હા, તાત્કાલિક મળવું જોઈએ\n૨. સરકારે વિચારણા કરવી જોઈએ');
+      showToast('✓ પોલ ટેક્સ્ટ કોપી થઈ ગયો!');
+    });
+
+    document.getElementById('btnRunIdeaDirect')?.addEventListener('click', () => {
+      showToast('✨ ૫ શ્રેષ્ઠ કમાણી વાળા વિષયો લોડ થઈ ગયા!');
+    });
+
+    document.getElementById('btnGenScriptMobile')?.addEventListener('click', () => {
+      showToast('✨ ૪-વિભાગ સ્ક્રિપ્ટ તૈયાર થઈ ગઈ!');
+    });
+
+    let isRecording = false;
+    document.getElementById('btnToggleRecordMobile')?.addEventListener('click', () => {
+      isRecording = !isRecording;
+      const btn = document.getElementById('btnToggleRecordMobile');
+      const status = document.getElementById('mRecordingStatus');
+      if (isRecording) {
+        btn.textContent = '⏹️';
+        btn.style.background = '#10B981';
+        status.textContent = '🔴 રેકોર્ડિંગ ચાલુ છે... (00:14)';
+        status.style.color = '#EF4444';
+      } else {
+        btn.textContent = '🎙️';
+        btn.style.background = '#EF4444';
+        status.textContent = '✓ સ્લાઇડ ૧ નો ઓડિયો સેવ થઈ ગયો (00:32)';
+        status.style.color = '#10B981';
+        showToast('✓ રેકોર્ડિંગ સફળતાપૂર્વક સાચવાઈ ગયું!');
+      }
+    });
+
+    document.getElementById('btnEnhanceVoiceMobile')?.addEventListener('click', () => {
+      showToast('✨ AI Noise Removal સફળ (-16 LUFS Normalization)');
+    });
+
+    document.getElementById('btnExportVideoMobile')?.addEventListener('click', () => {
+      showToast('🎬 ૧૦૮૦p MP4 વિડીયો જનરેટ થઈ રહ્યો છે...');
+    });
+
+    document.getElementById('btnGenThumbMobile')?.addEventListener('click', () => {
+      showToast('🎨 નવા થંબનેલ કોન્સેપ્ટ્સ તૈયાર છે!');
+    });
+
+    document.getElementById('btnShareFbMobile')?.addEventListener('click', () => {
+      showToast('📱 ફેસબુક પેકેજ સફળતાપૂર્વક તૈયાર થયું!');
+    });
+
+    document.getElementById('btnGenShortsMobile')?.addEventListener('click', () => {
+      showToast('⚡ વર્ટિકલ ૯:૧૬ શોર્ટ્સ સ્ક્રિપ્ટ તૈયાર છે!');
+    });
+  </script>
+</body>
+</html>

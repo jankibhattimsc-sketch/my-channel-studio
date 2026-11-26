@@ -350,27 +350,36 @@ p, span, li, a {
   left: 0;
   right: 0;
   height: 64px;
-  background-color: rgba(17, 23, 38, 0.95);
+  background-color: rgba(17, 23, 38, 0.98);
   backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-top: 1px solid var(--bg-card-border);
   z-index: 100;
-  justify-content: space-around;
+  justify-content: flex-start;
   align-items: center;
-  padding: 0 8px;
+  padding: 0 10px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  gap: 6px;
 }
 
 .mobile-nav-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  gap: 3px;
   color: var(--text-muted);
   text-decoration: none;
-  font-size: 0.65rem;
-  font-weight: 600;
-  padding: 8px 10px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 6px 10px;
   border-radius: var(--radius-sm);
   transition: all var(--transition-fast);
+  flex-shrink: 0;
+  min-width: 62px;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .mobile-nav-item.active {
@@ -779,12 +788,15 @@ p, span, li, a {
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   #sidebar {
     transform: translateX(-100%);
+    z-index: 99999;
   }
   #sidebar.open {
     transform: translateX(0);
+    z-index: 99999 !important;
+    box-shadow: 4px 0 35px rgba(0, 0, 0, 0.85);
   }
   #main-content {
     margin-left: 0;
@@ -850,5 +862,272 @@ p, span, li, a {
   }
   .grid-4 {
     grid-template-columns: 1fr;
+  }
+
+  /* Slide Voice Studio Mobile Optimization */
+  #svr-root {
+    padding: 10px !important;
+    border-radius: 12px !important;
+    gap: 10px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  .svr-mobile-view-bar {
+    display: block !important;
+    margin-bottom: 8px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .svr-recording-workspace {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    gap: 12px !important;
+    margin-top: 4px !important;
+  }
+
+  .svr-pane {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .svr-pane-slide {
+    padding: 10px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .svr-pane-slide [style*="aspect-ratio: 16/9"] {
+    max-height: 220px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .svr-pane-script {
+    padding: 10px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  #svr-slide-script-text {
+    height: 180px !important;
+    min-height: 160px !important;
+    font-size: 16px !important;
+    line-height: 1.5 !important;
+    padding: 10px !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+  }
+
+  .svr-pane-audio {
+    padding: 12px 10px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  #svr-live-timer {
+    font-size: 1.8rem !important;
+  }
+
+  #svr-live-waveform-canvas {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 38px !important;
+    box-sizing: border-box !important;
+  }
+
+  .svr-pane-audio.is-recording-mobile {
+    position: sticky !important;
+    bottom: 80px !important;
+    z-index: 1050 !important;
+    background: #0d0f12 !important;
+    border: 2px solid #ef4444 !important;
+    box-shadow: 0 -4px 25px rgba(239, 68, 68, 0.5) !important;
+  }
+
+  .svr-slide-strip {
+    padding: 4px 0 8px 0 !important;
+    gap: 4px !important;
+  }
+
+  .svr-slide-tab-btn {
+    padding: 4px 8px !important;
+    font-size: 0.72rem !important;
+  }
+
+  #svr-slidewise-audio-panel {
+    padding: 12px 10px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Universal Mobile Studio Layout (All Tools 100% Responsive) */
+  html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+
+  /* Prevent browser zoom on text inputs for mobile keyboards */
+  input[type="text"],
+  input[type="number"],
+  input[type="search"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+
+  /* Touch-friendly buttons for mobile app */
+  .btn, button.btn {
+    min-height: 38px;
+    touch-action: manipulation;
+  }
+
+  /* Video Editor Mobile Responsiveness */
+  #video-editor-container,
+  .ve-workspace-grid,
+  .video-editor-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    gap: 14px !important;
+  }
+
+  .video-preview-wrapper,
+  .ve-preview-player {
+    width: 100% !important;
+    max-width: 100% !important;
+    aspect-ratio: 16/9 !important;
+  }
+
+  .ve-timeline-container,
+  .video-timeline-tracks {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Script Writer Mobile */
+  .scriptwriter-workspace,
+  .script-sections-container {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 12px !important;
+  }
+
+  .script-slide-card {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Slide Prompts Mobile */
+  .slide-prompt-box,
+  .photo-presets-grid,
+  .slide-deck-grid {
+    grid-template-columns: 1fr !important;
+    width: 100% !important;
+  }
+
+  /* Thumbnail Studio Mobile */
+  .thumb-editor-grid,
+  .thumb-canvas-box {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+  }
+
+  #thumb-canvas,
+  .thumb-preview-canvas {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 16/9 !important;
+  }
+
+  /* Mobile Bottom Navigation Bar */
+  #mobile-nav {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 64px !important;
+    background: #090d16 !important;
+    border-top: 1.5px solid #1e293b !important;
+    z-index: 99990 !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding: 0 4px !important;
+    display: flex !important;
+    justify-content: space-around !important;
+    align-items: center !important;
+  }
+
+  .mobile-nav-item {
+    flex: 0 0 auto !important;
+    min-width: 54px !important;
+    padding: 4px 6px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.68rem !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+  }
+
+  .mobile-nav-item .mobile-icon {
+    font-size: 1.15rem !important;
+    margin-bottom: 2px !important;
+  }
+
+  /* Universal Mobile Studio Container Safety (Never cut off by bottom nav) */
+  #app-main, main, .main-content, #app, #view-container, .view-container {
+    padding-bottom: 85px !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Universal Tool Grids & Action Bars on Mobile */
+  .action-bar, .tools-header, .studio-top-bar, .sub-header-bar, .filter-bar {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .planner-calendar-grid, .workspace-columns, .topics-grid, .research-container, .analytics-grid, .seo-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    gap: 12px !important;
+  }
+
+  /* Tables and Data Grids Safe Responsive Scrolling */
+  .table-responsive, .table-container, table {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Universal Dialogs / Modals on Mobile */
+  .modal-content, .dialog-box, .popup-card {
+    width: 95% !important;
+    max-width: 95% !important;
+    margin: 10px auto !important;
+    padding: 14px !important;
+    box-sizing: border-box !important;
   }
 }

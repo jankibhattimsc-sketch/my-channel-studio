@@ -1,9 +1,142 @@
 import { api } from '../api.js';
-import { copyToClipboard } from '../utils/clipboard.js';
+import { copyToClipboard, showNoticeToast } from '../utils/clipboard.js';
+import { projectState } from '../utils/projectState.js';
+import { parseChatGptScriptText, validateSlideWiseScriptFidelity } from '../utils/externalSlideParser.js';
+import { saveScriptToDatabase } from '../utils/scriptDbSync.js';
 
 export async function renderChatGPT(container, navigateTo) {
   let activeConvId = 'default-conv';
   let conversations = [];
+
+  function saveChatGptScriptToProject(scriptText, shouldNavigateToVoice = false, isAuto = false) {
+    const activeProject = projectState.getActiveProject();
+    if (!activeProject) {
+      if (!isAuto) {
+        alert('કૃપા કરીને પહેલાં કોઈ પ્રોજેક્ટ પસંદ કરો અથવા નવો પ્રોજેક્ટ બનાવો.');
+        navigateTo('projects');
+      }
+      return;
+    }
+
+    try {
+      const existingSlides = Array.isArray(activeProject.slide?.slides) ? activeProject.slide.slides : [];
+      const exactRawText = (scriptText || '').trim();
+      if (!exactRawText) {
+        if (!isAuto) alert('સ્ક્રિપ્ટનું લખાણ ખાલી છે.');
+        return;
+      }
+
+      const parsedSections = parseChatGptScriptText(exactRawText, existingSlides);
+      if (!parsedSections || parsedSections.length === 0) {
+        if (!isAuto) alert('સ્ક્રિપ્ટનું લખાણ ખાલી છે.');
+        return;
+      }
+
+      if (!activeProject.script) activeProject.script = {};
+      activeProject.script.rawText = exactRawText;
+      activeProject.script.fullText = exactRawText;
+      activeProject.script.sections = parsedSections;
+      activeProject.script.editedSections = parsedSections;
+      activeProject.script.source = 'ChatGPT';
+      activeProject.script.importedAt = new Date().toISOString();
+      activeProject.script.isCompleted = true;
+
+      // Ensure slides exist without creating artificial dummy slides
+      if (!activeProject.slide) activeProject.slide = {};
+      if (!Array.isArray(activeProject.slide.slides)) activeProject.slide.slides = [];
+      const slides = activeProject.slide.slides;
+
+      const importedMeta = activeProject.slide?.importedPresentation || null;
+      const authenticCount = importedMeta?.slidesCount || importedMeta?.slideCount || importedMeta?.pageCount || 0;
+      if (authenticCount > 0 && slides.length > authenticCount) {
+        slides.length = authenticCount;
+      } else if (!importedMeta && parsedSections.length <= 1 && slides.length > 1) {
+        slides.length = 1;
+      }
+
+      if (slides.length === 0) {
+        slides.push({
+          slideNumber: 1,
+          title: 'સંપૂર્ણ સ્ક્રિપ્ટ',
+          subtitle: '',
+          bulletPoints: [],
+          scriptText: exactRawText,
+          bgColor: '#FFFFFF',
+          textColor: '#0F172A'
+        });
+      }
+
+      // Reset previous audio to guarantee zero mismatch between new script and audio
+      slides.forEach(sl => {
+        sl.audioUrl = '';
+        sl.recordingDuration = 0;
+        sl.recordingStatus = 'Not Recorded';
+      });
+
+      if (parsedSections.length <= 1) {
+        slides[0].scriptText = exactRawText;
+      } else {
+        slides.forEach((sl, idx) => {
+          if (parsedSections[idx]) {
+            sl.scriptText = parsedSections[idx].scriptText;
+            if (parsedSections[idx].title && (!sl.title || sl.title.startsWith('સ્લાઇડ #'))) {
+              sl.title = parsedSections[idx].title;
+            }
+          }
+        });
+      }
+
+      const validation = validateSlideWiseScriptFidelity(slides, parsedSections, exactRawText);
+      activeProject.script.validation = validation;
+
+      projectState.updateTool('slide', { slides });
+      projectState.updateTool('script', {
+        sections: parsedSections,
+        editedSections: parsedSections,
+        rawText: exactRawText,
+        fullText: exactRawText,
+        validation,
+        source: 'ChatGPT',
+        importedAt: activeProject.script.importedAt,
+        isCompleted: true
+      });
+
+      // Permanently save to Backend Database (Source of Truth)
+      saveScriptToDatabase(
+        activeProject.id,
+        {
+          rawText: exactRawText,
+          fullText: exactRawText,
+          sections: parsedSections,
+          validation,
+          source: 'ChatGPT'
+        },
+        { notify: !isAuto, showToast: true }
+      ).catch(e => console.warn('[ChatGPT DB Save notice]:', e));
+
+      projectState.saveVersionSnapshot(
+        activeProject.id,
+        'scripts',
+        parsedSections.length <= 1
+          ? `Imported Full Script from ChatGPT`
+          : `Imported Script from ChatGPT (${parsedSections.length} sections)`
+      );
+
+      const successMsg = isAuto
+        ? `✅ ChatGPT Script "${activeProject.name}" ના Script Section માં આપમેળે Save થઈ ગઈ!`
+        : (parsedSections.length <= 1
+          ? `🎉 ChatGPT સંપૂર્ણ સળંગ સ્ક્રિપ્ટ "${activeProject.name}" માં સફળતાપૂર્વક સાચવાઈ ગઈ!`
+          : `🎉 ChatGPT સ્ક્રિપ્ટ "${activeProject.name}" માં સફળતાપૂર્વક સાચવાઈ ગઈ!`);
+
+      showNoticeToast(successMsg, 'success');
+
+      if (shouldNavigateToVoice) {
+        setTimeout(() => navigateTo('myvoice'), 400);
+      }
+    } catch (err) {
+      if (!isAuto) alert('સ્ક્રિપ્ટ સાચવવામાં ભૂલ: ' + err.message);
+    }
+  }
 
   container.innerHTML = `
     <div style="display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
@@ -46,6 +179,9 @@ export async function renderChatGPT(container, navigateTo) {
 
         <!-- Quick Action Prompt Chips -->
         <div class="chat-quick-chips">
+          <button class="btn btn-outline btn-sm quick-chip" id="chip-slidewise-script" style="border-color: #10b981; color: #34d399;" data-text="📑 આ પ્રોજેક્ટની Import કરેલી મૂળ PPT/PDF સ્લાઇડ્સ પરથી ચોક્કસ સ્લાઇડ-વાઇઝ ગુજરાતી નરેશન સ્ક્રિપ્ટ [સ્લાઇડ #1: શીર્ષક] ફોર્મેટમાં તૈયાર કરો">
+            📑 સ્લાઇડ પ્રમાણે ચોક્કસ સ્ક્રિપ્ટ
+          </button>
           <button class="btn btn-outline btn-sm quick-chip" data-text="મારી ચેનલ માટે આજના 3 શ્રેષ્ઠ અને હાઇ-ડિમાન્ડ વિડીયો આઈડિયા આપો">
             💡 આજના 3 વાયરલ આઈડિયા
           </button>
@@ -162,10 +298,21 @@ export async function renderChatGPT(container, navigateTo) {
               ${m.content.replace(/\n/g, '<br>')}
             </div>
             ${m.role === 'assistant' ? `
-              <div style="display: flex; justify-content: flex-end; margin-top: 6px;">
-                <button class="btn btn-outline btn-sm copy-msg-btn" data-copy="${encodeURIComponent(m.content)}" style="font-size: 0.72rem; padding: 2px 8px;">
-                  📋 Copy
-                </button>
+              <div style="background: rgba(16, 185, 129, 0.1); border: 1.5px solid #10b981; border-radius: 8px; padding: 8px 12px; margin-top: 10px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                <span style="font-size: 0.78rem; color: #34d399; font-weight: 800; display: flex; align-items: center; gap: 6px;">
+                  <span>✅</span> આ Script Script Section માં Save થયેલી છે
+                </span>
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                  <button class="btn btn-primary btn-sm send-msg-voice-btn" data-text="${encodeURIComponent(m.content)}" style="font-size: 0.78rem; padding: 6px 14px; background: linear-gradient(135deg, #ec4899, #db2777); border: none; font-weight: 900; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                    <span>🎙️</span> આ જ Script નું Voiceover બનાવો ➔
+                  </button>
+                  <button class="btn btn-outline btn-sm save-msg-script-btn" data-text="${encodeURIComponent(m.content)}" style="font-size: 0.74rem; padding: 5px 10px; border-color: #10b981; color: #34d399; font-weight: 700; border-radius: 6px; cursor: pointer;">
+                    💾 ફરી Save કરો
+                  </button>
+                  <button class="btn btn-outline btn-sm copy-msg-btn" data-copy="${encodeURIComponent(m.content)}" style="font-size: 0.72rem; padding: 4px 8px;">
+                    📋 Copy
+                  </button>
+                </div>
               </div>
             ` : ''}
           </div>
@@ -176,6 +323,20 @@ export async function renderChatGPT(container, navigateTo) {
         btn.addEventListener('click', (e) => {
           const text = decodeURIComponent(e.currentTarget.getAttribute('data-copy'));
           copyToClipboard(text, 'જવાબ કોપી થઈ ગયો!');
+        });
+      });
+
+      messagesAreaEl.querySelectorAll('.save-msg-script-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const text = decodeURIComponent(e.currentTarget.getAttribute('data-text'));
+          saveChatGptScriptToProject(text, false);
+        });
+      });
+
+      messagesAreaEl.querySelectorAll('.send-msg-voice-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const text = decodeURIComponent(e.currentTarget.getAttribute('data-text'));
+          saveChatGptScriptToProject(text, true);
         });
       });
 
@@ -222,6 +383,12 @@ export async function renderChatGPT(container, navigateTo) {
         channelContextChk.checked
       );
 
+      // Auto-save ChatGPT generated script to active project's Script section
+      const curProject = projectState.getActiveProject();
+      if (curProject && res.message?.content && res.message.content.length > 30) {
+        saveChatGptScriptToProject(res.message.content, false, true);
+      }
+
       // Replace loading bubble with real reply
       loadingBubble.innerHTML = `
         <div class="chat-avatar assistant-avatar">🤖</div>
@@ -229,10 +396,21 @@ export async function renderChatGPT(container, navigateTo) {
           <div class="chat-text">
             ${res.message.content.replace(/\n/g, '<br>')}
           </div>
-          <div style="display: flex; justify-content: flex-end; margin-top: 6px;">
-            <button class="btn btn-outline btn-sm copy-msg-btn" data-copy="${encodeURIComponent(res.message.content)}" style="font-size: 0.72rem; padding: 2px 8px;">
-              📋 Copy
-            </button>
+          <div style="background: rgba(16, 185, 129, 0.1); border: 1.5px solid #10b981; border-radius: 8px; padding: 8px 12px; margin-top: 10px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <span style="font-size: 0.78rem; color: #34d399; font-weight: 800; display: flex; align-items: center; gap: 6px;">
+              <span>✅</span> આ Script આપમેળે Script Section માં Save થઈ ગઈ છે
+            </span>
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+              <button class="btn btn-primary btn-sm send-msg-voice-btn" data-text="${encodeURIComponent(res.message.content)}" style="font-size: 0.78rem; padding: 6px 14px; background: linear-gradient(135deg, #ec4899, #db2777); border: none; font-weight: 900; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                <span>🎙️</span> આ જ Script નું Voiceover બનાવો ➔
+              </button>
+              <button class="btn btn-outline btn-sm save-msg-script-btn" data-text="${encodeURIComponent(res.message.content)}" style="font-size: 0.74rem; padding: 5px 10px; border-color: #10b981; color: #34d399; font-weight: 700; border-radius: 6px; cursor: pointer;">
+                💾 ફરી Save કરો
+              </button>
+              <button class="btn btn-outline btn-sm copy-msg-btn" data-copy="${encodeURIComponent(res.message.content)}" style="font-size: 0.72rem; padding: 4px 8px;">
+                📋 Copy
+              </button>
+            </div>
           </div>
         </div>
       `;
@@ -240,6 +418,16 @@ export async function renderChatGPT(container, navigateTo) {
       loadingBubble.querySelector('.copy-msg-btn')?.addEventListener('click', (e) => {
         const textToCopy = decodeURIComponent(e.currentTarget.getAttribute('data-copy'));
         copyToClipboard(textToCopy, 'જવાબ કોપી થઈ ગયો!');
+      });
+
+      loadingBubble.querySelector('.save-msg-script-btn')?.addEventListener('click', (e) => {
+        const textToSave = decodeURIComponent(e.currentTarget.getAttribute('data-text'));
+        saveChatGptScriptToProject(textToSave, false);
+      });
+
+      loadingBubble.querySelector('.send-msg-voice-btn')?.addEventListener('click', (e) => {
+        const textToSave = decodeURIComponent(e.currentTarget.getAttribute('data-text'));
+        saveChatGptScriptToProject(textToSave, true);
       });
 
       messagesAreaEl.scrollTop = messagesAreaEl.scrollHeight;
@@ -268,7 +456,13 @@ export async function renderChatGPT(container, navigateTo) {
 
   container.querySelectorAll('.quick-chip').forEach(chip => {
     chip.addEventListener('click', (e) => {
-      const text = e.currentTarget.getAttribute('data-text');
+      let text = e.currentTarget.getAttribute('data-text');
+      if (e.currentTarget.id === 'chip-slidewise-script') {
+        const curProject = projectState.getActiveProject();
+        if (curProject?.script?.chatGptPrompt) {
+          text = curProject.script.chatGptPrompt;
+        }
+      }
       sendMessage(text);
     });
   });

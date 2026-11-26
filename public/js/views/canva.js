@@ -1,5 +1,5 @@
 import { projectState } from '../utils/projectState.js';
-import { copyToClipboard } from '../utils/clipboard.js';
+import { copyToClipboard, showNoticeToast } from '../utils/clipboard.js';
 
 export function renderCanva(container, navigateTo) {
   const p = projectState.getActiveProject();
@@ -130,9 +130,9 @@ export function renderCanva(container, navigateTo) {
     <!-- Top Project Header -->
     <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-lg); padding: 18px 22px; margin-bottom: 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.35);">
       <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-        <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
           <button id="btn-back-to-projects" class="btn btn-outline btn-sm" style="font-weight: 700; display: flex; align-items: center; gap: 6px;">
-            <span>←</span> બધા પ્રોજેક્ટ્સ (Projects)
+            <span>←</span> બધા ફોલ્ડર્સ
           </button>
           <div>
             <div style="display: flex; align-items: center; gap: 8px;">
@@ -142,18 +142,19 @@ export function renderCanva(container, navigateTo) {
               </h2>
             </div>
             <p style="font-size: 0.82rem; color: #38bdf8; margin: 2px 0 0 0; font-weight: 600;">
-              📁 પ્રોજેક્ટ: ${p.name}
+              📁 ફોલ્ડર: <span id="hdr-folder-name-canva">${p.folderName || 'મુખ્ય ફોલ્ડર'}</span>
+              <button id="btn-rename-folder-canva" class="btn btn-outline btn-xs" style="margin-left: 6px; padding: 1px 6px; font-size: 0.72rem;">✏️ Rename</button>
             </p>
           </div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <button id="btn-save-thumbnail-now" class="btn btn-success btn-sm" style="font-weight: 800; background: #f59e0b; border: none; padding: 8px 16px;">
+            💾 થંબનેલ સેવ કરો
+          </button>
           <a href="https://www.canva.com/create/youtube-thumbnails/" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="background: linear-gradient(135deg, #00c4cc, #7d2ae8); border: none; font-weight: 800; padding: 8px 18px; box-shadow: 0 4px 15px rgba(125,42,232,0.4); text-decoration: none; display: flex; align-items: center; gap: 8px;">
             <span>🎨</span> Canva માં નવું થંબનેલ બનાવો ↗
           </a>
-          <span class="badge badge-green" style="font-size: 0.75rem; font-weight: 800;">
-            ✓ Auto-Saved
-          </span>
         </div>
       </div>
     </div>
@@ -300,7 +301,36 @@ export function renderCanva(container, navigateTo) {
     link.click();
   });
 
+  // Save Thumbnail to Folder Button
+  container.querySelector('#btn-save-thumbnail-now')?.addEventListener('click', () => {
+    updateCanvaState({
+      headline: canvasHeadline,
+      subtitle: canvasSubtitle,
+      badgeText: canvasBadge,
+      isCompleted: true
+    });
+    const curP = projectState.getActiveProject();
+    showNoticeToast(`✅ થંબનેલ પ્લાન "${curP?.folderName || 'મુખ્ય ફોલ્ડર'}" માં સફળતાપૂર્વક સાચવાઈ ગયો છે! ✓`, 'success');
+  });
+
+  // Rename Folder from Canva tool
+  container.querySelector('#btn-rename-folder-canva')?.addEventListener('click', () => {
+    const curP = projectState.getActiveProject();
+    if (!curP) return;
+    const curFId = curP.folderId || 'f_default';
+    const newName = prompt(`"${curP.folderName || 'આ ફોલ્ડર'}" નું નવું નામ આપો:`, curP.folderName || '');
+    if (newName && newName.trim()) {
+      projectState.renameFolder(curFId, newName.trim());
+      const labelEl = container.querySelector('#hdr-folder-name-canva');
+      if (labelEl) labelEl.textContent = newName.trim();
+      showNoticeToast(`✓ ફોલ્ડરનું નામ બદલીને "${newName.trim()}" થયું!`, 'success');
+    }
+  });
+
   // Navigation
+  container.querySelector('#btn-back-to-projects')?.addEventListener('click', () => {
+    navigateTo('projects');
+  });
   container.querySelector('#btn-prev-editing')?.addEventListener('click', () => {
     navigateTo('editing');
   });

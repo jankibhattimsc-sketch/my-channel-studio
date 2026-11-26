@@ -5,6 +5,31 @@ services:
     plan: free
     buildCommand: npm install
     startCommand: node server/app.js
+    healthCheckPath: /api/cloud/status
     envVars:
       - key: NODE_ENV
         value: production
+      - key: DEMO_MODE
+        value: "false"
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_STORAGE_BUCKET
+        sync: false
+      - key: FIREBASE_API_KEY
+        sync: false
+      - key: CLOUD_DB_URL
+        sync: false

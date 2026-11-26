@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ઓડિયો રિકવરી ટૂલ - Gyan Yatra Studio</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 20px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #1e293b;
+      border: 1.5px solid #334155;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    h1 { color: #38bdf8; font-size: 1.4rem; margin-top: 0; }
+    .btn {
+      background: #10b981;
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: 800;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .btn-purple { background: #7c3aed; }
+    .btn-blue { background: #0284c7; }
+    .item {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .meta { font-size: 0.8rem; color: #94a3b8; }
+    audio { width: 100%; height: 36px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🎙️ બ્રાઉઝરમાંથી સેવ કરેલા ઓડિયો રિકવરી ટૂલ</h1>
+    <p style="color:#cbd5e1; font-size:0.9rem;">
+      આ પેજ તમારા બ્રાઉઝરના <code>GyanYatraStudioAudioDB</code> (IndexedDB) માંથી બધા પ્રોજેક્ટના સેવ થયેલા સ્લાઇડ ઓડિયો શોધીને બતાવશે.
+    </p>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-blue" onclick="scanAudioDB()">🔍 ફરી સ્કેન કરો</button>
+      <button class="btn" id="btnUploadAll" style="display:none;" onclick="uploadAllToServer()">💾 બધા ઓડિયો સર્વર પર સેવ કરો</button>
+      <a href="/studio#videoeditor" class="btn btn-purple" style="text-decoration:none;">🎬 Video Editor ખોલો →</a>
+    </div>
+    <div id="status" style="margin-top:12px; font-weight:700; color:#fbbf24;">સ્કેન થઈ રહ્યું છે...</div>
+  </div>
+
+  <div id="results"></div>
+
+  <script>
+    let recoveredItems = [];
+
+    function openDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open('GyanYatraStudioAudioDB', 2);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    function readAllFromStore(db, storeName) {
+      return new Promise((resolve) => {
+        if (!db.objectStoreNames.contains(storeName)) return resolve([]);
+        const tx = db.transaction(storeName, 'readonly');
+        const store = tx.objectStore(storeName);
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => resolve([]);
+      });
+    }
+
+    function toPlayableUrl(rec) {
+      if (rec.audioBlob instanceof Blob) return URL.createObjectURL(rec.audioBlob);
+      if (rec.blob instanceof Blob) return URL.createObjectURL(rec.blob);
+      if (typeof rec.audioDataUrl === 'string' && rec.audioDataUrl.startsWith('data:')) return rec.audioDataUrl;
+      if (typeof rec.dataUrl === 'string' && rec.dataUrl.startsWith('data:')) return rec.dataUrl;
+      if (typeof rec.audioUrl === 'string') return rec.audioUrl;
+      return '';
+    }
+
+    async function scanAudioDB() {
+      const statusEl = document.getElementById('status');
+      const resEl = document.getElementById('results');
+      resEl.innerHTML = '';
+      recoveredItems = [];
+
+      try {
+        const db = await openDB();
+        const slides = await readAllFromStore(db, 'slide_recordings');
+        const projs = await readAllFromStore(db, 'project_recordings');
+
+        const all = [
+          ...slides.map(s => ({ ...s, _store: 'slide_recordings' })),
+          ...projs.map(p => ({ ...p, _store: 'project_recordings' }))
+        ];
+
+        all.sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
+
+        if (all.length === 0) {
+          statusEl.textContent = '⚠️ આ બ્રાઉઝરના GyanYatraStudioAudioDB માં કોઈ ઓડિયો મળ્યો નથી. કૃપા કરીને બીજું બ્રાઉઝર (Chrome/Edge) ચેક કરો.';
+          return;
+        }
+
+        statusEl.textContent = `✅ કુલ ${all.length} સેવ થયેલા ઓડિયો રેકોર્ડિંગ મળ્યા!`;
+        document.getElementById('btnUploadAll').style.display = 'inline-block';
+        recoveredItems = all;
+
+        all.forEach((rec, idx) => {
+          const url = toPlayableUrl(rec);
+          const dt = rec.updatedAt || rec.createdAt ? new Date(rec.updatedAt || rec.createdAt).toLocaleString('en-IN') : 'Unknown';
+          const div = document.createElement('div');
+          div.className = 'item';
+          div.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+              <strong>#${idx + 1} • ${rec.slideTitle || rec.slideId || ('Slide ' + (rec.slideNumber || '?'))}</strong>
+              <span class="meta">Project: <code>${rec.projectId || 'N/A'}</code> • ${dt}</span>
+            </div>
+            ${url ? `<audio controls src="${url}"></audio>` : '<span style="color:#f87171;">ઓડિયો ડેટા ઉપલબ્ધ નથી</span>'}
+            <div style="display:flex; gap:8px;">
+              ${url ? `<a href="${url}" download="recovered_slide_${rec.slideNumber || idx + 1}.wav" class="btn btn-blue" style="padding:5px 10px; font-size:0.78rem; text-decoration:none;">⬇️ ડાઉનલોડ</a>` : ''}
+            </div>
+          `;
+          resEl.appendChild(div);
+        });
+      } catch (err) {
+        statusEl.textContent = '❌ DB ખોલવામાં ભૂલ: ' + err.message;
+      }
+    }
+
+    async function uploadAllToServer() {
+      const statusEl = document.getElementById('status');
+      let saved = 0;
+      for (let i = 0; i < recoveredItems.length; i++) {
+        const rec = recoveredItems[i];
+        let base64 = rec.audioDataUrl || rec.dataUrl || '';
+        const blob = rec.audioBlob || rec.blob;
+        if (!base64 && blob instanceof Blob) {
+          base64 = await new Promise((resolve) => {
+            const r = new FileReader();
+            r.onloadend = () => resolve(r.result);
+            r.readAsDataURL(blob);
+          });
+        }
+        if (base64 && base64.startsWith('data:')) {
+          const filename = `recovered_slide_${rec.slideNumber || (i + 1)}_${Date.now()}.wav`;
+          const res = await fetch('/api/voice/upload-audio', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ audioBase64: base64, filename, projectId: rec.projectId || 'recovered' })
+          });
+          if (res.ok) saved++;
+        }
+      }
+      statusEl.textContent = `🎉 કુલ ${saved} ઓડિયો ફાઇલો સર્વરના public/audio ફોલ્ડરમાં સેવ થઈ ગઈ!`;
+    }
+
+    scanAudioDB();
+  </script>
+</body>
+</html>

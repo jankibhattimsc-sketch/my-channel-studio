@@ -48,25 +48,41 @@ export async function renderSEO(container, navigateTo) {
 
   // Active selected thumbnail state
   let currentTopic = initialTopic;
-  let activeThumb = (project && project.thumbnail && (project.thumbnail.dalleShortPrompt || project.thumbnail.prompt))
+  const curTopicCleanSeo = (project?.topic || initialTopic || '').toLowerCase();
+  let defaultConceptIdxSeo = 0;
+  if (curTopicCleanSeo.includes('આંગણવાડી') || curTopicCleanSeo.includes('anganwadi') || curTopicCleanSeo.includes('તેડાગર')) {
+    defaultConceptIdxSeo = 1;
+  } else if (curTopicCleanSeo.includes('કિસાન') || curTopicCleanSeo.includes('kisan') || curTopicCleanSeo.includes('મોદી')) {
+    defaultConceptIdxSeo = 2;
+  } else if (curTopicCleanSeo.includes('da') || curTopicCleanSeo.includes('મોંઘવારી') || curTopicCleanSeo.includes('પગાર')) {
+    defaultConceptIdxSeo = 0;
+  }
+
+  let activeThumb = (project && project.thumbnail && (project.thumbnail.dalleShortPrompt || project.thumbnail.prompt) && (project.thumbnail.title === project.topic || project.thumbnail.gujaratiWords))
     ? {
         name: 'કસ્ટમ કોન્સેપ્ટ',
         topic: project.topic || initialTopic,
-        gujaratiWords: project.thumbnail.gujaratiWords || '૫૦% DA મંજૂર! ખાતામાં આવશે ₹15,000 થી ₹45,000',
+        gujaratiWords: project.thumbnail.gujaratiWords || (project.topic ? project.topic.split(/\s+/).slice(0, 5).join(' ') : 'સત્તાવાર પરિપત્ર અને નિયમો ૨૦૨૬'),
         photoSubject: project.thumbnail.photoSubject || 'સત્તાવાર અધિકૃત ફોટોગ્રાફ',
         prompt: project.thumbnail.dalleShortPrompt || project.thumbnail.prompt
       }
-    : presetConcepts[0];
+    : presetConcepts[defaultConceptIdxSeo];
 
   container.innerHTML = `
     <!-- Project Context Header -->
     <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-lg); padding: 14px 20px; margin-bottom: 18px; box-shadow: 0 8px 25px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
       <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-        <button id="btn-back-to-projects-thumb" class="btn btn-outline btn-sm" style="font-weight: 700;">← બધા પ્રોજેક્ટ્સ</button>
+        <button id="btn-back-to-projects-thumb" class="btn btn-outline btn-sm" style="font-weight: 700;">← બધા ફોલ્ડર્સ</button>
         <button id="btn-prev-seo-thumb" class="btn btn-secondary btn-sm" style="font-weight: 700;">← ૭. SEO</button>
-        <span style="font-size: 0.85rem; color: #38bdf8; font-weight: 800;">📁 પ્રોજેક્ટ: ${currentTopic}</span>
+        <span style="font-size: 0.85rem; color: #38bdf8; font-weight: 800; background: rgba(56,189,248,0.12); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(56,189,248,0.3);">
+          📁 ફોલ્ડર: <span id="hdr-folder-name-thumb">${project?.folderName || 'મુખ્ય ફોલ્ડર'}</span>
+        </span>
+        <button id="btn-rename-folder-thumb" class="btn btn-outline btn-xs" style="font-size: 0.75rem; padding: 3px 8px;">✏️ Rename</button>
       </div>
       <div style="display: flex; align-items: center; gap: 8px;">
+        <button id="btn-save-thumb-plan-now" class="btn btn-success btn-sm" style="font-weight: 800; background: #f59e0b; border: none; padding: 6px 14px;">
+          💾 થંબનેલ સેવ કરો
+        </button>
         <span class="badge badge-green" style="font-size: 0.72rem; font-weight: 800;">✓ Auto-Saved</span>
       </div>
     </div>
@@ -348,4 +364,33 @@ export async function renderSEO(container, navigateTo) {
   // Navigation Banner Buttons
   container.querySelector('#btn-back-to-projects-thumb')?.addEventListener('click', () => navigateTo('projects'));
   container.querySelector('#btn-prev-seo-thumb')?.addEventListener('click', () => navigateTo('seodescription'));
+
+  // Save Thumbnail to Folder Button
+  container.querySelector('#btn-save-thumb-plan-now')?.addEventListener('click', () => {
+    if (projectState && typeof projectState.setThumbnail === 'function') {
+      projectState.setThumbnail({
+        title: activeThumb.topic,
+        gujaratiWords: activeThumb.gujaratiWords,
+        photoSubject: activeThumb.photoSubject,
+        dalleShortPrompt: activeThumb.prompt,
+        isCompleted: true
+      });
+    }
+    const curP = projectState.getActiveProject();
+    showNoticeToast(`✅ થંબનેલ પ્લાન "${curP?.folderName || 'મુખ્ય ફોલ્ડર'}" માં સફળતાપૂર્વક સાચવાઈ ગયો છે! ✓`, 'success');
+  });
+
+  // Rename Folder from Thumbnail tool
+  container.querySelector('#btn-rename-folder-thumb')?.addEventListener('click', () => {
+    const curP = projectState.getActiveProject();
+    if (!curP) return;
+    const curFId = curP.folderId || 'f_default';
+    const newName = prompt(`"${curP.folderName || 'આ ફોલ્ડર'}" નું નવું નામ આપો:`, curP.folderName || '');
+    if (newName && newName.trim()) {
+      projectState.renameFolder(curFId, newName.trim());
+      const labelEl = container.querySelector('#hdr-folder-name-thumb');
+      if (labelEl) labelEl.textContent = newName.trim();
+      showNoticeToast(`✓ ફોલ્ડરનું નામ બદલીને "${newName.trim()}" થયું!`, 'success');
+    }
+  });
 }

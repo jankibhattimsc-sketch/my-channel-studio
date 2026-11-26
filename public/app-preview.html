@@ -1,0 +1,3220 @@
+<!DOCTYPE html>
+<html lang="gu" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gyan Yatra Studio - Screen 1, 2, 3 ડેસ્કટોપ પ્રીવ્યુ</title>
+
+  <meta name="description" content="મોબાઇલ એપ સ્ક્રીન ૧ (48h પ્રોમ્પ્ટ), સ્ક્રીન ૨ (૫ સબ-ટોપિક રિસર્ચ), અને સ્ક્રીન ૩ (૧૬:૯ સ્લાઇડ્સ & ChatGPT/NotebookLM ઓપન).">
+  <link rel="icon" type="image/jpeg" href="/images/logo.jpg">
+
+  <!-- Google Fonts: Noto Sans Gujarati & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-desktop: #070a13;
+      --panel-bg: #0f172a;
+      --panel-border: #1e293b;
+      --accent-purple: #7c3aed;
+      --accent-indigo: #6366f1;
+      --accent-emerald: #10b981;
+      --accent-cyan: #38bdf8;
+      --accent-amber: #f59e0b;
+      --accent-blue: #0284c7;
+      --accent-red: #d71920;
+      --phone-bg: #f8fafc;
+      --font-gu: 'Noto Sans Gujarati', sans-serif;
+      --font-en: 'Outfit', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-desktop);
+      color: #f8fafc;
+      font-family: var(--font-gu);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button { font-family: inherit; }
+
+    /* Top Desktop Header */
+    .desktop-header {
+      background: rgba(15, 23, 42, 0.96);
+      border-bottom: 1.5px solid var(--panel-border);
+      padding: 10px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+
+    .desktop-header-inner {
+      max-width: 1750px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-logo-img {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      object-fit: cover;
+      border: 1.5px solid var(--accent-emerald);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+    }
+
+    .brand-title-box h1 {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-title-box p {
+      font-size: 0.72rem;
+      color: var(--accent-cyan);
+      font-family: var(--font-en);
+      font-weight: 700;
+    }
+
+    /* Screen Selector in Header */
+    .screen-switcher-bar {
+      display: flex;
+      background: #090e1a;
+      border: 1.5px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 3px;
+      gap: 4px;
+    }
+
+    .btn-screen-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      cursor: pointer;
+      border: 1px solid transparent;
+      background: transparent;
+      color: #94a3b8;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .btn-screen-tab:hover { color: #ffffff; }
+
+    .btn-screen-tab.active {
+      background: #1e293b;
+      color: #ffffff;
+      border-color: #334155;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+
+    .btn-screen-tab.active.tab-1 { border-color: var(--accent-red); color: #fca5a5; }
+    .btn-screen-tab.active.tab-2 { border-color: var(--accent-purple); color: #d8b4fe; }
+    .btn-screen-tab.active.tab-3 { border-color: var(--accent-emerald); color: #6ee7b7; }
+    .btn-screen-tab.active.tab-4 { border-color: #3b82f6; color: #93c5fd; }
+    .btn-screen-tab.active.tab-5 { border-color: #ec4899; color: #f9a8d4; }
+    .btn-screen-tab.active.tab-6 { border-color: #a855f7; color: #e9d5ff; }
+    .btn-screen-tab.active.tab-7 { border-color: #10b981; color: #6ee7b7; }
+    .btn-screen-tab.active.tab-8 { border-color: #f59e0b; color: #fcd34d; }
+    .btn-screen-tab.active.tab-9 { border-color: #38bdf8; color: #7dd3fc; }
+    .btn-screen-tab.active.tab-all { border-color: var(--accent-cyan); color: #7dd3fc; }
+
+    .header-links {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-dt {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .btn-dt-primary {
+      background: linear-gradient(135deg, var(--accent-emerald), #059669);
+      color: #ffffff;
+      box-shadow: 0 2px 10px rgba(16, 185, 129, 0.35);
+    }
+
+    .btn-dt-secondary {
+      background: #1e293b;
+      color: #e2e8f0;
+      border-color: #334155;
+    }
+
+    /* Workspace Layout */
+    .desktop-workspace {
+      flex: 1;
+      max-width: 1850px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: 290px 1fr 290px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    @media (max-width: 1400px) {
+      .desktop-workspace {
+        grid-template-columns: 260px 1fr;
+      }
+      .inspector-panel { display: none; }
+    }
+
+    @media (max-width: 1000px) {
+      .desktop-workspace {
+        grid-template-columns: 1fr;
+      }
+      .controls-panel { display: none; }
+    }
+
+    /* Side Panels */
+    .controls-panel, .inspector-panel {
+      background: var(--panel-bg);
+      border: 1.5px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .panel-title {
+      font-size: 0.92rem;
+      font-weight: 800;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--panel-border);
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .control-label {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 4px;
+    }
+
+    .sub-btn {
+      flex: 1;
+      padding: 6px 6px;
+      background: #090e1a;
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+      color: #cbd5e1;
+      font-size: 0.74rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .sub-btn.active {
+      background: var(--accent-purple);
+      color: #ffffff;
+      border-color: var(--accent-purple);
+    }
+
+    /* Central Simulator Area */
+    .simulator-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .phones-container {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 18px;
+      width: 100%;
+      flex-wrap: wrap;
+    }
+
+    /* Smartphone Chassis - Clean, Zero Bottom Clutter */
+    .phone-chassis {
+      position: relative;
+      width: 375px;
+      height: 820px;
+      max-width: 100%;
+      background: #000000;
+      border-radius: 46px;
+      padding: 11px;
+      box-shadow:
+        0 0 0 3px #262e3d,
+        0 0 0 6px #0f172a,
+        0 25px 50px -12px rgba(0, 0, 0, 0.9);
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-sizing: border-box;
+      flex-shrink: 0;
+    }
+
+    .phone-badge-label {
+      position: absolute;
+      top: -28px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e293b;
+      border: 1px solid #334155;
+      padding: 2px 10px;
+      border-radius: 16px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      white-space: nowrap;
+      z-index: 10;
+    }
+
+    .phone-screen {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: var(--phone-bg);
+      border-radius: 36px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      color: #0f172a;
+    }
+
+    /* Phone Status Bar */
+    .phone-status-bar {
+      height: 32px;
+      background: #ffffff;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: var(--font-en);
+      font-size: 0.74rem;
+      font-weight: 800;
+      color: #0f172a;
+      flex-shrink: 0;
+      z-index: 50;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .dynamic-island {
+      width: 80px;
+      height: 18px;
+      background: #000000;
+      border-radius: 12px;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      top: 6px;
+    }
+
+    .phone-status-icons {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.66rem;
+    }
+
+    /* App Headers */
+    .app-screen-header {
+      background: #ffffff;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1.5px solid #e2e8f0;
+      flex-shrink: 0;
+      z-index: 40;
+    }
+
+    .app-screen-body {
+      flex: 1;
+      overflow-y: auto;
+      background: #f8fafc;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Bottom Gesture Bar - No bottom buttons! */
+    .phone-home-indicator {
+      height: 16px;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border-top: 1px solid #f1f5f9;
+    }
+
+    .home-pill {
+      width: 110px;
+      height: 4px;
+      background: #94a3b8;
+      border-radius: 4px;
+    }
+
+    /* Generic UI Elements */
+    .btn-action-3-row {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr 1fr;
+      gap: 6px;
+    }
+
+    .btn-act-3 {
+      padding: 7px 5px;
+      border-radius: 7px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      white-space: nowrap;
+      border: 1px solid transparent;
+    }
+
+    .btn-act-copy {
+      background: var(--accent-red);
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(215, 25, 32, 0.3);
+    }
+
+    .btn-act-outline {
+      background: #ffffff;
+      border-color: #102a56;
+      color: #102a56;
+    }
+
+    .prompt-mode-toggle {
+      display: flex;
+      background: #f1f5f9;
+      border-radius: 8px;
+      padding: 3px;
+      gap: 4px;
+    }
+
+    .prompt-mode-btn {
+      flex: 1;
+      padding: 5px 4px;
+      font-size: 0.68rem;
+      font-weight: 800;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      text-align: center;
+      background: transparent;
+      color: #64748b;
+    }
+
+    .prompt-mode-btn.active {
+      background: #102a56;
+      color: #ffffff;
+    }
+
+    .prompt-textarea {
+      width: 100%;
+      height: 85px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 7px;
+      font-family: inherit;
+      font-size: 0.66rem;
+      line-height: 1.35;
+      color: #334155;
+      background: #f8fafc;
+      resize: none;
+    }
+
+    .topic-item-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 9px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .topic-item-card:hover {
+      border-color: #10b981;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+    }
+
+    .topic-title-txt {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1.3;
+    }
+
+    /* Screen 2: Sub-Topics Cards */
+    .subtopic-card-item {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 9px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    }
+
+    /* Screen 3: Slide Canvas */
+    .slide-canvas-card {
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1.5px solid #cbd5e1;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+
+    .slide-canvas-aspect {
+      aspect-ratio: 16 / 9;
+      background: #ffffff;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .slide-canvas-title {
+      font-size: 0.76rem;
+      font-weight: 900;
+      color: #0f172a;
+      line-height: 1.25;
+      margin-bottom: 2px;
+    }
+
+    .slide-canvas-sub {
+      font-size: 0.66rem;
+      font-weight: 700;
+      color: #0284c7;
+      margin-bottom: 4px;
+    }
+
+    .slide-canvas-bullets {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .slide-canvas-bullets li {
+      font-size: 0.6rem;
+      line-height: 1.25;
+      color: #334155;
+      font-weight: 600;
+      display: flex;
+      align-items: flex-start;
+      gap: 4px;
+    }
+
+    .slide-canvas-bullets li::before {
+      content: '•';
+      color: #10b981;
+      font-weight: 900;
+      font-size: 0.72rem;
+    }
+
+    .slide-photo-box {
+      aspect-ratio: 4 / 3;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3px;
+      text-align: center;
+    }
+
+    .slide-photo-img { font-size: 1.6rem; }
+
+    .slide-photo-caption {
+      font-size: 0.52rem;
+      font-weight: 700;
+      color: #475569;
+      margin-top: 2px;
+      line-height: 1.15;
+    }
+
+    .slide-controls-strip {
+      background: #f8fafc;
+      padding: 5px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .btn-slide-nav {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      color: #0f172a;
+      padding: 3px 7px;
+      border-radius: 5px;
+      font-size: 0.68rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .slide-pills-row {
+      display: flex;
+      gap: 3px;
+      overflow-x: auto;
+      padding: 3px 8px 6px 8px;
+      background: #f8fafc;
+    }
+
+    .slide-pill-step {
+      min-width: 24px;
+      height: 24px;
+      border-radius: 5px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      color: #475569;
+      font-size: 0.68rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .slide-pill-step.active {
+      background: #10b981;
+      color: #ffffff;
+      border-color: #10b981;
+    }
+
+    .presets-chips-row {
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+      padding: 2px 0;
+    }
+
+    .preset-chip {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      padding: 3px 7px;
+      border-radius: 5px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #334155;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .preset-chip.active {
+      background: #f0fdf4;
+      border-color: #10b981;
+      color: #166534;
+      border-width: 1.5px;
+    }
+
+    .next-step-box {
+      border-radius: 10px;
+      padding: 9px 11px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    /* Toast Notification inside phone */
+    .sim-toast {
+      position: absolute;
+      bottom: 22px;
+      left: 12px;
+      right: 12px;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 100;
+      opacity: 0;
+      transform: translateY(20px);
+      pointer-events: none;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .sim-toast.show {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- =========================================================
+       1. TOP DESKTOP HEADER & SCREEN SWITCHER
+       ========================================================= -->
+  <header class="desktop-header">
+    <div class="desktop-header-inner">
+      <div class="header-brand">
+        <img src="/images/logo.jpg" alt="Logo" class="brand-logo-img" onerror="this.src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120'">
+        <div class="brand-title-box">
+          <h1>📱 Gyan Yatra Studio <span style="font-size:0.7rem; background:#10b981; padding:2px 8px; border-radius:6px; color:#fff;">LIVE PREVIEW</span></h1>
+          <p>૧-૭ વિડીયો સ્ટુડિયો | ૮. થંબનેલ (અલગ) | ૯. ટાઇટલ & SEO (અલગ)</p>
+        </div>
+      </div>
+
+      <!-- Center Screen Switcher Tabs -->
+      <div class="screen-switcher-bar">
+        <button id="nav-btn-s1" class="btn-screen-tab tab-1"><span>💡</span><span>૧</span></button>
+        <button id="nav-btn-s2" class="btn-screen-tab tab-2"><span>🔍</span><span>૨</span></button>
+        <button id="nav-btn-s3" class="btn-screen-tab tab-3"><span>📑</span><span>૩</span></button>
+        <button id="nav-btn-s4" class="btn-screen-tab tab-4"><span>📝</span><span>૪</span></button>
+        <button id="nav-btn-s5" class="btn-screen-tab tab-5"><span>🎙️</span><span>૫</span></button>
+        <button id="nav-btn-s6" class="btn-screen-tab tab-6"><span>🎛️</span><span>૬</span></button>
+        <button id="nav-btn-s7" class="btn-screen-tab tab-7"><span>🎬</span><span>૭</span></button>
+        <button id="nav-btn-s8" class="btn-screen-tab tab-8"><span>🎨</span><span>૮. Thumb</span></button>
+        <button id="nav-btn-s9" class="btn-screen-tab tab-9"><span>🚀</span><span>૯. SEO</span></button>
+        <button id="nav-btn-all" class="btn-screen-tab tab-all active"><span>👥</span><span>બધી ૯</span></button>
+      </div>
+
+      <!-- Links -->
+      <div class="header-links">
+        <a href="/studio" class="btn-dt btn-dt-secondary" title="વેબ સ્ટુડિયો">
+          <span>🛠️</span> <span>વેબ સ્ટુડિયો</span>
+        </a>
+        <a href="/preview" class="btn-dt btn-dt-secondary" title="વિડીયો પ્રીવ્યુ">
+          <span>🎬</span> <span>વિડીયો પ્રીવ્યુ</span>
+        </a>
+        <a href="/gyan-yatra-studio.apk" download="gyan-yatra-studio.apk" class="btn-dt btn-dt-primary" title="છેલ્લો બનાવેલો APK">
+          <span>📱</span> <span>APK ફાઇલ</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- =========================================================
+       2. THREE-COLUMN DESKTOP WORKSPACE
+       ========================================================= -->
+  <main class="desktop-workspace">
+
+    <!-- LEFT: CONTROLLER -->
+    <aside class="controls-panel">
+      <div class="panel-title">
+        <span>⚡</span> <span>સ્ક્રીન કંટ્રોલર</span>
+      </div>
+
+      <div style="background:rgba(124,58,237,0.12); border:1.5px solid rgba(124,58,237,0.3); border-radius:12px; padding:10px;">
+        <div style="font-size:0.78rem; font-weight:800; color:#c084fc; margin-bottom:4px;">📌 ક્રમબદ્ધ ૪ સ્ક્રીન્સ:</div>
+        <div style="font-size:0.7rem; color:#cbd5e1; line-height:1.4;">
+          • <strong>સ્ક્રીન ૧:</strong> ૪૮ કલાક એનાલિટિક્સ પ્રોમ્પ્ટ.<br>
+          • <strong>સ્ક્રીન ૨:</strong> વિષયના અનુસંધાનમાં ૫ સબ-ટોપિક્સ.<br>
+          • <strong>સ્ક્રીન ૩:</strong> ૧૬:૯ સ્લાઇડ્સ + ChatGPT & NotebookLM.<br>
+          • <strong>સ્ક્રીન ૪:</strong> Script Writer (સ્લાઇડ મુજબ ગુજરાતી સ્ક્રિપ્ટ).
+        </div>
+      </div>
+
+      <div class="control-group">
+        <span class="control-label">સ્ક્રીન વ્યુ સિલેક્ટ કરો:</span>
+        <div class="btn-row" style="flex-wrap:wrap;">
+          <button id="side-btn-s1" class="sub-btn">૧</button>
+          <button id="side-btn-s2" class="sub-btn">૨</button>
+          <button id="side-btn-s3" class="sub-btn">૩</button>
+          <button id="side-btn-s4" class="sub-btn">૪</button>
+          <button id="side-btn-s5" class="sub-btn">૫</button>
+          <button id="side-btn-s6" class="sub-btn">૬</button>
+          <button id="side-btn-s7" class="sub-btn">૭</button>
+          <button id="side-btn-s8" class="sub-btn">૮</button>
+          <button id="side-btn-s9" class="sub-btn">૯</button>
+          <button id="side-btn-all" class="sub-btn active">બધી</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <span class="control-label">ઝડપી ટૂલ્સ ઓપન:</span>
+        <button id="side-btn-open-chatgpt" class="btn-dt btn-dt-secondary" style="background:#10a37f; color:#fff; border-color:#10a37f; justify-content:center;">
+          <span>⚡</span> <span>Open ChatGPT (chatgpt.com)</span>
+        </button>
+        <button id="side-btn-open-notebooklm" class="btn-dt btn-dt-secondary" style="background:#4285f4; color:#fff; border-color:#4285f4; justify-content:center;">
+          <span>📓</span> <span>Open NotebookLM</span>
+        </button>
+      </div>
+
+      <div class="control-group">
+        <span class="control-label">ઝૂમ / સ્કેલ:</span>
+        <div class="btn-row">
+          <button class="sub-btn btn-scale" data-scale="0.80">80%</button>
+          <button class="sub-btn btn-scale active" data-scale="0.90">90%</button>
+          <button class="sub-btn btn-scale" data-scale="1.0">100%</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER: THE PHONE SIMULATORS (SCREEN 1, 2, 3) -->
+    <section class="simulator-area">
+      <div class="phones-container" id="phonesContainer">
+
+        <!-- ===================================================
+             PHONE 1: SCREEN 1 (48 કલાક આઈડિયા & પ્રોમ્પ્ટ સ્ક્રીન)
+             =================================================== -->
+        <div class="phone-chassis" id="phone1Chassis">
+          <div class="phone-badge-label" style="color:#f87171;">💡 સ્ક્રીન ૧: 48h પ્રોમ્પ્ટ</div>
+          <div class="phone-screen">
+
+            <!-- Status Bar -->
+            <div class="phone-status-bar">
+              <span>09:41</span>
+              <div class="dynamic-island"></div>
+              <div class="phone-status-icons"><span>5G</span><span>🔋 100%</span></div>
+            </div>
+
+            <!-- Header -->
+            <header class="app-screen-header">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <div style="background:#d71920; color:#fff; width:24px; height:22px; border-radius:5px; display:flex; align-items:center; justify-content:center; font-size:11px;">💡</div>
+                <div>
+                  <div style="font-size:0.82rem; font-weight:900; color:#0f172a;">Gyan Yatra</div>
+                  <div style="font-size:0.6rem; font-weight:800; color:#d71920;">૧. 48h Topic Studio</div>
+                </div>
+              </div>
+              <button id="p1-btn-goto-s2" style="background:#7c3aed; color:#fff; border:none; padding:3px 8px; border-radius:5px; font-size:0.65rem; font-weight:800; cursor:pointer;">
+                સબ-ટોપિક્સ →
+              </button>
+            </header>
+
+            <!-- Screen 1 Body -->
+            <div class="app-screen-body">
+
+              <!-- 3 Action Buttons -->
+              <div class="btn-action-3-row">
+                <button id="p1-btn-copy-prompt" class="btn-act-3 btn-act-copy">
+                  <span>📋</span> <span>Copy Prompt</span>
+                </button>
+                <button id="p1-btn-yt-studio" class="btn-act-3 btn-act-outline">
+                  <span>🌐</span> <span>YT Studio</span>
+                </button>
+                <button id="p1-btn-chatgpt" class="btn-act-3 btn-act-outline">
+                  <span>⚡</span> <span>ChatGPT</span>
+                </button>
+              </div>
+
+              <!-- Master Prompt Card -->
+              <div style="background:#fff; border:1.5px solid #102a56; border-radius:10px; padding:10px; display:flex; flex-direction:column; gap:6px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="background:#102a56; color:#fff; font-size:0.62rem; font-weight:900; padding:2px 5px; border-radius:4px;">કાયમી માસ્ટર પ્રોમ્પ્ટ</span>
+                  <span style="background:#fef2f2; color:#dc2626; border:1px solid #fecaca; font-size:0.58rem; font-weight:800; padding:1px 5px; border-radius:4px;">YouTube 48 કલાક</span>
+                </div>
+
+                <div class="prompt-mode-toggle">
+                  <button id="p1-mode-earning" class="prompt-mode-btn active">💰 ૫ શ્રેષ્ઠ કમાણી વાળા</button>
+                  <button id="p1-mode-viral" class="prompt-mode-btn">⚡ ૧૦ વાયરલ વિષયો</button>
+                </div>
+
+                <textarea id="p1-prompt-text" class="prompt-textarea" readonly></textarea>
+
+                <button id="p1-btn-copy-main" style="background:#102a56; color:#fff; border:none; padding:6px; border-radius:6px; font-size:0.68rem; font-weight:800; cursor:pointer;">
+                  📋 પ્રોમ્પ્ટ કોપી કરો (ChatGPT માટે)
+                </button>
+              </div>
+
+              <!-- Trending Topics -->
+              <div style="display:flex; flex-direction:column; gap:5px;">
+                <span style="font-size:0.72rem; font-weight:900; color:#0f172a;">🔥 ૪૮ કલાક ટ્રેન્ડિંગ વિષયો:</span>
+
+                <div class="topic-item-card" data-topic="આંગણવાડી પગાર વધારો હાઈકોર્ટ ચુકાદો">
+                  <div style="display:flex; justify-content:space-between; font-size:0.6rem; font-weight:700;">
+                    <span style="color:#0284c7; background:#e0f2fe; padding:1px 5px; border-radius:3px;">સરકારી યોજના</span>
+                    <span style="color:#059669;">૪,૮૫૦ વ્યુઝ • ₹૨૨૦ RPM</span>
+                  </div>
+                  <div class="topic-title-txt">આંગણવાડી પગાર વધારા પછી કેટલો પગાર મળશે? લઘુતમ વેતન ચુકાદો</div>
+                </div>
+
+                <div class="topic-item-card" data-topic="GSRTC Helper ભરતી 2026">
+                  <div style="display:flex; justify-content:space-between; font-size:0.6rem; font-weight:700;">
+                    <span style="color:#7c3aed; background:#ede9fe; padding:1px 5px; border-radius:3px;">ભરતી & નોકરી</span>
+                    <span style="color:#059669;">૫,૨૪૦ વ્યુઝ • ₹૨૪૫ RPM</span>
+                  </div>
+                  <div class="topic-title-txt">GSRTC Helper ભરતી 2026 – નવી કામચલાઉ યાદી અને લિસ્ટ</div>
+                </div>
+              </div>
+
+              <!-- Next Button to Screen 2 -->
+              <div class="next-step-box" id="p1-next-to-s2" style="background:#f5f3ff; border:1.5px solid #ddd6fe;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-size:1.1rem;">🔍</span>
+                  <div>
+                    <div style="font-size:0.72rem; font-weight:900; color:#6d28d9;">આગળની સ્ક્રીન: ૨. ૫ સબ-ટોપિક રિસર્ચ</div>
+                    <div style="font-size:0.6rem; color:#7c3aed;">વિષય પરથી ૫ અનુસંધાન વિષયો મેળવવા અહીં ક્લિક કરો</div>
+                  </div>
+                </div>
+                <span style="color:#6d28d9; font-weight:900;">→</span>
+              </div>
+
+            </div>
+
+            <!-- Home Pill -->
+            <div class="phone-home-indicator"><div class="home-pill"></div></div>
+            <div id="p1-toast" class="sim-toast"><span id="p1-toast-text">પ્રોમ્પ્ટ કોપી થયો!</span></div>
+          </div>
+        </div>
+
+        <!-- ===================================================
+             PHONE 2: SCREEN 2 (૫ અનુસંધાન વિષયો રિસર્ચ સ્ક્રીન - NEW!)
+             =================================================== -->
+        <div class="phone-chassis" id="phone2Chassis">
+          <div class="phone-badge-label" style="color:#c084fc;">🔍 સ્ક્રીન ૨: ૫ સબ-ટોપિક રિસર્ચ</div>
+          <div class="phone-screen">
+
+            <!-- Status Bar -->
+            <div class="phone-status-bar">
+              <span>09:41</span>
+              <div class="dynamic-island"></div>
+              <div class="phone-status-icons"><span>5G</span><span>🔋 100%</span></div>
+            </div>
+
+            <!-- Header -->
+            <header class="app-screen-header">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <button id="p2-btn-back-to-s1" style="background:#f1f5f9; border:1px solid #cbd5e1; width:22px; height:22px; border-radius:5px; cursor:pointer; font-size:10px;">←</button>
+                <div>
+                  <div style="font-size:0.82rem; font-weight:900; color:#0f172a;">Gyan Yatra Subtopics</div>
+                  <div style="font-size:0.6rem; font-weight:800; color:#7c3aed;">૨. ૫ અનુસંધાન વિષયો રિસર્ચ</div>
+                </div>
+              </div>
+              <button id="p2-btn-goto-s3" style="background:#10b981; color:#fff; border:none; padding:3px 8px; border-radius:5px; font-size:0.65rem; font-weight:800; cursor:pointer;">
+                સ્લાઇડ્સ →
+              </button>
+            </header>
+
+            <!-- Screen 2 Body -->
+            <div class="app-screen-body">
+
+              <!-- Topic Input Card -->
+              <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:10px; display:flex; flex-direction:column; gap:5px;">
+                <span style="font-size:0.72rem; font-weight:900; color:#0f172a;">🎯 તમારો મુખ્ય વિષય લખો:</span>
+                <input type="text" id="p2-input-topic" value="આંગણવાડી પગાર વધારો હાઈકોર્ટ ચુકાદો" style="padding:6px 8px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit; font-size:0.72rem; font-weight:700;">
+                <button id="p2-btn-generate-subtopics" style="background:#7c3aed; color:#fff; border:none; padding:6px; border-radius:6px; font-size:0.68rem; font-weight:800; cursor:pointer;">
+                  ✨ ૫ અનુસંધાન વિષયો બનાવો
+                </button>
+              </div>
+
+              <!-- Subtopic ChatGPT Search Prompt Card -->
+              <div style="background:#fff; border:1.5px solid #7c3aed; border-radius:10px; padding:9px; display:flex; flex-direction:column; gap:5px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:0.72rem; font-weight:900; color:#7c3aed;">⚡ ૫ વિષયો રિસર્ચ પ્રોમ્પ્ટ</span>
+                  <span style="background:#f3e8ff; color:#7c3aed; font-size:0.58rem; font-weight:800; padding:1px 5px; border-radius:3px;">ChatGPT Formula</span>
+                </div>
+                <textarea id="p2-subtopic-prompt-text" class="prompt-textarea" style="height:65px;" readonly></textarea>
+                <div style="display:flex; gap:4px;">
+                  <button id="p2-btn-copy-sub-prompt" style="flex:1; background:#7c3aed; color:#fff; border:none; padding:5px; border-radius:5px; font-size:0.66rem; font-weight:800; cursor:pointer;">
+                    📋 પ્રોમ્પ્ટ કોપી કરો
+                  </button>
+                  <button id="p2-btn-open-chatgpt-s2" style="flex:1; background:#10a37f; color:#fff; border:none; padding:5px; border-radius:5px; font-size:0.66rem; font-weight:800; cursor:pointer;">
+                    ⚡ Open ChatGPT
+                  </button>
+                </div>
+              </div>
+
+              <!-- 5 Connected Sub-Topics List -->
+              <div style="display:flex; flex-direction:column; gap:5px;" id="p2-subtopics-list-container">
+                <!-- Dynamically Populated 5 Sub-topics -->
+              </div>
+
+              <!-- Next Button to Screen 3 -->
+              <div class="next-step-box" id="p2-next-to-s3" style="background:#eff6ff; border:1.5px solid #93c5fd;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-size:1.1rem;">📑</span>
+                  <div>
+                    <div style="font-size:0.72rem; font-weight:900; color:#1e40af;">આગળની સ્ક્રીન: ૩. ૧૬:૯ સ્લાઇડ્સ ટૂલ</div>
+                    <div style="font-size:0.6rem; color:#2563eb;">પ્યોર વ્હાઇટ સ્લાઇડ્સ અને ChatGPT/NotebookLM ઓપન કરવા ક્લિક કરો</div>
+                  </div>
+                </div>
+                <span style="color:#1e40af; font-weight:900;">→</span>
+              </div>
+
+            </div>
+
+            <!-- Home Pill -->
+            <div class="phone-home-indicator"><div class="home-pill"></div></div>
+            <div id="p2-toast" class="sim-toast"><span id="p2-toast-text">વિષય પસંદ થયો!</span></div>
+          </div>
+        </div>
+
+        <!-- ===================================================
+             PHONE 3: SCREEN 3 (૧૬:૯ સ્લાઇડ્સ & CHATGPT / NOTEBOOKLM)
+             =================================================== -->
+        <div class="phone-chassis" id="phone3Chassis">
+          <div class="phone-badge-label" style="color:#34d399;">📑 સ્ક્રીન ૩: ૧૬:૯ સ્લાઇડ્સ</div>
+          <div class="phone-screen">
+
+            <!-- Status Bar -->
+            <div class="phone-status-bar">
+              <span>09:41</span>
+              <div class="dynamic-island"></div>
+              <div class="phone-status-icons"><span>5G</span><span>🔋 100%</span></div>
+            </div>
+
+            <!-- Header -->
+            <header class="app-screen-header">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <button id="p3-btn-back-to-s2" style="background:#f1f5f9; border:1px solid #cbd5e1; width:22px; height:22px; border-radius:5px; cursor:pointer; font-size:10px;">←</button>
+                <div>
+                  <div style="font-size:0.82rem; font-weight:900; color:#0f172a;">Gyan Yatra Slides</div>
+                  <div style="font-size:0.6rem; font-weight:800; color:#10b981;">૩. ૧૬:૯ Slides & AI Tools</div>
+                </div>
+              </div>
+              <span id="p3-badge-slides-num" style="font-size:0.62rem; background:#ecfdf5; color:#059669; padding:2px 6px; border-radius:10px; font-weight:800; border:1px solid #a7f3d0;">
+                ૯ સ્લાઇડ્સ
+              </span>
+            </header>
+
+            <!-- Screen 3 Body -->
+            <div class="app-screen-body">
+
+              <!-- Active Topic Banner -->
+              <div style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:5px 8px;">
+                <span style="font-size:0.58rem; font-weight:800; color:#10b981;">🎯 સક્રિય વિષય:</span>
+                <div id="p3-active-topic-title" style="font-size:0.7rem; font-weight:800; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                  આંગણવાડી બહેનોના પગાર વધારા અંગે હાઈકોર્ટનો ઐતિહાસિક આદેશ (LPA 363/2025)
+                </div>
+              </div>
+
+              <!-- 16:9 Presentation Slide Canvas -->
+              <div class="slide-canvas-card">
+                <div class="slide-canvas-aspect">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span class="slide-pill-badge" id="p3-slide-badge" style="font-size:0.6rem; padding:1px 5px; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:3px;">🏛️ સત્તાવાર GR પરિપત્ર</span>
+                    <span style="font-family:var(--font-en); font-size:0.62rem; font-weight:800; color:#94a3b8;" id="p3-slide-counter">SLIDE 1 OF 9</span>
+                  </div>
+
+                  <div style="display:grid; grid-template-columns:65% 35%; gap:6px; align-items:center;">
+                    <div>
+                      <h3 class="slide-canvas-title" id="p3-slide-title">ગુજરાત હાઇકોર્ટનો ઐતિહાસિક ચુકાદો</h3>
+                      <div class="slide-canvas-sub" id="p3-slide-sub">આંગણવાડી બહેનો માટે મોટો નિર્ણય (LPA 363/2025)</div>
+                      <ul class="slide-canvas-bullets" id="p3-slide-bullets">
+                        <li>હાઇકોર્ટની ડિવિઝન બેંચ (LPA 363/2025) દ્વારા ઐતિહાસિક આદેશ</li>
+                        <li>આંગણવાડી કાર્યકર અને તેડાગર બહેનોને કાયમી કર્મચારી ગણવા નિર્દેશ</li>
+                        <li>રાજ્ય સરકારને લઘુતમ વેતન ચૂકવવા માટે કડક સમયમર્યાદા અપાઈ</li>
+                      </ul>
+                    </div>
+
+                    <!-- Photo Box -->
+                    <div class="slide-photo-box">
+                      <span class="slide-photo-img" id="p3-slide-photo-icon">🏛️</span>
+                      <span class="slide-photo-caption" id="p3-slide-photo-caption">ગુજરાત હાઇકોર્ટ સોલા</span>
+                    </div>
+                  </div>
+
+                  <div style="display:flex; justify-content:space-between; border-top:1px solid #f1f5f9; padding-top:2px; font-size:0.55rem; color:#94a3b8; font-weight:700;">
+                    <span>🎯 જ્ઞાન યાત્રા એજ્યુકેશનલ સીરીઝ</span>
+                    <span>HD 1080p Presentation</span>
+                  </div>
+                </div>
+
+                <!-- Controls Strip -->
+                <div class="slide-controls-strip">
+                  <button id="p3-btn-prev" class="btn-slide-nav">◀️ અગાઉ</button>
+                  <span id="p3-slide-indicator" style="font-size:0.72rem; font-weight:900; color:#10b981;">૧ / ૯</span>
+                  <button id="p3-btn-next" class="btn-slide-nav">આગળ ▶️</button>
+                </div>
+
+                <!-- Pills 1 to 9 -->
+                <div class="slide-pills-row" id="p3-slide-pills"></div>
+              </div>
+
+              <!-- Photo Presets -->
+              <div style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:6px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                  <span style="font-size:0.68rem; font-weight:800; color:#0f172a;">🖼️ વાસ્તવિક ફોટો બદલો:</span>
+                  <span style="font-size:0.58rem; color:#64748b;">વાસ્તવિક ફોટા</span>
+                </div>
+                <div class="presets-chips-row" id="p3-presets-chips">
+                  <button class="preset-chip active" data-preset="highcourt">🏛️ હાઇકોર્ટ</button>
+                  <button class="preset-chip" data-preset="courtorder">⚖️ કોર્ટ ઓર્ડર</button>
+                  <button class="preset-chip" data-preset="sachivalaya">🏢 સચિવાલય</button>
+                  <button class="preset-chip" data-preset="circular">🏛️ GR પરિપત્ર</button>
+                  <button class="preset-chip" data-preset="anganwadi_meal">🍲 ભોજન કેન્દ્ર</button>
+                  <button class="preset-chip" data-preset="subsidy">💰 DBT સહાય</button>
+                  <button class="preset-chip" data-preset="portal">💻 OJAS પોર્ટલ</button>
+                  <button class="preset-chip" data-preset="dates">📅 તારીખો</button>
+                  <button class="preset-chip" data-preset="rules">📜 નિયમો</button>
+                </div>
+              </div>
+
+              <!-- Slide Prompt Card with Direct ChatGPT & NotebookLM Open Buttons -->
+              <div style="background:#fff; border:1.5px solid #0284c7; border-radius:10px; padding:9px; display:flex; flex-direction:column; gap:5px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:0.72rem; font-weight:900; color:#0284c7;">⚡ સ્લાઇડ કન્ટેન્ટ સર્ચ પ્રોમ્પ્ટ</span>
+                  <span style="font-size:0.58rem; background:#ecfdf5; color:#059669; padding:1px 5px; border-radius:3px; font-weight:800;">No Scripts</span>
+                </div>
+
+                <div class="prompt-mode-toggle">
+                  <button id="p3-mode-chatgpt" class="prompt-mode-btn active" style="font-size:0.62rem;">⚡ ChatGPT સ્લાઇડ</button>
+                  <button id="p3-mode-notebooklm" class="prompt-mode-btn" style="font-size:0.62rem;">📓 NotebookLM</button>
+                </div>
+
+                <textarea id="p3-slide-prompt-text" class="prompt-textarea" style="height:65px;" readonly></textarea>
+
+                <!-- Actions: Copy & Paste -->
+                <div style="display:flex; gap:4px;">
+                  <button id="p3-btn-copy-slide-prompt" style="flex:1; background:#0284c7; color:#fff; border:none; padding:6px; border-radius:5px; font-size:0.68rem; font-weight:800; cursor:pointer;">
+                    📋 પ્રોમ્પ્ટ કોપી કરો
+                  </button>
+                  <button id="p3-btn-paste-content" style="flex:1; background:#fff; border:1.5px solid #10b981; color:#10b981; padding:6px; border-radius:5px; font-size:0.68rem; font-weight:800; cursor:pointer;">
+                    📥 કન્ટેન્ટ પેસ્ટ કરો
+                  </button>
+                </div>
+
+                <!-- DIRECT TOOL OPEN BUTTONS (As requested!) -->
+                <div style="display:flex; gap:4px; margin-top:2px;">
+                  <button id="p3-btn-direct-chatgpt" style="flex:1; background:#10a37f; color:#fff; border:none; padding:6px; border-radius:5px; font-size:0.68rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;">
+                    <span>⚡</span> <span>ChatGPT ખોલો</span>
+                  </button>
+                  <button id="p3-btn-direct-notebooklm" style="flex:1; background:#4285f4; color:#fff; border:none; padding:6px; border-radius:5px; font-size:0.68rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;">
+                    <span>📓</span> <span>NotebookLM ખોલો</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Next Step Strip (to Screen 4: Script Writer) -->
+              <div class="next-step-box" id="p3-next-to-s4" style="background:#eff6ff; border:1.5px solid #93c5fd; padding:7px;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-size:1.1rem;">📝</span>
+                  <div>
+                    <div style="font-size:0.7rem; font-weight:900; color:#1e40af;">આગળની સ્ક્રીન: ૪. Script Writer</div>
+                    <div style="font-size:0.58rem; color:#2563eb;">સ્લાઇડ્સના આધારે ગુજરાતી સ્ક્રિપ્ટ બનાવો</div>
+                  </div>
+                </div>
+                <span style="color:#1e40af; font-weight:900;">→</span>
+              </div>
+
+            </div>
+
+            <!-- Home Pill -->
+            <div class="phone-home-indicator"><div class="home-pill"></div></div>
+            <div id="p3-toast" class="sim-toast"><span id="p3-toast-text">સ્લાઇડ પ્રોમ્પ્ટ કોપી થયો!</span></div>
+          </div>
+        </div>
+
+        <!-- ===================================================
+             PHONE 4: SCREEN 4 (SCRIPT WRITER & PROMPTS)
+             =================================================== -->
+        <div class="phone-chassis" id="phone4Chassis">
+          <div class="phone-badge-label" style="color:#60a5fa;">📝 સ્ક્રીન ૪: Script Writer</div>
+          <div class="phone-screen">
+
+            <!-- Status Bar -->
+            <div class="phone-status-bar">
+              <span>09:41</span>
+              <div class="dynamic-island"></div>
+              <div class="phone-status-icons"><span>5G</span><span>🔋 100%</span></div>
+            </div>
+
+            <!-- Header -->
+            <header class="app-screen-header">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <button id="p4-btn-back-to-s3" style="background:#f1f5f9; border:1px solid #cbd5e1; width:22px; height:22px; border-radius:5px; cursor:pointer; font-size:10px;">←</button>
+                <div>
+                  <div style="font-size:0.82rem; font-weight:900; color:#0f172a;">Gyan Yatra Script</div>
+                  <div style="font-size:0.6rem; font-weight:800; color:#2563eb;">૪. Script Writer & Prompts</div>
+                </div>
+              </div>
+              <button id="p4-btn-copy-full-header" style="background:#2563eb; color:#fff; border:none; padding:3px 7px; border-radius:5px; font-size:0.62rem; font-weight:800; cursor:pointer;">
+                📋 Full Copy
+              </button>
+            </header>
+
+            <!-- Screen 4 Body -->
+            <div class="app-screen-body">
+
+              <!-- Linked Topic Banner -->
+              <div style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:5px 8px;">
+                <span style="font-size:0.58rem; font-weight:800; color:#2563eb;">🎯 સ્લાઇડ્સ સાથે જોડાયેલ વિષય:</span>
+                <div id="p4-active-topic-title" style="font-size:0.7rem; font-weight:800; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                  આંગણવાડી બહેનોના પગાર વધારા અંગે હાઈકોર્ટનો ઐતિહાસિક આદેશ (LPA 363/2025)
+                </div>
+              </div>
+
+              <!-- ChatGPT Script Master Prompt Card -->
+              <div style="background:#fff; border:1.5px solid #2563eb; border-radius:10px; padding:9px; display:flex; flex-direction:column; gap:5px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:0.72rem; font-weight:900; color:#1e40af;">✍️ ChatGPT સ્ક્રિપ્ટ પ્રોમ્પ્ટ</span>
+                  <span style="font-size:0.58rem; background:#dbeafe; color:#1d4ed8; padding:1px 5px; border-radius:3px; font-weight:800;">Slide-Wise</span>
+                </div>
+
+                <!-- Tone Switch -->
+                <div class="prompt-mode-toggle">
+                  <button id="p4-tone-anchor" class="prompt-mode-btn active" style="font-size:0.62rem;">🎙️ ન્યૂઝ એન્કર</button>
+                  <button id="p4-tone-friendly" class="prompt-mode-btn" style="font-size:0.62rem;">😊 સરળ સમજૂતી</button>
+                </div>
+
+                <textarea id="p4-script-prompt-text" class="prompt-textarea" style="height:62px;" readonly></textarea>
+
+                <div style="display:flex; gap:4px;">
+                  <button id="p4-btn-copy-prompt" style="flex:1; background:#2563eb; color:#fff; border:none; padding:5px; border-radius:5px; font-size:0.66rem; font-weight:800; cursor:pointer;">
+                    📋 પ્રોમ્પ્ટ કોપી
+                  </button>
+                  <button id="p4-btn-open-chatgpt" style="flex:1; background:#10a37f; color:#fff; border:none; padding:5px; border-radius:5px; font-size:0.66rem; font-weight:800; cursor:pointer;">
+                    ⚡ ChatGPT ખોલો
+                  </button>
+                </div>
+
+                <button id="p4-btn-paste-script" style="background:#fff; border:1.5px solid #7c3aed; color:#7c3aed; padding:5px; border-radius:5px; font-size:0.66rem; font-weight:800; cursor:pointer;">
+                  📥 ChatGPT સ્ક્રિપ્ટ પેસ્ટ કરો
+                </button>
+              </div>
+
+              <!-- Slide-Wise Script Viewer / Editor -->
+              <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:9px; display:flex; flex-direction:column; gap:5px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:0.7rem; font-weight:900; color:#0f172a;">📜 સ્લાઇડ મુજબ સ્ક્રિપ્ટ:</span>
+                  <span id="p4-word-stats" style="font-size:0.6rem; font-weight:800; color:#059669;">~૨૫ સેકન્ડ • ૫૫ શબ્દો</span>
+                </div>
+
+                <!-- Slide Selector Pills -->
+                <div class="slide-pills-row" id="p4-slide-pills" style="padding:2px 0; background:#fff;"></div>
+
+                <div id="p4-cur-slide-title" style="font-size:0.66rem; font-weight:800; color:#1e40af;">
+                  📌 સ્લાઇડ ૧: ગુજરાત હાઇકોર્ટનો ઐતિહાસિક ચુકાદો
+                </div>
+
+                <textarea id="p4-slide-script-editor" class="prompt-textarea" style="height:105px; background:#f8fafc; color:#0f172a; font-size:0.68rem; line-height:1.45;"></textarea>
+
+                <div style="display:flex; gap:4px;">
+                  <button id="p4-btn-copy-one" style="flex:1; background:#fff; border:1px solid #cbd5e1; color:#334155; padding:5px; border-radius:5px; font-size:0.65rem; font-weight:800; cursor:pointer;">
+                    📋 આ સ્લાઇડ કોપી
+                  </button>
+                  <button id="p4-btn-copy-all" style="flex:1; background:#10b981; color:#fff; border:none; padding:5px; border-radius:5px; font-size:0.65rem; font-weight:800; cursor:pointer;">
+                    📋 બધી સ્ક્રિપ્ટ કોપી
+                  </button>
+                </div>
+              </div>
+
+              <!-- Next Step Strip (to Screen 5: Voice Record) -->
+              <div class="next-step-box" id="p4-next-to-s5" style="background:#ecfdf5; border:1.5px solid #86efac; padding:7px;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-size:1.1rem;">🎙️</span>
+                  <div>
+                    <div style="font-size:0.7rem; font-weight:900; color:#166534;">આગળની સ્ક્રીન: ૫. Voice Record</div>
+                    <div style="font-size:0.58rem; color:#15803d;">સ્લાઇડ સામે રાખીને અવાજ રેકોર્ડ કરવા ક્લિક કરો</div>
+                  </div>
+                </div>
+                <span style="color:#166534; font-weight:900;">→</span>
+              </div>
+
+            </div>
+
+            <!-- Home Pill -->
+            <div class="phone-home-indicator"><div class="home-pill"></div></div>
+            <div id="p4-toast" class="sim-toast"><span id="p4-toast-text">સ્ક્રિપ્ટ કોપી થઈ!</span></div>
+          </div>
+        </div>
+
+        <!-- ===================================================
+             PHONE 5: SCREEN 5 (VOICE RECORD STUDIO - WEB EXACT)
+             =================================================== -->
+        <div class="phone-chassis" id="phone5Chassis">
+          <div class="phone-badge-label" style="color:#f472b6;">🎙️ સ્ક્રીન ૫: Voice Record</div>
+          <div class="phone-screen">
+
+            <!-- Status Bar -->
+            <div class="phone-status-bar">
+              <span>09:41</span>
+              <div class="dynamic-island"></div>
+              <div class="phone-status-icons"><span>5G</span><span>🔋 100%</span></div>
+            </div>
+
+            <!-- Header -->
+            <header class="app-screen-header">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <button id="p5-btn-back-to-s4" style="background:#f1f5f9; border:1px solid #cbd5e1; width:22px; height:22px; border-radius:5px; cursor:pointer; font-size:10px;">←</button>
+                <div>
+                  <div style="font-size:0.82rem; font-weight:900; color:#0f172a;">Gyan Yatra Voice</div>
+                  <div style="font-size:0.6rem; font-weight:800; color:#ec4899;">૫. સ્લાઇડ ઓડિયો રેકોર્ડર</div>
+                </div>
+              </div>
+              <span id="p5-recorded-badge" style="font-size:0.62rem; background:#fdf2f8; color:#be185d; padding:2px 7px; border-radius:10px; font-weight:800; border:1px solid #fbcfe8;">
+                0 / 9 રેકોર્ડ
+              </span>
+            </header>
+
+            <!-- Screen 5 Body (Exact Web Functions: Slide + Script + Live Recorder + Enhancer) -->
+            <div class="app-screen-body">
+
+              <!-- Slide Selector Pills -->
+              <div class="slide-pills-row" id="p5-slide-pills" style="padding:3px 4px; background:#fff; border-radius:8px; border:1px solid #e2e8f0;"></div>
+
+              <!-- 1. Slide + Verbatim Teleprompter Script -->
+              <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:8px; display:flex; flex-direction:column; gap:5px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span id="p5-cur-slide-title" style="font-size:0.68rem; font-weight:900; color:#0f172a;">
+                    📌 સ્લાઇડ ૧: ગુજરાત હાઇકોર્ટનો ઐતિહાસિક ચુકાદો
+                  </span>
+                  <span id="p5-slide-saved-badge" style="display:none; font-size:0.58rem; background:#ecfdf5; color:#059669; padding:1px 5px; border-radius:4px; font-weight:800;">
+                    ✓ સેવ
+                  </span>
+                </div>
+
+                <!-- Mini 16:9 Slide Visual Reference -->
+                <div style="background:#ffffff; border:1px solid #cbd5e1; border-radius:6px; padding:6px 8px; display:flex; justify-content:space-between; align-items:center; gap:6px;">
+                  <div style="overflow:hidden;">
+                    <div id="p5-mini-slide-badge" style="font-size:0.54rem; font-weight:800; color:#64748b;">🏛️ સત્તાવાર GR પરિપત્ર</div>
+                    <div id="p5-mini-slide-sub" style="font-size:0.62rem; font-weight:800; color:#0284c7; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                      આંગણવાડી બહેનો માટે મોટો નિર્ણય (LPA 363/2025)
+                    </div>
+                  </div>
+                  <span id="p5-mini-slide-icon" style="font-size:1.3rem;">🏛️</span>
+                </div>
+
+                <!-- Verbatim Script Box to Read While Recording -->
+                <div id="p5-teleprompter-script" style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:8px; font-size:0.68rem; line-height:1.45; color:#0f172a; font-weight:600; max-height:95px; overflow-y:auto;">
+                </div>
+              </div>
+
+              <!-- 2. Live Voice Recorder Panel (First & Primary - Exact Web Recorder Functions) -->
+              <div id="p5-recorder-box" style="background:#0f172a; border:1.5px solid #7c3aed; border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:7px; color:#fff;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span id="p5-rec-status" style="font-size:0.68rem; font-weight:900; color:#38bdf8;">🎙️ LIVE VOICE RECORDER</span>
+                  <span id="p5-rec-timer" style="font-family:monospace; font-size:0.9rem; font-weight:900; color:#fff;">00:00</span>
+                </div>
+
+                <!-- Live VU Meter Bar -->
+                <div style="height:8px; background:#1e293b; border-radius:4px; overflow:hidden;">
+                  <div id="p5-vu-bar" style="width:0%; height:100%; background:linear-gradient(90deg, #10b981, #f59e0b, #ef4444); transition:width 0.1s;"></div>
+                </div>
+
+                <!-- Controls Row -->
+                <div style="display:flex; gap:5px;">
+                  <button id="p5-btn-record" style="flex:2; background:#ec4899; color:#fff; border:none; padding:7px; border-radius:6px; font-size:0.7rem; font-weight:800; cursor:pointer;">
+                    🎙️ રેકોર્ડ શરૂ કરો
+                  </button>
+                  <button id="p5-btn-pause" style="display:none; flex:1; background:#f59e0b; color:#0f172a; border:none; padding:7px; border-radius:6px; font-size:0.68rem; font-weight:800; cursor:pointer;">
+                    ⏸️ થોભો
+                  </button>
+                  <button id="p5-btn-stop" style="display:none; flex:1; background:#10b981; color:#fff; border:none; padding:7px; border-radius:6px; font-size:0.68rem; font-weight:800; cursor:pointer;">
+                    ⏹️ સેવ
+                  </button>
+                  <button id="p5-btn-retake" style="background:#1e293b; color:#cbd5e1; border:1px solid #334155; padding:7px 9px; border-radius:6px; font-size:0.66rem; font-weight:800; cursor:pointer;">
+                    🔄 Retake
+                  </button>
+                </div>
+
+                <!-- Playback for Recorded Take -->
+                <div id="p5-playback-row" style="display:none; align-items:center; gap:6px; background:#1e293b; padding:5px 8px; border-radius:6px;">
+                  <audio id="p5-audio-player" controls style="width:100%; height:28px;"></audio>
+                </div>
+              </div>
+
+              <!-- 3. AI Voice Enhancer & One-Click Presets (Exact Web Presets) -->
+              <div style="background:#fff; border:1.5px solid #7c3aed; border-radius:10px; padding:9px; display:flex; flex-direction:column; gap:6px;">
+                <span style="font-size:0.72rem; font-weight:900; color:#6d28d9;">✨ AI વોઇસ એન્હાન્સર (Web Presets)</span>
+                <div class="presets-chips-row" id="p5-enhancer-presets">
+                  <button class="preset-chip active" data-preset="anchor">🎙️ Gujarati News Anchor</button>
+                  <button class="preset-chip" data-preset="studio">🎧 Studio Voice</button>
+                  <button class="preset-chip" data-preset="natural">🌿 Natural Voice</button>
+                  <button class="preset-chip" data-preset="loud">🔊 Loud & Clear</button>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:0.62rem; font-weight:700; color:#334155;">
+                  <label><input type="checkbox" id="p5-chk-noise" checked> Noise Cut</label>
+                  <label><input type="checkbox" id="p5-chk-clarity" checked> 3kHz Clarity</label>
+                  <label><input type="checkbox" id="p5-chk-norm" checked> -1dBFS Norm</label>
+                </div>
+                <button id="p5-btn-enhance-save" style="background:#7c3aed; color:#fff; border:none; padding:6px; border-radius:6px; font-size:0.68rem; font-weight:800; cursor:pointer;">
+                  ✨ અવાજ એન્હાન્સ & સેવ કરો
+                </button>
+              </div>
+
+              <!-- 4. Next Step: Screen 6 (Audio Editing Studio) -->
+              <div class="next-step-box" id="p5-next-to-s6" style="background:#f5f3ff; border:1.5px solid #c4b5fd; padding:7px;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-size:1.1rem;">🎛️</span>
+                  <div>
+                    <div style="font-size:0.68rem; font-weight:900; color:#5b21b6;">આગળની સ્ક્રીન: ૬. Audio Editing Studio</div>
+                    <div style="font-size:0.56rem; color:#7c3aed;">Enhancer, Trim/Split, BGM Mixer & Export</div>
+                  </div>
+                </div>
+                <span style="color:#5b21b6; font-weight:900;">→</span>
+              </div>
+
+            </div>
+
+            <!-- Home Pill -->
+            <div class="phone-home-indicator"><div class="home-pill"></div></div>
+            <div id="p5-toast" class="sim-toast"><span id="p5-toast-text">અવાજ સેવ થયો!</span></div>
+          </div>
+        </div>
+
+        <!-- ===================================================
+             PHONE 6: SCREEN 6 (AUDIO EDITING STUDIO - WEB EXACT)
+             =================================================== -->
+        <div class="phone-chassis" id="phone6Chassis">
+          <div class="phone-badge-label" style="color:#c084fc;">🎛️ સ્ક્રીન ૬: Audio Editing Studio</div>
+          <div class="phone-screen">
+
+            <!-- Status Bar -->
+            <div class="phone-status-bar">
+              <span>09:41</span>
+              <div class="dynamic-island"></div>
+              <div class="phone-status-icons"><span>5G</span><span>🔋 100%</span></div>
+            </div>
+
+            <!-- Header -->
+            <header class="app-screen-header">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <button id="p6-btn-back-to-s5" style="background:#f1f5f9; border:1px solid #cbd5e1; width:22px; height:22px; border-radius:5px; cursor:pointer; font-size:10px;">←</button>
+                <div>
+                  <div style="font-size:0.82rem; font-weight:900; color:#0f172a;">Audio Editing DAW</div>
+                  <div style="font-size:0.6rem; font-weight:800; color:#7c3aed;">૬. સેમ વેબ ઓડિયો એડિટિંગ ટૂલ્સ</div>
+                </div>
+              </div>
+              <a href="/studio#myvoice" target="_blank" style="background:#7c3aed; color:#fff; padding:3px 7px; border-radius:5px; font-size:0.6rem; font-weight:800; text-decoration:none;">Web DAW</a>
+            </header>
+
+            <!-- Screen 6 Body -->
+            <div class="app-screen-body">
+
+              <!-- Slide Selector -->
+              <div class="slide-pills-row" id="p6-slide-pills" style="padding:3px 4px; background:#fff; border-radius:8px; border:1px solid #e2e8f0;"></div>
+
+              <!-- 5 Exact Web Audio Editing Tool Tabs -->
+              <div class="presets-chips-row" id="p6-tool-tabs" style="padding-bottom:2px;">
+                <button class="preset-chip active" data-tab="enhancer">✨ AI Enhancer</button>
+                <button class="preset-chip" data-tab="editor">✂️ Multitrack</button>
+                <button class="preset-chip" data-tab="bgm">🎵 BGM Mixer</button>
+                <button class="preset-chip" data-tab="quality">📊 Quality</button>
+                <button class="preset-chip" data-tab="export">💾 Export</button>
+              </div>
+
+              <!-- TAB 1: AI Voice Enhancer (Real DSP) -->
+              <div id="p6-panel-enhancer" style="background:#fff; border:1.5px solid #7c3aed; border-radius:10px; padding:9px; display:flex; flex-direction:column; gap:6px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:0.72rem; font-weight:900; color:#6d28d9;">✨ AI Voice Enhancer (DSP)</span>
+                  <div style="display:flex; gap:3px;">
+                    <button id="p6-cmp-orig" style="font-size:0.56rem; padding:2px 5px; border:1px solid #cbd5e1; border-radius:4px; background:#fff; cursor:pointer;">Orig</button>
+                    <button id="p6-cmp-enh" style="font-size:0.56rem; padding:2px 5px; border:1px solid #7c3aed; border-radius:4px; background:#7c3aed; color:#fff; cursor:pointer;">Enhanced</button>
+                  </div>
+                </div>
+                <div class="presets-chips-row" id="p6-enhancer-presets">
+                  <button class="preset-chip active" data-preset="crystal">💎 Crystal Ultra</button>
+                  <button class="preset-chip" data-preset="anchor">🎙️ Gujarati Anchor</button>
+                  <button class="preset-chip" data-preset="studio">🎧 Studio</button>
+                  <button class="preset-chip" data-preset="loud">🔊 Loud & Clear</button>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:4px; font-size:0.64rem; font-weight:700; color:#334155;">
+                  <label><input type="checkbox" checked> Noise Reduction (Highpass & Notch)</label>
+                  <label><input type="checkbox" checked> Voice Clarity (3kHz Presence EQ)</label>
+                  <label><input type="checkbox" checked> Studio Compressor + De-Esser (7kHz)</label>
+                  <label><input type="checkbox" checked> Loudness Norm (-1.0 dBFS) & Trim Silence</label>
+                </div>
+                <button id="p6-btn-apply-dsp" style="background:#7c3aed; color:#fff; border:none; padding:6px; border-radius:6px; font-size:0.68rem; font-weight:800; cursor:pointer;">
+                  ✨ એન્હાન્સ & સેવ કરો
+                </button>
+              </div>
+
+              <!-- TAB 2: Multitrack Audio Editor (4 Tracks + Trim/Split/Fade/Undo/Redo/Zoom) -->
+              <div id="p6-panel-editor" style="display:none; background:#0f172a; border:1.5px solid #7c3aed; border-radius:10px; padding:9px; flex-direction:column; gap:6px; color:#fff;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:0.7rem; font-weight:900;">✂️ Multitrack Editor (4 Tracks)</span>
+                  <span id="p6-zoom-label" style="font-size:0.62rem; color:#38bdf8; font-weight:800;">Zoom: 1.0x</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:4px; font-size:0.58rem;">
+                  <div style="display:flex; align-items:center; gap:5px;"><span style="width:72px;">1. Original</span><div style="flex:1; height:14px; background:#1e293b; border-radius:3px;"><div style="width:85%; height:100%; background:#38bdf8; border-radius:3px;"></div></div></div>
+                  <div style="display:flex; align-items:center; gap:5px;"><span style="width:72px;">2. Enhanced</span><div style="flex:1; height:14px; background:#1e293b; border-radius:3px;"><div style="width:92%; height:100%; background:#a855f7; border-radius:3px;"></div></div></div>
+                  <div style="display:flex; align-items:center; gap:5px;"><span style="width:72px;">3. BGM</span><div style="flex:1; height:14px; background:#1e293b; border-radius:3px;"><div style="width:55%; height:100%; background:#10b981; border-radius:3px;"></div></div></div>
+                  <div style="display:flex; align-items:center; gap:5px;"><span style="width:72px;">4. SFX</span><div style="flex:1; height:14px; background:#1e293b; border-radius:3px;"><div style="width:35%; height:100%; background:#f59e0b; border-radius:3px;"></div></div></div>
+                </div>
+                <input type="range" min="0" max="100" value="35" style="width:100%;">
+                <div style="display:flex; flex-wrap:wrap; gap:4px;">
+                  <button class="p6-ed-btn" data-act="Trim Start/End" style="background:#1e293b; color:#fff; border:1px solid #334155; padding:3px 6px; border-radius:4px; font-size:0.6rem; cursor:pointer;">✂️ Trim</button>
+                  <button class="p6-ed-btn" data-act="Split at Playhead" style="background:#1e293b; color:#fff; border:1px solid #334155; padding:3px 6px; border-radius:4px; font-size:0.6rem; cursor:pointer;">⚡ Split</button>
+                  <button class="p6-ed-btn" data-act="Delete Range" style="background:#1e293b; color:#fff; border:1px solid #334155; padding:3px 6px; border-radius:4px; font-size:0.6rem; cursor:pointer;">🗑️ Delete</button>
+                  <button class="p6-ed-btn" data-act="Fade In/Out" style="background:#1e293b; color:#fff; border:1px solid #334155; padding:3px 6px; border-radius:4px; font-size:0.6rem; cursor:pointer;">📈 Fade</button>
+                  <button class="p6-ed-btn" data-act="Undo" style="background:#1e293b; color:#fff; border:1px solid #334155; padding:3px 6px; border-radius:4px; font-size:0.6rem; cursor:pointer;">↩️ Undo</button>
+                  <button class="p6-ed-btn" data-act="Redo" style="background:#1e293b; color:#fff; border:1px solid #334155; padding:3px 6px; border-radius:4px; font-size:0.6rem; cursor:pointer;">↪️ Redo</button>
+                  <button id="p6-btn-zoom-in" style="background:#1e293b; color:#fff; border:1px solid #334155; padding:3px 6px; border-radius:4px; font-size:0.6rem; cursor:pointer;">🔍 +</button>
+                  <button id="p6-btn-zoom-out" style="background:#1e293b; color:#fff; border:1px solid #334155; padding:3px 6px; border-radius:4px; font-size:0.6rem; cursor:pointer;">🔍 -</button>
+                </div>
+              </div>
+
+              <!-- TAB 3: BGM Mixer -->
+              <div id="p6-panel-bgm" style="display:none; background:#fff; border:1.5px solid #10b981; border-radius:10px; padding:9px; flex-direction:column; gap:6px;">
+                <span style="font-size:0.72rem; font-weight:900; color:#059669;">🎵 BGM Mixer & Auto-Ducking</span>
+                <select style="padding:5px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.66rem; font-family:inherit;">
+                  <option>Soft News Documentary Bed</option>
+                  <option>Calm Educational Piano</option>
+                  <option>Inspiring Gujarati Ambient</option>
+                </select>
+                <div style="font-size:0.64rem; font-weight:700;">Voice Volume: <span id="p6-voice-vol-val">100%</span><input id="p6-voice-vol" type="range" min="0" max="100" value="100" style="width:100%;"></div>
+                <div style="font-size:0.64rem; font-weight:700;">BGM Volume: <span id="p6-bgm-vol-val">12%</span><input id="p6-bgm-vol" type="range" min="0" max="100" value="12" style="width:100%;"></div>
+                <div style="display:flex; justify-content:space-between; font-size:0.62rem; font-weight:700;">
+                  <label><input type="checkbox" checked> 🦆 Auto-Ducking</label>
+                  <label><input type="checkbox" checked> 🔁 Loop</label>
+                  <label><input type="checkbox"> 🔇 Mute</label>
+                </div>
+              </div>
+
+              <!-- TAB 4: Quality Checker -->
+              <div id="p6-panel-quality" style="display:none; background:#fff; border:1.5px solid #0284c7; border-radius:10px; padding:9px; flex-direction:column; gap:6px;">
+                <span style="font-size:0.72rem; font-weight:900; color:#0284c7;">📊 Audio Quality Checker</span>
+                <div style="display:flex; flex-direction:column; gap:4px; font-size:0.64rem; font-weight:700;">
+                  <div style="display:flex; justify-content:space-between;"><span>Peak dBFS:</span><span style="color:#10b981;">-1.0 dBFS ✓</span></div>
+                  <div style="display:flex; justify-content:space-between;"><span>Clipping:</span><span style="color:#10b981;">0 Clips ✓</span></div>
+                  <div style="display:flex; justify-content:space-between;"><span>Noise Floor:</span><span style="color:#10b981;">-62 dB ✓</span></div>
+                  <div style="display:flex; justify-content:space-between;"><span>Loudness:</span><span style="color:#0284c7;">-14.0 LUFS ✓</span></div>
+                </div>
+                <button id="p6-btn-audit" style="background:#0284c7; color:#fff; border:none; padding:6px; border-radius:6px; font-size:0.66rem; font-weight:800; cursor:pointer;">📊 ફરી ઓડિટ ચલાવો</button>
+              </div>
+
+              <!-- TAB 5: Export & Save -->
+              <div id="p6-panel-export" style="display:none; background:#fff; border:1.5px solid #0f172a; border-radius:10px; padding:9px; flex-direction:column; gap:6px;">
+                <span style="font-size:0.72rem; font-weight:900; color:#0f172a;">💾 Export & Save System</span>
+                <button class="p6-exp-btn" data-fmt="WAV 16-bit PCM" style="background:#7c3aed; color:#fff; border:none; padding:6px; border-radius:6px; font-size:0.66rem; font-weight:800; cursor:pointer;">💾 Export WAV (16-bit PCM)</button>
+                <div style="display:flex; gap:5px;">
+                  <button class="p6-exp-btn" data-fmt="MP3" style="flex:1; background:#fff; border:1px solid #cbd5e1; padding:5px; border-radius:6px; font-size:0.64rem; font-weight:800; cursor:pointer;">🎵 Export MP3</button>
+                  <button class="p6-exp-btn" data-fmt="Merged Master" style="flex:1; background:#fff; border:1px solid #cbd5e1; padding:5px; border-radius:6px; font-size:0.64rem; font-weight:800; cursor:pointer;">📦 Merged Master</button>
+                </div>
+              </div>
+
+              <!-- Next Step: Screen 7 (Video Render, Save & Share) -->
+              <div class="next-step-box" id="p6-next-to-s7" style="background:#ecfdf5; border:1.5px solid #86efac; padding:7px;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-size:1.1rem;">🎬</span>
+                  <div>
+                    <div style="font-size:0.68rem; font-weight:900; color:#166534;">છેલ્લી સ્ક્રીન: ૭. વિડીયો સેવ & શેર</div>
+                    <div style="font-size:0.56rem; color:#15803d;">૧૦૮૦p વિડીયો બનાવો, સેવ અને WhatsApp શેર કરો</div>
+                  </div>
+                </div>
+                <span style="color:#166534; font-weight:900;">→</span>
+              </div>
+
+            </div>
+
+            <!-- Home Pill -->
+            <div class="phone-home-indicator"><div class="home-pill"></div></div>
+            <div id="p6-toast" class="sim-toast"><span id="p6-toast-text">એડિટિંગ સેવ થયું!</span></div>
+          </div>
+        </div>
+
+        <!-- ===================================================
+             PHONE 7: SCREEN 7 (FINAL VIDEO RENDER, SAVE & SHARE)
+             =================================================== -->
+        <div class="phone-chassis" id="phone7Chassis">
+          <div class="phone-badge-label" style="color:#34d399;">🎬 સ્ક્રીન ૭: Video Save & Share</div>
+          <div class="phone-screen">
+
+            <!-- Status Bar -->
+            <div class="phone-status-bar">
+              <span>09:41</span>
+              <div class="dynamic-island"></div>
+              <div class="phone-status-icons"><span>5G</span><span>🔋 100%</span></div>
+            </div>
+
+            <!-- Header -->
+            <header class="app-screen-header">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <button id="p7-btn-back-to-s6" style="background:#f1f5f9; border:1px solid #cbd5e1; width:22px; height:22px; border-radius:5px; cursor:pointer; font-size:10px;">←</button>
+                <div>
+                  <div style="font-size:0.82rem; font-weight:900; color:#0f172a;">Gyan Yatra Video</div>
+                  <div style="font-size:0.6rem; font-weight:800; color:#10b981;">૭. ફાઇનલ વિડીયો — સેવ & શેર</div>
+                </div>
+              </div>
+              <span style="font-size:0.6rem; background:#ecfdf5; color:#059669; padding:2px 6px; border-radius:8px; font-weight:800; border:1px solid #a7f3d0;">1080p MP4</span>
+            </header>
+
+            <!-- Screen 7 Body -->
+            <div class="app-screen-body">
+
+              <!-- 1. Active Project Banner -->
+              <div style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:6px 8px;">
+                <span style="font-size:0.58rem; font-weight:800; color:#10b981;">🎬 તૈયાર વિડીયો પ્રોજેક્ટ:</span>
+                <div id="p7-active-topic-title" style="font-size:0.7rem; font-weight:800; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                  આંગણવાડી બહેનોના પગાર વધારા અંગે હાઈકોર્ટનો ઐતિહાસિક આદેશ (LPA 363/2025)
+                </div>
+              </div>
+
+              <!-- 2. 16:9 Video Player & Render Preview Card -->
+              <div style="background:#0f172a; border:1.5px solid #1e293b; border-radius:12px; overflow:hidden;">
+                <div style="aspect-ratio:16/9; background:#ffffff; padding:8px 10px; display:flex; flex-direction:column; justify-content:space-between; color:#0f172a;">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span id="p7-ready-badge" style="font-size:0.56rem; font-weight:800; background:#ecfdf5; color:#059669; padding:1px 5px; border-radius:3px; border:1px solid #10b981;">✓ 1080p HD READY</span>
+                    <span id="p7-slide-num" style="font-size:0.58rem; font-weight:800; color:#64748b;">SLIDE 1 / 9</span>
+                  </div>
+                  <div style="text-align:center;">
+                    <button id="p7-btn-play" style="background:none; border:none; font-size:2rem; cursor:pointer; line-height:1;">▶️</button>
+                    <div id="p7-player-title" style="font-size:0.68rem; font-weight:900; color:#0f172a; line-height:1.25;">ગુજરાત હાઇકોર્ટનો ઐતિહાસિક ચુકાદો</div>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; font-size:0.52rem; color:#64748b; font-weight:700;">
+                    <span>🎯 જ્ઞાન યાત્રા 1080p</span>
+                    <span>Studio Audio (-14 LUFS)</span>
+                  </div>
+                </div>
+                <div style="padding:7px 9px; display:flex; flex-direction:column; gap:5px;">
+                  <div id="p7-progress-wrap" style="display:none;">
+                    <div style="height:6px; background:#1e293b; border-radius:3px; overflow:hidden;">
+                      <div id="p7-progress-bar" style="width:0%; height:100%; background:#10b981; transition:width 0.1s;"></div>
+                    </div>
+                    <div id="p7-progress-txt" style="font-size:0.6rem; color:#cbd5e1; text-align:center; margin-top:3px; font-weight:700;">વિડીયો બની રહ્યો છે... 0%</div>
+                  </div>
+                  <button id="p7-btn-render" style="background:#7c3aed; color:#fff; border:none; padding:6px; border-radius:6px; font-size:0.68rem; font-weight:800; cursor:pointer;">
+                    🎬 ફુલ 1080p વિડીયો બનાવો (Render)
+                  </button>
+                </div>
+              </div>
+
+              <!-- 3. SAVE VIDEO CARD -->
+              <div style="background:#fff; border:1.5px solid #10b981; border-radius:10px; padding:9px; display:flex; flex-direction:column; gap:6px;">
+                <span style="font-size:0.74rem; font-weight:900; color:#059669;">💾 વિડીયો સેવ કરો (Save & Download)</span>
+                <span style="font-size:0.62rem; color:#64748b;">તૈયાર ૧૦૮૦p MP4 વિડીયો ફોનમાં અથવા વેબ પ્રીવ્યુમાં સેવ કરો.</span>
+                <button id="p7-btn-save-mp4" style="background:#10b981; color:#fff; border:none; padding:8px; border-radius:7px; font-size:0.72rem; font-weight:900; cursor:pointer;">
+                  💾 વિડીયો સેવ કરો (Save 1080p MP4)
+                </button>
+                <a href="/preview" target="_blank" style="text-align:center; background:#fff; border:1.2px solid #0284c7; color:#0284c7; padding:6px; border-radius:7px; font-size:0.66rem; font-weight:800; text-decoration:none;">
+                  🌐 વેબ વિડીયો પ્રીવ્યુ & ડાઉનલોડ હબ ખોલો
+                </a>
+              </div>
+
+              <!-- 4. SHARE VIDEO CARD -->
+              <div style="background:#fff; border:1.5px solid #128c7e; border-radius:10px; padding:9px; display:flex; flex-direction:column; gap:6px;">
+                <span style="font-size:0.74rem; font-weight:900; color:#128c7e;">📤 વિડીયો શેર કરો (Share Video)</span>
+                <div style="display:flex; gap:5px;">
+                  <button id="p7-btn-share-wa" style="flex:1; background:#128c7e; color:#fff; border:none; padding:7px; border-radius:7px; font-size:0.68rem; font-weight:800; cursor:pointer;">
+                    💬 WhatsApp શેર
+                  </button>
+                  <button id="p7-btn-copy-link" style="flex:1; background:#fff; border:1.2px solid #cbd5e1; color:#0f172a; padding:7px; border-radius:7px; font-size:0.68rem; font-weight:800; cursor:pointer;">
+                    🔗 લિંક કોપી
+                  </button>
+                </div>
+              </div>
+
+              <!-- Next Step: Screen 8 (Thumbnail) -->
+              <div class="next-step-box" id="p7-next-to-s8" style="background:#fffbeb; border:1.5px solid #fcd34d; padding:7px;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-size:1.1rem;">🎨</span>
+                  <div>
+                    <div style="font-size:0.68rem; font-weight:900; color:#92400e;">આગળની સ્ક્રીન: ૮. થંબનેલ સ્ટુડિયો</div>
+                    <div style="font-size:0.56rem; color:#b45309;">૧૬:૯ Pure White થંબનેલ & AI પ્રોમ્પ્ટ</div>
+                  </div>
+                </div>
+                <span style="color:#92400e; font-weight:900;">→</span>
+              </div>
+
+            </div>
+
+            <!-- Home Pill -->
+            <div class="phone-home-indicator"><div class="home-pill"></div></div>
+            <div id="p7-toast" class="sim-toast"><span id="p7-toast-text">વિડીયો સેવ થયો!</span></div>
+          </div>
+        </div>
+
+        <!-- ===================================================
+             PHONE 8: SCREEN 8 (DEDICATED THUMBNAIL SCREEN)
+             =================================================== -->
+        <div class="phone-chassis" id="phone8Chassis">
+          <div class="phone-badge-label" style="color:#fcd34d;">🎨 સ્ક્રીન ૮: થંબનેલ (અલગ સ્ક્રીન)</div>
+          <div class="phone-screen">
+
+            <div class="phone-status-bar">
+              <span>09:41</span>
+              <div class="dynamic-island"></div>
+              <div class="phone-status-icons"><span>5G</span><span>🔋 100%</span></div>
+            </div>
+
+            <header class="app-screen-header">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <button id="p8-btn-back-to-s7" style="background:#f1f5f9; border:1px solid #cbd5e1; width:22px; height:22px; border-radius:5px; cursor:pointer; font-size:10px;">←</button>
+                <div>
+                  <div style="font-size:0.82rem; font-weight:900; color:#0f172a;">Thumbnail Studio</div>
+                  <div style="font-size:0.6rem; font-weight:800; color:#d97706;">૮. ૧૬:૯ થંબનેલ & AI પ્રોમ્પ્ટ</div>
+                </div>
+              </div>
+              <span style="font-size:0.58rem; background:#fffbeb; color:#b45309; padding:2px 6px; border-radius:8px; font-weight:800; border:1px solid #fde68a;">HIGH CTR</span>
+            </header>
+
+            <div class="app-screen-body">
+              <!-- Presets -->
+              <div class="presets-chips-row" id="p8-presets">
+                <button class="preset-chip active" data-idx="0">👩‍🏫 આંગણવાડી/ભરતી</button>
+                <button class="preset-chip" data-idx="1">🏛️ DA/પગાર</button>
+                <button class="preset-chip" data-idx="2">🌾 સરકારી યોજના</button>
+                <button class="preset-chip" data-idx="3">🎓 પરીક્ષા/મેરિટ</button>
+              </div>
+
+              <!-- Pure White 16:9 Live Thumbnail Preview -->
+              <div style="background:#fff; border:1.5px solid #cbd5e1; border-radius:10px; overflow:hidden; box-shadow:0 3px 10px rgba(0,0,0,0.06);">
+                <div style="aspect-ratio:16/9; background:#ffffff; padding:8px; display:grid; grid-template-columns:42% 58%; gap:8px; align-items:center;">
+                  <div style="height:100%; background:#f8fafc; border:1px solid #cbd5e1; border-radius:7px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4px; text-align:center;">
+                    <span id="p8-photo-icon" style="font-size:2rem;">🏛️</span>
+                    <span id="p8-photo-sub" style="font-size:0.54rem; font-weight:700; color:#475569; margin-top:3px;">ગુજરાત હાઇકોર્ટ સોલા</span>
+                  </div>
+                  <div style="display:flex; flex-direction:column; justify-content:space-between; height:100%;">
+                    <span id="p8-badge" style="align-self:flex-start; background:#dc2626; color:#fff; font-size:0.55rem; font-weight:900; padding:1px 5px; border-radius:3px;">સત્તાવાર ચુકાદો</span>
+                    <div id="p8-catch-preview" style="font-size:0.82rem; font-weight:900; color:#0f2b5c; line-height:1.2;">પગાર ₹૨૪,૮૦૦! હાઇકોર્ટનો ઐતિહાસિક આદેશ</div>
+                    <span style="font-size:0.52rem; font-weight:800; color:#10b981;">16:9 Pure White • AAA Contrast ✓</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Edit Catchwords -->
+              <div style="background:#fff; border:1px solid #e2e8f0; border-radius:9px; padding:8px;">
+                <span style="font-size:0.66rem; font-weight:800; color:#0f172a;">✍️ થંબનેલ પર લખવાના બોલ્ડ શબ્દો:</span>
+                <input id="p8-catch-input" type="text" value="પગાર ₹૨૪,૮૦૦! હાઇકોર્ટનો ઐતિહાસિક આદેશ" style="width:100%; margin-top:4px; padding:5px 7px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit; font-size:0.7rem; font-weight:700;">
+              </div>
+
+              <!-- AI Thumbnail Prompt Card -->
+              <div style="background:#fff; border:1.5px solid #10b981; border-radius:10px; padding:9px; display:flex; flex-direction:column; gap:5px;">
+                <span style="font-size:0.7rem; font-weight:900; color:#059669;">🎨 AI Thumbnail Master Prompt (Pure White)</span>
+                <textarea id="p8-prompt-text" class="prompt-textarea" style="height:68px;" readonly></textarea>
+                <div style="display:flex; gap:4px;">
+                  <button id="p8-btn-copy-prompt" style="flex:1; background:#10b981; color:#fff; border:none; padding:6px; border-radius:5px; font-size:0.66rem; font-weight:800; cursor:pointer;">📋 પ્રોમ્પ્ટ કોપી</button>
+                  <button id="p8-btn-open-chatgpt" style="flex:1; background:#10a37f; color:#fff; border:none; padding:6px; border-radius:5px; font-size:0.66rem; font-weight:800; cursor:pointer;">⚡ ChatGPT ખોલો</button>
+                </div>
+                <button id="p8-btn-save-thumb" style="background:#fff; border:1.2px solid #0284c7; color:#0284c7; padding:5px; border-radius:5px; font-size:0.65rem; font-weight:800; cursor:pointer;">💾 થંબનેલ સેવ કરો</button>
+              </div>
+
+              <!-- Next Step: Screen 9 (Title & SEO) -->
+              <div class="next-step-box" id="p8-next-to-s9" style="background:#eff6ff; border:1.5px solid #93c5fd; padding:7px;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-size:1.1rem;">🚀</span>
+                  <div>
+                    <div style="font-size:0.68rem; font-weight:900; color:#1e40af;">આગળની સ્ક્રીન: ૯. ટાઇટલ & SEO</div>
+                    <div style="font-size:0.56rem; color:#2563eb;">વાયરલ ટાઇટલ, ડિસ્ક્રિપ્શન & ટૅગ્સ</div>
+                  </div>
+                </div>
+                <span style="color:#1e40af; font-weight:900;">→</span>
+              </div>
+            </div>
+
+            <div class="phone-home-indicator"><div class="home-pill"></div></div>
+            <div id="p8-toast" class="sim-toast"><span id="p8-toast-text">થંબનેલ પ્રોમ્પ્ટ કોપી થયો!</span></div>
+          </div>
+        </div>
+
+        <!-- ===================================================
+             PHONE 9: SCREEN 9 (DEDICATED TITLE, DESCRIPTION & SEO)
+             =================================================== -->
+        <div class="phone-chassis" id="phone9Chassis">
+          <div class="phone-badge-label" style="color:#7dd3fc;">🚀 સ્ક્રીન ૯: ટાઇટલ & SEO (અલગ સ્ક્રીન)</div>
+          <div class="phone-screen">
+
+            <div class="phone-status-bar">
+              <span>09:41</span>
+              <div class="dynamic-island"></div>
+              <div class="phone-status-icons"><span>5G</span><span>🔋 100%</span></div>
+            </div>
+
+            <header class="app-screen-header">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <button id="p9-btn-back-to-s8" style="background:#f1f5f9; border:1px solid #cbd5e1; width:22px; height:22px; border-radius:5px; cursor:pointer; font-size:10px;">←</button>
+                <div>
+                  <div style="font-size:0.82rem; font-weight:900; color:#0f172a;">Title & SEO Studio</div>
+                  <div style="font-size:0.6rem; font-weight:800; color:#2563eb;">૯. ટાઇટલ, ડિસ્ક્રિપ્શન & ટૅગ્સ</div>
+                </div>
+              </div>
+              <button id="p9-btn-copy-all-hdr" style="background:#10b981; color:#fff; border:none; padding:3px 7px; border-radius:5px; font-size:0.6rem; font-weight:800; cursor:pointer;">📋 All Copy</button>
+            </header>
+
+            <div class="app-screen-body">
+              <!-- 1. Viral Titles -->
+              <div style="background:#fff; border:1.5px solid #2563eb; border-radius:10px; padding:8px; display:flex; flex-direction:column; gap:5px;">
+                <span style="font-size:0.7rem; font-weight:900; color:#1e40af;">🔥 ૧. હાઈ-CTR ગુજરાતી ટાઇટલ:</span>
+                <div id="p9-titles-list" style="display:flex; flex-direction:column; gap:4px;"></div>
+              </div>
+
+              <!-- 2. Description -->
+              <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:8px; display:flex; flex-direction:column; gap:4px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:0.68rem; font-weight:900; color:#0f172a;">📝 ૨. YouTube ડિસ્ક્રિપ્શન:</span>
+                  <button id="p9-btn-copy-desc" style="background:#eff6ff; border:1px solid #93c5fd; color:#1d4ed8; font-size:0.58rem; font-weight:800; padding:2px 6px; border-radius:4px; cursor:pointer;">📋 કોપી</button>
+                </div>
+                <textarea id="p9-desc-text" class="prompt-textarea" style="height:75px; background:#f8fafc; color:#0f172a;"></textarea>
+              </div>
+
+              <!-- 3. Viral Tags -->
+              <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:8px; display:flex; flex-direction:column; gap:4px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:0.68rem; font-weight:900; color:#0f172a;">🏷️ ૩. વાયરલ ટૅગ્સ (Tags):</span>
+                  <button id="p9-btn-copy-tags" style="background:#eff6ff; border:1px solid #93c5fd; color:#1d4ed8; font-size:0.58rem; font-weight:800; padding:2px 6px; border-radius:4px; cursor:pointer;">📋 કોપી</button>
+                </div>
+                <textarea id="p9-tags-text" class="prompt-textarea" style="height:50px; background:#f8fafc; color:#0f172a;"></textarea>
+              </div>
+
+              <!-- 4. SEO Master Prompt & All-in-One Copy -->
+              <div style="background:#fff; border:1.5px solid #10b981; border-radius:10px; padding:8px; display:flex; flex-direction:column; gap:5px;">
+                <div style="display:flex; gap:4px;">
+                  <button id="p9-btn-copy-seo-prompt" style="flex:1; background:#fff; border:1px solid #cbd5e1; padding:5px; border-radius:5px; font-size:0.64rem; font-weight:800; cursor:pointer;">📋 SEO પ્રોમ્પ્ટ</button>
+                  <button id="p9-btn-open-yt" style="flex:1; background:#d71920; color:#fff; border:none; padding:5px; border-radius:5px; font-size:0.64rem; font-weight:800; cursor:pointer;">🌐 YT Studio</button>
+                </div>
+                <button id="p9-btn-copy-all" style="background:#10b981; color:#fff; border:none; padding:7px; border-radius:6px; font-size:0.68rem; font-weight:900; cursor:pointer;">
+                  📦 સંપૂર્ણ Title + Description + Tags કોપી
+                </button>
+              </div>
+            </div>
+
+            <div class="phone-home-indicator"><div class="home-pill"></div></div>
+            <div id="p9-toast" class="sim-toast"><span id="p9-toast-text">SEO પેકેજ કોપી થયું!</span></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- RIGHT: LIVE INSPECTOR -->
+    <aside class="inspector-panel">
+      <div class="panel-title">
+        <span>🔍</span> <span>લાઇવ ઇન્સ્પેક્ટર</span>
+      </div>
+
+      <div class="control-group">
+        <span class="control-label">હાલ પસંદ થયેલ વિષય:</span>
+        <div id="dt-topic-info-box" style="background:#090e1a; border:1px solid #1e293b; border-radius:10px; padding:10px; font-size:0.78rem; color:#38bdf8; font-weight:800; line-height:1.4;">
+          આંગણવાડી પગાર વધારો હાઈકોર્ટ ચુકાદો
+        </div>
+      </div>
+
+      <div class="control-group">
+        <span class="control-label">૪ સ્ક્રીન સ્પેસિફિકેશન:</span>
+        <div style="background:#090e1a; border:1px solid #1e293b; border-radius:10px; padding:10px; display:flex; flex-direction:column; gap:6px; font-size:0.72rem;">
+          <div style="display:flex; justify-content:space-between;">
+            <span>સ્ક્રીન ૧:</span>
+            <span style="color:#f87171; font-weight:800;">48h Master Prompt</span>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span>સ્ક્રીન ૨:</span>
+            <span style="color:#c084fc; font-weight:800;">૫ સબ-ટોપિક્સ રિસર્ચ</span>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span>સ્ક્રીન ૩:</span>
+            <span style="color:#34d399; font-weight:800;">૧૬:૯ Slides & AI Tools</span>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span>સ્ક્રીન ૪:</span>
+            <span style="color:#60a5fa; font-weight:800;">Script Writer & Prompts</span>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span>બોટમ ઓપ્શન્સ:</span>
+            <span style="color:#10b981; font-weight:800;">૧૦૦% Clean</span>
+          </div>
+        </div>
+      </div>
+
+      <button id="btn-dt-whatsapp-share" class="btn-dt btn-dt-secondary" style="background:#128c7e; color:#fff; border-color:#128c7e; justify-content:center;">
+        <span>💬</span> <span>પ્રોમ્પ્ટ WhatsApp માં મોકલો</span>
+      </button>
+
+      <div style="margin-top:auto; padding:12px; background:#064e3b; border:1.5px solid #10b981; border-radius:12px;">
+        <div style="font-size:0.78rem; font-weight:800; color:#fff; margin-bottom:4px;">✨ ૩ સ્ક્રીન લિંક્ડ ફ્લો</div>
+        <div style="font-size:0.68rem; color:#a7f3d0; line-height:1.4;">
+          સ્ક્રીન ૧ માં ૪૮ કલાક એનાલિટિક્સ → સ્ક્રીન ૨ માં ૫ અનુસંધાન વિષયો → સ્ક્રીન ૩ માં ૧૬:૯ સ્લાઇડ્સ અને ChatGPT/NotebookLM ઓપન!
+        </div>
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- =========================================================
+       3. INTERACTIVE JAVASCRIPT ENGINE
+       ========================================================= -->
+  <script>
+    (function () {
+      'use strict';
+
+      // State
+      let activeMainTopic = 'આંગણવાડી પગાર વધારો હાઈકોર્ટ ચુકાદો';
+      let activeSlideTopic = 'આંગણવાડી બહેનોના પગાર વધારા અંગે હાઈકોર્ટનો ઐતિહાસિક આદેશ (LPA 363/2025 ચુકાદો)';
+      let screen1PromptMode = 'earning'; // 'earning' | 'viral'
+      let screen3PromptMode = 'chatgpt'; // 'chatgpt' | 'notebooklm'
+      let currentSlideIdx = 0;
+      let activeViewMode = 'all'; // 's1' | 's2' | 's3' | 'all'
+
+      // Photo Presets
+      const photoPresets = {
+        highcourt: { icon: '🏛️', caption: 'ગુજરાત હાઇકોર્ટ સોલા' },
+        courtorder: { icon: '⚖️', caption: 'LPA 363/2025 ચુકાદો' },
+        sachivalaya: { icon: '🏢', caption: 'સચિવાલય સ્વર્ણિમ સંકુલ' },
+        circular: { icon: '🏛️', caption: 'સત્તાવાર GR પરિપત્ર' },
+        anganwadi_meal: { icon: '🍲', caption: 'પૌષ્ટિક આહાર કેન્દ્ર' },
+        subsidy: { icon: '💰', caption: 'DBT બેંક સહાય' },
+        portal: { icon: '💻', caption: 'OJAS સત્તાવાર પોર્ટલ' },
+        dates: { icon: '📅', caption: 'મહત્વપૂર્ણ તારીખો' },
+        rules: { icon: '📜', caption: 'પાત્રતા અને સેવા નિયમો' }
+      };
+
+      // 5 Subtopics generator
+      function generate5Subtopics(topic) {
+        return [
+          {
+            step: 1,
+            badge: '🏛️ કાનૂની આદેશ',
+            title: `${topic} અંગે હાઈકોર્ટનો ઐતિહાસિક આદેશ (LPA 363/2025 ચુકાદો)`,
+            focus: 'મૂળ કેસ અને કોર્ટનો સીધો નિર્દેશ'
+          },
+          {
+            step: 2,
+            badge: '⚖️ પગાર સરખામણી',
+            title: 'કાર્યકર અને તેડાગર: જૂનું માનદ વેતન vs નવો સન્માનજનક પગાર સંપૂર્ણ સરખામણી',
+            focus: 'જૂના અને નવા વેતન માળખા વચ્ચેનો તફાવત'
+          },
+          {
+            step: 3,
+            badge: '💰 ગણતરી ફોર્મ્યુલા',
+            title: 'નવા વેતન માળખાની ગણતરી: લઘુતમ વેતન ધારા હેઠળ માસિક ₹૨૪,૮૦૦ પગાર કેવી રીતે મળશે?',
+            focus: 'ચોક્કસ રૂપિયા અને નાણાકીય આંકડા'
+          },
+          {
+            step: 4,
+            badge: '📅 અમલ & એરિયર્સ',
+            title: 'અમલીકરણની તારીખ અને એરિયર્સ (Arrears) ની જોગવાઈ: ક્યારથી મળશે બાકી રકમ?',
+            focus: 'સમયમર્યાદા અને ખાતામાં જમા થવાની તારીખ'
+          },
+          {
+            step: 5,
+            badge: '🏢 સચિવાલય GR',
+            title: 'ગાંધીનગર સચિવાલય GR પરિપત્ર અને નાણાં વિભાગ પ્રક્રિયા: સત્તાવાર ઓર્ડર PDF ડાઉનલોડ',
+            focus: 'સત્તાવાર સરકારી ઠરાવ અને પુરાવા'
+          }
+        ];
+      }
+
+      let subtopicsList = generate5Subtopics(activeMainTopic);
+
+      // 9 Authentic Slides
+      const slides = [
+        {
+          id: 1,
+          badge: '🏛️ સત્તાવાર GR પરિપત્ર',
+          title: 'ગુજરાત હાઇકોર્ટનો ઐતિહાસિક ચુકાદો',
+          subtitle: 'આંગણવાડી બહેનો માટે મોટો નિર્ણય (LPA 363/2025)',
+          bullets: [
+            'હાઇકોર્ટની ડિવિઝન બેંચ (LPA 363/2025) દ્વારા ઐતિહાસિક આદેશ',
+            'આંગણવાડી કાર્યકર અને તેડાગર બહેનોને કાયમી કર્મચારી ગણવા નિર્દેશ',
+            'રાજ્ય સરકારને લઘુતમ વેતન ચૂકવવા માટે કડક સમયમર્યાદા અપાઈ'
+          ],
+          photoIcon: '🏛️',
+          photoCaption: 'ગુજરાત હાઇકોર્ટ સોલા'
+        },
+        {
+          id: 2,
+          badge: '⚖️ LPA 363/2025 ચુકાદો',
+          title: 'કોર્ટના મહત્વના આદેશના મુખ્ય મુદ્દા',
+          subtitle: 'સુપ્રીમ કોર્ટના ચુકાદાનો સંદર્ભ અને અવલોકન',
+          bullets: [
+            'કેન્દ્ર અને રાજ્ય સરકારની સંયુક્ત જવાબદારી નક્કી કરાઈ',
+            'માનદ વેતન પ્રથા કાયમી સેવાઓ સામે અયોગ્ય હોવાનું અવલોકન',
+            'સેવા સાતત્ય, ગ્રેચ્યુઇટી અને પેન્શન હક્ક અંગે મહત્વનો નિર્દેશ'
+          ],
+          photoIcon: '⚖️',
+          photoCaption: 'LPA 363/2025 ચુકાદો'
+        },
+        {
+          id: 3,
+          badge: '💰 નવું વેતન માળખું',
+          title: 'નવા પગાર માળખાની સંપૂર્ણ ગણતરી',
+          subtitle: 'જૂનું માનદ વેતન vs લઘુતમ વેતન ધારો',
+          bullets: [
+            'કાર્યકર બહેનો: ₹૧૦,૦૦૦ થી વધીને ₹૨૪,૮૦૦ સંભવિત પગાર',
+            'તેડાગર બહેનો: ₹૫,૫૦૦ થી વધીને ₹૧૮,૦૦૦ સુધીનો ફાયદો',
+            'DA (મોંઘવારી ભથ્થું) અને વાર્ષિક ઇન્ક્રીમેન્ટ લાગુ કરવાની માંગ'
+          ],
+          photoIcon: '💰',
+          photoCaption: 'DBT બેંક સહાય'
+        },
+        {
+          id: 4,
+          badge: '🏢 સચિવાલય પ્રક્રિયા',
+          title: 'ગાંધીનગર સચિવાલય GR પરિપત્ર',
+          subtitle: 'મહિલા & બાળ વિકાસ અને નાણાં વિભાગની હિલચાલ',
+          bullets: [
+            'નાણાં વિભાગ દ્વારા બજેટ જોગવાઈ અને મંજૂરી પ્રક્રિયા શરૂ',
+            'સત્તાવાર ઠરાવ (GR) ટૂંક સમયમાં જાહેર થવાની શક્યતા',
+            'રાજ્યભરના ૫૩,૦૦૦ થી વધુ આંગણવાડી કેન્દ્રોને અસર થશે'
+          ],
+          photoIcon: '🏢',
+          photoCaption: 'સચિવાલય સ્વર્ણિમ સંકુલ'
+        },
+        {
+          id: 5,
+          badge: '📅 અમલીકરણ તારીખ',
+          title: 'અમલ ક્યારથી? એરિયર્સ જોગવાઈ',
+          subtitle: 'ચુકાદા મુજબ બાકી રકમ (Arrears) ચૂકવણી',
+          bullets: [
+            'કોર્ટે રાજ્ય સરકારને અમલ માટે ચોક્કસ સમયમર્યાદા આપી છે',
+            'પિટિશન દાખલ કર્યા તારીખથી એરિયર્સ ગણતરીની સ્પષ્ટતા',
+            'ખાતામાં એકસાથે એરિયર્સ જમા થવાની પ્રક્રિયા'
+          ],
+          photoIcon: '📅',
+          photoCaption: 'મહત્વપૂર્ણ તારીખો'
+        },
+        {
+          id: 6,
+          badge: '🍲 ભોજન & કેન્દ્ર કામગીરી',
+          title: 'આંગણવાડી સેવાની મહત્વની ભૂમિકા',
+          subtitle: 'બાળકો અને ધાત્રી માતાઓ માટે પાયાની સેવા',
+          bullets: [
+            'પૂર્ણા યોજના અને પૌષ્ટિક આહાર વિતરણનું પાયાનું કાર્ય',
+            'સગર્ભા બહેનોની આરોગ્ય નોંધણી અને રસીકરણ વ્યવસ્થા',
+            'કોવિડ અને સરકારી સર્વેમાં આગળ રહીને કરેલી કામગીરી'
+          ],
+          photoIcon: '🍲',
+          photoCaption: 'પૌષ્ટિક આહાર કેન્દ્ર'
+        },
+        {
+          id: 7,
+          badge: '📜 પાત્રતા & નિયમો',
+          title: 'લાભ કોને મળશે? પાત્રતા નિયમો',
+          subtitle: 'કાર્યકર અને તેડાગર બહેનો માટે શરતો',
+          bullets: [
+            'ગુજરાત સરકાર હેઠળ નોંધાયેલ તમામ કાર્યકર અને તેડાગર બહેનો',
+            'નિવૃત્ત થયેલ બહેનો માટે ગ્રેચ્યુઇટી લાભની સ્પષ્ટતા',
+            'સર્વિસ બુક અને ડિજિટલ પોર્ટલ પર ડેટા વેરિફિકેશન'
+          ],
+          photoIcon: '📜',
+          photoCaption: 'પાત્રતા અને સેવા નિયમો'
+        },
+        {
+          id: 8,
+          badge: '💻 ઓનલાઇન પોર્ટલ',
+          title: 'ઓનલાઇન સ્ટેટસ અને ઓર્ડર ડાઉનલોડ',
+          subtitle: 'હાઇકોર્ટ ઓર્ડર અને સરકારી પોર્ટલ વિગતો',
+          bullets: [
+            'ગુજરાત હાઇકોર્ટની સત્તાવાર વેબસાઇટ પરથી ઓર્ડર ડાઉનલોડ',
+            'WCD ગુજરાત પોર્ટલ પર નોટિફિકેશન ટ્રેકિંગ સુવિધા',
+            'જિલ્લા પંચાયત કક્ષાએ અરજી અને માર્ગદર્શન વ્યવસ્થા'
+          ],
+          photoIcon: '💻',
+          photoCaption: 'OJAS સત્તાવાર પોર્ટલ'
+        },
+        {
+          id: 9,
+          badge: '🎯 નિષ્કર્ષ & સારાંશ',
+          title: 'સંપૂર્ણ સારાંશ અને સાવચેતી',
+          subtitle: 'અફવાઓથી બચો - માત્ર સત્તાવાર પરિપત્ર માન્ય',
+          bullets: [
+            'હાઇકોર્ટના આદેશથી કર્મચારીઓમાં ખુશીનો માહોલ',
+            'સોશિયલ મીડિયા ફેક મેસેજથી સાવધ રહેવા સલાહ',
+            'સત્તાવાર GR બહાર પડતાં જ ચેનલ પર સૌથી પહેલાં અપડેટ મળશે'
+          ],
+          photoIcon: '🏛️',
+          photoCaption: 'સત્તાવાર GR પરિપત્ર'
+        }
+      ];
+
+      // Prompts Generators
+      function get48hMasterPrompt(mode) {
+        if (mode === 'earning') {
+          return `તમે ગુજરાતી ભાષાના સિનિયર YouTube કન્ટેન્ટ સ્ટ્રેટેજિસ્ટ અને એનાલિટિક્સ એક્સપર્ટ છો.
+મેં સાથે મારા YouTube Studio ના છેલ્લા ૪૮ કલાક (Realtime Analytics) નો સ્ક્રીનશોટ જોડ્યો છે.
+
+કૃપા કરીને આ સ્ક્રીનશોટમાં ૪૮ કલાકમાં જે વિડીયો પર સૌથી વધુ વ્યૂઝ આવી રહ્યા છે તેનું વિશ્લેષણ કરીને મને આવા ૫ ચોક્કસ વિષયો (Topics) આપો:
+૧. જે વિષય પર વિડીયો બનાવવાથી RPM ₹૨૨૦ થી વધુ મળે (હાઈ રેવન્યુ કેટેગરી જેમ કે: સરકારી યોજના, ભરતી, કાયદાકીય ચુકાદા, પેન્શન, નાણાકીય સહાય).
+૨. વિષયનું શીર્ષક વાસ્તવિક, સ્પષ્ટ અને ગુજરાતીમાં હોવું જોઈએ (ક્લિકબેટ વિના).
+૩. દરેક વિષય માટે:
+   - વિડીયોનું ચોક્કસ ગુજરાતી શીર્ષક
+   - અંદાજિત ૪૮ કલાક સંભવિત વ્યુઝ
+   - સંભવિત RPM દર
+   - ૫ મુખ્ય મુદ્દાઓ જે વિડીયોમાં સમજાવવા જોઈએ.`;
+        } else {
+          return `તમે ગુજરાતી YouTube એલ્ગોરિધમ એક્સપર્ટ છો.
+મેં સાથે મારા YouTube Studio ના છેલ્લા ૪૮ કલાકના રિયલટાઇમ વ્યૂઝનો સ્ક્રીનશોટ જોડ્યો છે.
+
+આ સ્ક્રીનશોટના આધારે જે ટોપિક્સ હાલ સૌથી ઝડપથી વાયરલ થઈ રહ્યા છે તેવા ૧૦ સુપર-વાયરલ વિષયો આપો:
+૧. હાઈ CTR (Click-Through Rate) મેળવી શકે તેવા ૧૦ આકર્ષક ગુજરાતી ટાઇટલ.
+૨. દરેક ટાઇટલ સાથે થંબનેલ પર લખવાનો ૧ મુખ્ય કેચવર્ડ (દા.ત. ઐતિહાસિક ઓર્ડર, નવો પરિપત્ર, સીધા ખાતામાં).
+૩. ઝડપી વ્યુઝ લાવવા માટે પ્રથમ ૩૦ સેકન્ડનો હૂક આઈડિયા.`;
+        }
+      }
+
+      function getSubtopicResearchPrompt() {
+        return `તમે ગુજરાતી YouTube એજ્યુકેશનલ વિડીયો કન્સલ્ટન્ટ છો.
+મારો મુખ્ય વિષય છે: "${activeMainTopic}"
+
+મારે આ એક જ મુખ્ય વિષયના આધારે શ્રેણીબદ્ધ ૫ અલગ-અલગ સબ-ટોપિક્સ (અનુસંધાન વિષયો) બનાવવા છે જેથી દર્શકો એક પછી એક બધા વિડીયો જુએ.
+કૃપા કરીને આ વિષયના આધારે નીચે મુજબ ૫ વિશિષ્ટ વિષયો ગુજરાતીમાં આપો:
+
+૧. વિષય ૧ (મૂળ આદેશ / બેકગ્રાઉન્ડ): કાનૂની પૃષ્ઠભૂમિ, હાઇકોર્ટ ઓર્ડર અથવા સરકારી નોટિફિકેશન
+૨. વિષય ૨ (તુલના): જૂની સ્થિતિ vs નવી સ્થિતિ (માનદ વેતન vs લઘુતમ વેતન)
+૩. વિષય ૩ (ગણતરી): ચોક્કસ નાણાકીય ગણતરી અને ₹૨૪,૮૦૦ માસિક ફોર્મ્યુલા
+૪. વિષય ૪ (અમલીકરણ & એરિયર્સ): કઈ તારીખથી અમલ શરૂ થશે અને બાકી રકમ (Arrears) ની જોગવાઈ
+૫. વિષય ૫ (સચિવાલય પ્રક્રિયા): સત્તાવાર GR પરિપત્ર, ઓર્ડર PDF અને આગામી પગલાં
+
+દરેક વિષયનું આકર્ષક ગુજરાતી શીર્ષક અને ૧ મુખ્ય હાઈલાઈટ આપો.`;
+      }
+
+      function getSlideSearchPrompt(mode) {
+        if (mode === 'chatgpt') {
+          return `તમે સરકારી ભરતી, યોજના અને કાયદાકીય ચુકાદા વિષય પર ૧૦૮૦p શૈક્ષણિક વિડીયો માટે પ્રોફેશનલ સ્લાઇડ ડિઝાઇનર છો.
+વિષય: "${activeSlideTopic}"
+
+મારે આ વિષય પર ૯ શૈક્ષણિક સ્લાઇડ્સનું ૧૬:૯ પાવરપોઇન્ટ ડેક બનાવવું છે.
+ખાસ શરતો:
+૧. સ્લાઇડમાં કોઈ લાંબી સ્ક્રિપ્ટ કે બોલવાનું લખાણ રાખવું નથી (Strictly Zero Audio/Voice Scripts in slides).
+૨. દરેક સ્લાઇડ ૧૬:૯ Pure White બેકગ્રાઉન્ડ માટે યોગ્ય હોવી જોઈએ.
+૩. દરેક સ્લાઇડમાં:
+   - સ્લાઇડ ક્રમ અને કેટેગરી બેજ (દા.ત. 🏛️ સત્તાવાર GR પરિપત્ર)
+   - સ્પષ્ટ, આકર્ષક ગુજરાતી શીર્ષક (Title - મહત્તમ ૮ થી ૧૦ શબ્દો)
+   - ગૌણ શીર્ષક (Subtitle)
+   - માત્ર ૩ ટૂંકા, મુદ્દાસર બુલેટ પોઇન્ટ્સ (Bullets)
+   - ૧ વાસ્તવિક ફોટો સૂચન (વાસ્તવિક સ્થળ, ઓફિસ, સરકારી પરિપત્ર અથવા કોર્ટ - No 3D cartoon, no neon)
+
+કૃપા કરીને સ્લાઇડ ૧ થી ૯ ક્રમબદ્ધ ગુજરાતીમાં આપો.`;
+        } else {
+          return `સંદર્ભ વિષય: "${activeSlideTopic}"
+
+NotebookLM સ્ત્રોત દસ્તાવેજો (GR પરિપત્ર, કોર્ટ ચુકાદો, પ્રેસ નોટ) માંથી માત્ર અધિકૃત માહિતી તારવીને ૯ સ્લાઇડ્સ માટે મુખ્ય ફેક્ટ્સ અને બુલેટ્સ અલગ તારવો:
+- સ્લાઇડ ૧: ઐતિહાસિક પૃષ્ઠભૂમિ અને મૂળ વિવાદ
+- સ્લાઇડ ૨: કોર્ટ અથવા સરકારનો તાજો નિર્ણય
+- સ્લાઇડ ૩: નાણાકીય / પગાર / સહાય ગણતરી (જૂનું vs નવું)
+- સ્લાઇડ ૪: સચિવાલય GR પરિપત્ર અને નિયમો
+- સ્લાઇડ ૫: અમલીકરણ તારીખો અને એરિયર્સ જોગવાઈ
+- સ્લાઇડ ૬: જમીની સ્તર પર કામગીરી અને મહત્ત્વ
+- સ્લાઇડ ૭: લાભાર્થી પાત્રતા અને શરતો
+- સ્લાઇડ ૮: પોર્ટલ અને ડાઉનલોડ પ્રક્રિયા
+- સ્લાઇડ ૯: નિષ્કર્ષ અને સાવચેતી
+
+શરત: સ્લાઇડ કન્ટેન્ટમાં સ્ક્રિપ્ટ મિક્સ ના કરશો, ફક્ત સ્વચ્છ ગુજરાતી પોઇન્ટ્સ આપો.`;
+        }
+      }
+
+      // DOM Handles
+      const p1 = document.getElementById('phone1Chassis');
+      const p2 = document.getElementById('phone2Chassis');
+      const p3 = document.getElementById('phone3Chassis');
+      const p4 = document.getElementById('phone4Chassis');
+      const p5 = document.getElementById('phone5Chassis');
+      const p6 = document.getElementById('phone6Chassis');
+      const p7 = document.getElementById('phone7Chassis');
+      const p8 = document.getElementById('phone8Chassis');
+      const p9 = document.getElementById('phone9Chassis');
+
+      const navBtnS1 = document.getElementById('nav-btn-s1');
+      const navBtnS2 = document.getElementById('nav-btn-s2');
+      const navBtnS3 = document.getElementById('nav-btn-s3');
+      const navBtnS4 = document.getElementById('nav-btn-s4');
+      const navBtnS5 = document.getElementById('nav-btn-s5');
+      const navBtnS6 = document.getElementById('nav-btn-s6');
+      const navBtnS7 = document.getElementById('nav-btn-s7');
+      const navBtnS8 = document.getElementById('nav-btn-s8');
+      const navBtnS9 = document.getElementById('nav-btn-s9');
+      const navBtnAll = document.getElementById('nav-btn-all');
+
+      const sideBtnS1 = document.getElementById('side-btn-s1');
+      const sideBtnS2 = document.getElementById('side-btn-s2');
+      const sideBtnS3 = document.getElementById('side-btn-s3');
+      const sideBtnS4 = document.getElementById('side-btn-s4');
+      const sideBtnS5 = document.getElementById('side-btn-s5');
+      const sideBtnS6 = document.getElementById('side-btn-s6');
+      const sideBtnS7 = document.getElementById('side-btn-s7');
+      const sideBtnS8 = document.getElementById('side-btn-s8');
+      const sideBtnS9 = document.getElementById('side-btn-s9');
+      const sideBtnAll = document.getElementById('side-btn-all');
+
+      // Screen 4 State
+      let screen4ToneMode = 'anchor';
+      let currentScriptSlideIdx = 0;
+      const slideScripts = [
+        'નમસ્કાર મિત્રો, જ્ઞાન યાત્રામાં આપનું સ્વાગત છે. ગુજરાતની હજારો આંગણવાડી કાર્યકર અને તેડાગર બહેનો માટે ગુજરાત હાઇકોર્ટની ડિવિઝન બેંચે LPA 363/2025 હેઠળ એક ઐતિહાસિક આદેશ આપ્યો છે. કોર્ટે સ્પષ્ટ નિર્દેશ કર્યો છે કે બહેનોને લઘુતમ વેતન મુજબ સન્માનજનક પગાર મળવો જ જોઈએ.',
+        'કોર્ટના આ ચુકાદામાં સુપ્રીમ કોર્ટના અગાઉના આદેશોનો આધાર લઈને સ્પષ્ટ કરવામાં આવ્યું છે કે વર્ષોથી ચાલતી માનદ વેતન પ્રથા કાયમી કામગીરી સામે અયોગ્ય છે. કેન્દ્ર અને રાજ્ય સરકાર બંનેની સંયુક્ત જવાબદારી નક્કી કરીને સેવા સાતત્ય અને ગ્રેચ્યુઇટી અંગે પણ મહત્વનું અવલોકન કર્યું છે.',
+        'હવે વાત કરીએ નવા પગાર માળખાની ગણતરી વિશે. જૂના માનદ વેતન મુજબ કાર્યકર બહેનોને ₹૧૦,૦૦૦ મળતા હતા, જે લઘુતમ વેતન ધારા મુજબ વધીને માસિક ₹૨૪,૮૦૦ સુધી પહોંચી શકે છે. જ્યારે તેડાગર બહેનોના પગારમાં પણ ₹૫,૫૦૦ થી વધીને ₹૧૮,૦૦૦ સુધીનો મોટો ફાયદો થવાની શક્યતા છે.',
+        'આ ચુકાદા બાદ ગાંધીનગર સચિવાલય ખાતે મહિલા અને બાળ વિકાસ વિભાગ તેમજ નાણાં વિભાગમાં બજેટ જોગવાઈની પ્રક્રિયા તેજ બની છે. રાજ્યભરના ૫૩,૦૦૦ થી વધુ આંગણવાડી કેન્દ્રોને આવરી લેતો સત્તાવાર ઠરાવ એટલે કે GR ટૂંક સમયમાં બહાર પડી શકે છે.',
+        'સૌથી મહત્વનો પ્રશ્ન એ છે કે નવો પગાર ક્યારથી લાગુ થશે અને એરિયર્સનું શું? હાઇકોર્ટે રાજ્ય સરકારને અમલીકરણ માટે ચોક્કસ સમયમર્યાદા આપી છે. પિટિશન દાખલ કર્યા તારીખથી બાકી નીકળતી એરિયર્સની રકમ પણ સીધી બહેનોના બેંક ખાતામાં જમા કરવાની જોગવાઈ છે.',
+        'આંગણવાડી બહેનો માત્ર ભોજન કેન્દ્ર જ નથી ચલાવતી, પરંતુ પૂર્ણા યોજના, સગર્ભા બહેનોની આરોગ્ય નોંધણી, રસીકરણ અને સરકારના તમામ મહત્વના સર્વેમાં પાયાની ભૂમિકા નિભાવે છે. આ મહેનતને ધ્યાનમાં રાખીને જ કોર્ટે આ સન્માનજનક નિર્ણય સંભળાવ્યો છે.',
+        'હવે જોઈએ કે આ લાભ કોને મળશે? ગુજરાત સરકાર હેઠળ નોંધાયેલી તમામ કાયમી કાર્યકર અને તેડાગર બહેનો આ માટે પાત્ર ગણાશે. નિવૃત્ત થયેલી બહેનો માટે ગ્રેચ્યુઇટી લાભ અને ડિજિટલ પોર્ટલ પર સર્વિસ બુક વેરિફિકેશન જરૂરી રહેશે.',
+        'તમે ગુજરાત હાઇકોર્ટની સત્તાવાર વેબસાઇટ પર જઈને LPA 363/2025 ઓર્ડરની નકલ ડાઉનલોડ કરી શકો છો. ઉપરાંત WCD ગુજરાત પોર્ટલ અને જિલ્લા પંચાયત કચેરીએથી પણ સત્તાવાર પરિપત્રની માહિતી મેળવી શકાય છે.',
+        'અંતમાં એટલું જ કહીશું કે સોશિયલ મીડિયા પર ફરતા કોઈ પણ ફેક મેસેજ પર વિશ્વાસ ન કરશો. માત્ર સરકારનો સત્તાવાર GR પરિપત્ર જ માન્ય ગણાશે. આવી જ સચોટ અને વિશ્વસનીય માહિતી માટે ચેનલને સબ્સ્ક્રાઇબ કરવાનું ભૂલશો નહીં. ધન્યવાદ!'
+      ];
+
+      function showToastP4(msg) {
+        const el = document.getElementById('p4-toast');
+        document.getElementById('p4-toast-text').textContent = msg;
+        el.classList.add('show');
+        setTimeout(() => el.classList.remove('show'), 2000);
+      }
+
+      // Toasts
+      function showToastP1(msg) {
+        const el = document.getElementById('p1-toast');
+        document.getElementById('p1-toast-text').textContent = msg;
+        el.classList.add('show');
+        setTimeout(() => el.classList.remove('show'), 2000);
+      }
+
+      function showToastP2(msg) {
+        const el = document.getElementById('p2-toast');
+        document.getElementById('p2-toast-text').textContent = msg;
+        el.classList.add('show');
+        setTimeout(() => el.classList.remove('show'), 2000);
+      }
+
+      function showToastP3(msg) {
+        const el = document.getElementById('p3-toast');
+        document.getElementById('p3-toast-text').textContent = msg;
+        el.classList.add('show');
+        setTimeout(() => el.classList.remove('show'), 2000);
+      }
+
+      // Set View Mode
+      function setViewMode(mode) {
+        activeViewMode = mode;
+        [navBtnS1, navBtnS2, navBtnS3, navBtnS4, navBtnS5, navBtnS6, navBtnS7, navBtnS8, navBtnS9, navBtnAll].forEach(b => b.classList.remove('active'));
+        [sideBtnS1, sideBtnS2, sideBtnS3, sideBtnS4, sideBtnS5, sideBtnS6, sideBtnS7, sideBtnS8, sideBtnS9, sideBtnAll].forEach(b => b.classList.remove('active'));
+
+        p1.style.display = (mode === 's1' || mode === 'all') ? 'flex' : 'none';
+        p2.style.display = (mode === 's2' || mode === 'all') ? 'flex' : 'none';
+        p3.style.display = (mode === 's3' || mode === 'all') ? 'flex' : 'none';
+        p4.style.display = (mode === 's4' || mode === 'all') ? 'flex' : 'none';
+        p5.style.display = (mode === 's5' || mode === 'all') ? 'flex' : 'none';
+        p6.style.display = (mode === 's6' || mode === 'all') ? 'flex' : 'none';
+        p7.style.display = (mode === 's7' || mode === 'all') ? 'flex' : 'none';
+        p8.style.display = (mode === 's8' || mode === 'all') ? 'flex' : 'none';
+        p9.style.display = (mode === 's9' || mode === 'all') ? 'flex' : 'none';
+
+        if (mode === 's1') {
+          navBtnS1.classList.add('active');
+          sideBtnS1.classList.add('active');
+        } else if (mode === 's2') {
+          navBtnS2.classList.add('active');
+          sideBtnS2.classList.add('active');
+        } else if (mode === 's3') {
+          navBtnS3.classList.add('active');
+          sideBtnS3.classList.add('active');
+        } else if (mode === 's4') {
+          navBtnS4.classList.add('active');
+          sideBtnS4.classList.add('active');
+        } else if (mode === 's5') {
+          navBtnS5.classList.add('active');
+          sideBtnS5.classList.add('active');
+          renderScreen5();
+        } else if (mode === 's6') {
+          navBtnS6.classList.add('active');
+          sideBtnS6.classList.add('active');
+          renderScreen6();
+        } else if (mode === 's7') {
+          navBtnS7.classList.add('active');
+          sideBtnS7.classList.add('active');
+          renderScreen7();
+        } else if (mode === 's8') {
+          navBtnS8.classList.add('active');
+          sideBtnS8.classList.add('active');
+          renderScreen8();
+        } else if (mode === 's9') {
+          navBtnS9.classList.add('active');
+          sideBtnS9.classList.add('active');
+          renderScreen9();
+        } else {
+          navBtnAll.classList.add('active');
+          sideBtnAll.classList.add('active');
+          renderScreen5();
+          renderScreen6();
+          renderScreen7();
+          renderScreen8();
+          renderScreen9();
+        }
+      }
+
+      navBtnS1.addEventListener('click', () => setViewMode('s1'));
+      sideBtnS1.addEventListener('click', () => setViewMode('s1'));
+
+      navBtnS2.addEventListener('click', () => setViewMode('s2'));
+      sideBtnS2.addEventListener('click', () => setViewMode('s2'));
+
+      navBtnS3.addEventListener('click', () => setViewMode('s3'));
+      sideBtnS3.addEventListener('click', () => setViewMode('s3'));
+
+      navBtnS4.addEventListener('click', () => setViewMode('s4'));
+      sideBtnS4.addEventListener('click', () => setViewMode('s4'));
+
+      navBtnAll.addEventListener('click', () => setViewMode('all'));
+      sideBtnAll.addEventListener('click', () => setViewMode('all'));
+
+      document.getElementById('p3-next-to-s4').addEventListener('click', () => setViewMode('s4'));
+      document.getElementById('p4-btn-back-to-s3').addEventListener('click', () => setViewMode('s3'));
+
+      // Transitions
+      document.getElementById('p1-btn-goto-s2').addEventListener('click', () => setViewMode('s2'));
+      document.getElementById('p1-next-to-s2').addEventListener('click', () => setViewMode('s2'));
+
+      document.getElementById('p2-btn-back-to-s1').addEventListener('click', () => setViewMode('s1'));
+      document.getElementById('p2-btn-goto-s3').addEventListener('click', () => setViewMode('s3'));
+      document.getElementById('p2-next-to-s3').addEventListener('click', () => setViewMode('s3'));
+
+      document.getElementById('p3-btn-back-to-s2').addEventListener('click', () => setViewMode('s2'));
+
+      // Render Screen 1
+      function renderScreen1() {
+        document.getElementById('p1-prompt-text').value = get48hMasterPrompt(screen1PromptMode);
+      }
+
+      document.getElementById('p1-mode-earning').addEventListener('click', () => {
+        screen1PromptMode = 'earning';
+        document.getElementById('p1-mode-earning').classList.add('active');
+        document.getElementById('p1-mode-viral').classList.remove('active');
+        renderScreen1();
+      });
+
+      document.getElementById('p1-mode-viral').addEventListener('click', () => {
+        screen1PromptMode = 'viral';
+        document.getElementById('p1-mode-viral').classList.add('active');
+        document.getElementById('p1-mode-earning').classList.remove('active');
+        renderScreen1();
+      });
+
+      function copy48h() {
+        navigator.clipboard.writeText(get48hMasterPrompt(screen1PromptMode)).then(() => {
+          showToastP1('૪૮ કલાક પ્રોમ્પ્ટ કોપી થયો!');
+        }).catch(() => showToastP1('પ્રોમ્પ્ટ કોપી થયો!'));
+      }
+      document.getElementById('p1-btn-copy-prompt').addEventListener('click', copy48h);
+      document.getElementById('p1-btn-copy-main').addEventListener('click', copy48h);
+
+      document.getElementById('p1-btn-yt-studio').addEventListener('click', () => {
+        navigator.clipboard.writeText('https://studio.youtube.com');
+        showToastP1('YouTube Studio લિંક કોપી થઈ!');
+      });
+
+      document.getElementById('p1-btn-chatgpt').addEventListener('click', () => {
+        navigator.clipboard.writeText('https://chatgpt.com');
+        window.open('https://chatgpt.com', '_blank');
+        showToastP1('ChatGPT ઓપન થયું!');
+      });
+
+      document.querySelectorAll('#phone1Chassis .topic-item-card').forEach(c => {
+        c.addEventListener('click', () => {
+          const t = c.getAttribute('data-topic');
+          if (t) {
+            activeMainTopic = t;
+            document.getElementById('p2-input-topic').value = t;
+            subtopicsList = generate5Subtopics(t);
+            renderScreen2();
+            showToastP1('વિષય સબ-ટોપિક્સ સ્ક્રીનમાં મોકલાયો: ' + t.substring(0, 20) + '...');
+            setTimeout(() => setViewMode('s2'), 400);
+          }
+        });
+      });
+
+      // Render Screen 2 (5 Subtopics)
+      function renderScreen2() {
+        document.getElementById('p2-subtopic-prompt-text').value = getSubtopicResearchPrompt();
+        const listContainer = document.getElementById('p2-subtopics-list-container');
+        listContainer.innerHTML = '';
+
+        subtopicsList.forEach(sub => {
+          const card = document.createElement('div');
+          card.className = 'subtopic-card-item';
+          card.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:0.6rem; font-weight:800; background:#ede9fe; color:#6d28d9; padding:1px 5px; border-radius:3px; border:1px solid #ddd6fe;">
+                ${sub.badge}
+              </span>
+              <span style="font-size:0.6rem; font-weight:800; color:#94a3b8;">વિષય ${sub.step} / ૫</span>
+            </div>
+            <div style="font-size:0.72rem; font-weight:800; color:#0f172a; line-height:1.3;">${sub.title}</div>
+            <div style="font-size:0.58rem; color:#64748b;">🎯 ફોકસ: ${sub.focus}</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #f1f5f9; padding-top:4px; margin-top:2px;">
+              <button class="btn-sub-copy" style="background:#fff; border:1px solid #cbd5e1; font-size:0.62rem; padding:2px 6px; border-radius:4px; cursor:pointer;">
+                📋 કોપી
+              </button>
+              <button class="btn-sub-to-slide" style="background:#10b981; color:#fff; border:none; font-size:0.64rem; font-weight:800; padding:3px 8px; border-radius:4px; cursor:pointer;">
+                આના પર સ્લાઇડ્સ બનાવો →
+              </button>
+            </div>
+          `;
+
+          // Copy button on card
+          card.querySelector('.btn-sub-copy').addEventListener('click', () => {
+            navigator.clipboard.writeText(sub.title);
+            showToastP2('સબ-ટોપિક કોપી થયો!');
+          });
+
+          // Go to Slide Screen with this sub-topic
+          card.querySelector('.btn-sub-to-slide').addEventListener('click', () => {
+            activeSlideTopic = sub.title;
+            document.getElementById('p3-active-topic-title').textContent = sub.title;
+            document.getElementById('dt-topic-info-box').textContent = sub.title;
+            slides[0].title = sub.title;
+            renderScreen3();
+            renderScreen4();
+            showToastP2('સ્લાઇડ્સ સ્ક્રીન પર મોકલાયો!');
+            setTimeout(() => setViewMode('s3'), 300);
+          });
+
+          listContainer.appendChild(card);
+        });
+      }
+
+      document.getElementById('p2-btn-generate-subtopics').addEventListener('click', () => {
+        const val = document.getElementById('p2-input-topic').value.trim();
+        if (val) {
+          activeMainTopic = val;
+          subtopicsList = generate5Subtopics(val);
+          renderScreen2();
+          showToastP2('૫ નવા સબ-ટોપિક્સ જનરેટ થયા!');
+        }
+      });
+
+      document.getElementById('p2-btn-copy-sub-prompt').addEventListener('click', () => {
+        navigator.clipboard.writeText(getSubtopicResearchPrompt());
+        showToastP2('૫ વિષયો રિસર્ચ પ્રોમ્પ્ટ કોપી થયો!');
+      });
+
+      document.getElementById('p2-btn-open-chatgpt-s2').addEventListener('click', () => {
+        navigator.clipboard.writeText(getSubtopicResearchPrompt());
+        window.open('https://chatgpt.com', '_blank');
+        showToastP2('ChatGPT ઓપન થયું અને પ્રોમ્પ્ટ કોપી થયો!');
+      });
+
+      // Render Screen 3 (16:9 Slides)
+      function renderSlidePills() {
+        const c = document.getElementById('p3-slide-pills');
+        c.innerHTML = '';
+        slides.forEach((s, idx) => {
+          const pill = document.createElement('div');
+          pill.className = 'slide-pill-step' + (idx === currentSlideIdx ? ' active' : '');
+          pill.textContent = idx + 1;
+          pill.addEventListener('click', () => {
+            currentSlideIdx = idx;
+            renderScreen3();
+          });
+          c.appendChild(pill);
+        });
+      }
+
+      function renderScreen3() {
+        const cur = slides[currentSlideIdx];
+        document.getElementById('p3-slide-badge').textContent = cur.badge;
+        document.getElementById('p3-slide-counter').textContent = `SLIDE ${currentSlideIdx + 1} OF ${slides.length}`;
+        document.getElementById('p3-slide-title').textContent = cur.title;
+        document.getElementById('p3-slide-sub').textContent = cur.subtitle;
+        document.getElementById('p3-slide-photo-icon').textContent = cur.photoIcon;
+        document.getElementById('p3-slide-photo-caption').textContent = cur.photoCaption;
+        document.getElementById('p3-slide-indicator').textContent = `${currentSlideIdx + 1} / ${slides.length}`;
+
+        const ul = document.getElementById('p3-slide-bullets');
+        ul.innerHTML = '';
+        cur.bullets.forEach(b => {
+          const li = document.createElement('li');
+          li.textContent = b;
+          ul.appendChild(li);
+        });
+
+        document.getElementById('p3-slide-prompt-text').value = getSlideSearchPrompt(screen3PromptMode);
+        renderSlidePills();
+      }
+
+      document.getElementById('p3-btn-prev').addEventListener('click', () => {
+        if (currentSlideIdx > 0) {
+          currentSlideIdx--;
+          renderScreen3();
+        }
+      });
+
+      document.getElementById('p3-btn-next').addEventListener('click', () => {
+        if (currentSlideIdx < slides.length - 1) {
+          currentSlideIdx++;
+          renderScreen3();
+        }
+      });
+
+      document.querySelectorAll('#p3-presets-chips .preset-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#p3-presets-chips .preset-chip').forEach(c => c.classList.remove('active'));
+          btn.classList.add('active');
+          const pKey = btn.getAttribute('data-preset');
+          const preset = photoPresets[pKey];
+          if (preset) {
+            slides[currentSlideIdx].photoIcon = preset.icon;
+            slides[currentSlideIdx].photoCaption = preset.caption;
+            renderScreen3();
+            showToastP3('ફોટો બદલાયો: ' + preset.caption);
+          }
+        });
+      });
+
+      document.getElementById('p3-mode-chatgpt').addEventListener('click', () => {
+        screen3PromptMode = 'chatgpt';
+        document.getElementById('p3-mode-chatgpt').classList.add('active');
+        document.getElementById('p3-mode-notebooklm').classList.remove('active');
+        renderScreen3();
+      });
+
+      document.getElementById('p3-mode-notebooklm').addEventListener('click', () => {
+        screen3PromptMode = 'notebooklm';
+        document.getElementById('p3-mode-notebooklm').classList.add('active');
+        document.getElementById('p3-mode-chatgpt').classList.remove('active');
+        renderScreen3();
+      });
+
+      function copySlidePrompt() {
+        navigator.clipboard.writeText(getSlideSearchPrompt(screen3PromptMode)).then(() => {
+          showToastP3('સ્લાઇડ પ્રોમ્પ્ટ કોપી થયો!');
+        }).catch(() => showToastP3('પ્રોમ્પ્ટ કોપી થયો!'));
+      }
+      document.getElementById('p3-btn-copy-slide-prompt').addEventListener('click', copySlidePrompt);
+
+      document.getElementById('p3-btn-paste-content').addEventListener('click', () => {
+        const pasted = prompt('ChatGPT અથવા NotebookLM માંથી આવેલી સ્લાઇડ્સ પેસ્ટ કરો:');
+        if (pasted && pasted.trim()) {
+          slides[currentSlideIdx].title = pasted.trim().split('\n')[0].replace(/^[-•*#\d.]*\s*/, '');
+          renderScreen3();
+          showToastP3('સ્લાઇડ અપડેટ થઈ!');
+        }
+      });
+
+      // DIRECT OPEN CHATGPT & NOTEBOOKLM BUTTONS (As requested!)
+      document.getElementById('p3-btn-direct-chatgpt').addEventListener('click', () => {
+        copySlidePrompt();
+        window.open('https://chatgpt.com', '_blank');
+        showToastP3('⚡ ChatGPT ખૂલ્યું & સ્લાઇડ પ્રોમ્પ્ટ કોપી થયો!');
+      });
+
+      document.getElementById('p3-btn-direct-notebooklm').addEventListener('click', () => {
+        copySlidePrompt();
+        window.open('https://notebooklm.google.com', '_blank');
+        showToastP3('📓 NotebookLM ખૂલ્યું & સ્લાઇડ પ્રોમ્પ્ટ કોપી થયો!');
+      });
+
+      document.getElementById('side-btn-open-chatgpt').addEventListener('click', () => {
+        copySlidePrompt();
+        window.open('https://chatgpt.com', '_blank');
+        showToastP3('⚡ ChatGPT ઓપન થયું!');
+      });
+
+      document.getElementById('side-btn-open-notebooklm').addEventListener('click', () => {
+        copySlidePrompt();
+        window.open('https://notebooklm.google.com', '_blank');
+        showToastP3('📓 NotebookLM ઓપન થયું!');
+      });
+
+      // WhatsApp Share
+      document.getElementById('btn-dt-whatsapp-share').addEventListener('click', () => {
+        const text = encodeURIComponent(`*${activeSlideTopic}*\n\nSlide Master Prompt:\n${getSlideSearchPrompt(screen3PromptMode)}`);
+        window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+      });
+
+      // =========================================================
+      // SCREEN 4: SCRIPT WRITER ENGINE
+      // =========================================================
+      function getScriptMasterPrompt() {
+        const toneDesc = screen4ToneMode === 'anchor'
+          ? 'ગંભીર, સચોટ અને વિશ્વસનીય ગુજરાતી ન્યૂઝ એન્કર સ્ટાઇલ'
+          : 'સરળ, મિત્રતાપૂર્ણ અને ગ્રામીણ દર્શકોને તરત સમજાય તેવી ગુજરાતી ભાષા';
+        const slideLines = slides.map((s, idx) => `[સ્લાઇડ ${idx + 1}] ${s.title}`).join('\n');
+        return `તમે ગુજરાતી YouTube એજ્યુકેશનલ ચેનલ "જ્ઞાન યાત્રા" ના સિનિયર સ્ક્રિપ્ટ રાઇટર છો.\nવિષય: "${activeSlideTopic}"\nસ્ટાઇલ / ટોન: ${toneDesc}\n\nનીચે આપેલી ${slides.length} સ્લાઇડ્સ મુજબ સ્લાઇડ-બાય-સ્લાઇડ ગુજરાતી વોઇસઓવર સ્ક્રિપ્ટ લખો:\n${slideLines}\n\nખાસ નિયમો:\n૧. દરેક સ્લાઇડ માટે [સ્લાઇડ ૧], [સ્લાઇડ ૨]... હેડિંગ આપીને માત્ર બોલવાનું લખાણ આપો.\n૨. દરેક સ્લાઇડની સ્ક્રિપ્ટ ૪૦ થી ૬૦ શબ્દોની રાખો.`;
+      }
+
+      function renderScreen4() {
+        document.getElementById('p4-active-topic-title').textContent = activeSlideTopic;
+        document.getElementById('p4-script-prompt-text').value = getScriptMasterPrompt();
+
+        const pillsEl = document.getElementById('p4-slide-pills');
+        pillsEl.innerHTML = '';
+        slides.forEach((s, idx) => {
+          const pill = document.createElement('div');
+          pill.className = 'slide-pill-step' + (idx === currentScriptSlideIdx ? ' active' : '');
+          pill.textContent = idx + 1;
+          pill.style.background = idx === currentScriptSlideIdx ? '#2563eb' : '#ffffff';
+          pill.style.borderColor = idx === currentScriptSlideIdx ? '#2563eb' : '#cbd5e1';
+          pill.addEventListener('click', () => {
+            currentScriptSlideIdx = idx;
+            renderScreen4();
+          });
+          pillsEl.appendChild(pill);
+        });
+
+        const curText = slideScripts[currentScriptSlideIdx] || '';
+        document.getElementById('p4-cur-slide-title').textContent =
+          `📌 સ્લાઇડ ${currentScriptSlideIdx + 1}: ${slides[currentScriptSlideIdx].title}`;
+        document.getElementById('p4-slide-script-editor').value = curText;
+
+        const words = curText.trim().split(/\s+/).filter(Boolean).length;
+        const secs = Math.max(5, Math.round(words * 0.45));
+        document.getElementById('p4-word-stats').textContent = `~${secs} સેકન્ડ • ${words} શબ્દો`;
+      }
+
+      document.getElementById('p4-tone-anchor').addEventListener('click', () => {
+        screen4ToneMode = 'anchor';
+        document.getElementById('p4-tone-anchor').classList.add('active');
+        document.getElementById('p4-tone-friendly').classList.remove('active');
+        renderScreen4();
+      });
+
+      document.getElementById('p4-tone-friendly').addEventListener('click', () => {
+        screen4ToneMode = 'friendly';
+        document.getElementById('p4-tone-friendly').classList.add('active');
+        document.getElementById('p4-tone-anchor').classList.remove('active');
+        renderScreen4();
+      });
+
+      document.getElementById('p4-slide-script-editor').addEventListener('input', (e) => {
+        slideScripts[currentScriptSlideIdx] = e.target.value;
+        const words = e.target.value.trim().split(/\s+/).filter(Boolean).length;
+        const secs = Math.max(5, Math.round(words * 0.45));
+        document.getElementById('p4-word-stats').textContent = `~${secs} સેકન્ડ • ${words} શબ્દો`;
+      });
+
+      function copyScriptPrompt4() {
+        navigator.clipboard.writeText(getScriptMasterPrompt()).then(() => {
+          showToastP4('સ્ક્રિપ્ટ માસ્ટર પ્રોમ્પ્ટ કોપી થયો!');
+        }).catch(() => showToastP4('પ્રોમ્પ્ટ કોપી થયો!'));
+      }
+      document.getElementById('p4-btn-copy-prompt').addEventListener('click', copyScriptPrompt4);
+
+      document.getElementById('p4-btn-open-chatgpt').addEventListener('click', () => {
+        copyScriptPrompt4();
+        window.open('https://chatgpt.com', '_blank');
+        showToastP4('⚡ ChatGPT ખૂલ્યું & સ્ક્રિપ્ટ પ્રોમ્પ્ટ કોપી થયો!');
+      });
+
+      document.getElementById('p4-btn-paste-script').addEventListener('click', () => {
+        const raw = prompt('ChatGPT માંથી આવેલી [સ્લાઇડ ૧] થી [સ્લાઇડ ૯] સ્ક્રિપ્ટ અહીં પેસ્ટ કરો:');
+        if (raw && raw.trim()) {
+          const parts = raw.split(/\[(?:સ્લાઇડ|Slide)\s*\d+[^\]]*\]/i).map(p => p.trim()).filter(Boolean);
+          if (parts.length > 1) {
+            for (let i = 0; i < slideScripts.length && i < parts.length; i++) {
+              slideScripts[i] = parts[i];
+            }
+          } else {
+            slideScripts[currentScriptSlideIdx] = raw.trim();
+          }
+          renderScreen4();
+          showToastP4('સ્ક્રિપ્ટ સફળતાપૂર્વક અપડેટ થઈ!');
+        }
+      });
+
+      document.getElementById('p4-btn-copy-one').addEventListener('click', () => {
+        navigator.clipboard.writeText(slideScripts[currentScriptSlideIdx] || '');
+        showToastP4(`સ્લાઇડ ${currentScriptSlideIdx + 1} ની સ્ક્રિપ્ટ કોપી થઈ!`);
+      });
+
+      function copyFullScript4() {
+        const full = slides.map((s, i) => `[સ્લાઇડ ${i + 1}: ${s.title}]\n${slideScripts[i] || ''}`).join('\n\n');
+        navigator.clipboard.writeText(full);
+        showToastP4('બધી ૯ સ્લાઇડ્સની સંપૂર્ણ સ્ક્રિપ્ટ કોપી થઈ!');
+      }
+      document.getElementById('p4-btn-copy-all').addEventListener('click', copyFullScript4);
+      document.getElementById('p4-btn-copy-full-header').addEventListener('click', copyFullScript4);
+
+      // =========================================================
+      // SCREEN 5: VOICE RECORD STUDIO ENGINE (EXACT WEB FUNCTIONS)
+      // =========================================================
+      let currentVoiceSlideIdx = 0;
+      let p5SelectedPreset = 'anchor';
+      const voiceTakes = slides.map(() => ({ recorded: false, seconds: 0, url: null, enhanced: false }));
+
+      let p5MediaRecorder = null;
+      let p5AudioChunks = [];
+      let p5RecTimer = null;
+      let p5RecSeconds = 0;
+      let p5IsRecording = false;
+      let p5IsPaused = false;
+      let p5VuInterval = null;
+
+      function showToastP5(msg) {
+        const el = document.getElementById('p5-toast');
+        document.getElementById('p5-toast-text').textContent = msg;
+        el.classList.add('show');
+        setTimeout(() => el.classList.remove('show'), 2200);
+      }
+
+      function formatTimer5(sec) {
+        const m = String(Math.floor(sec / 60)).padStart(2, '0');
+        const s = String(sec % 60).padStart(2, '0');
+        return `${m}:${s}`;
+      }
+
+      function renderScreen5() {
+        const pillsEl = document.getElementById('p5-slide-pills');
+        pillsEl.innerHTML = '';
+        let recCount = 0;
+        slides.forEach((s, idx) => {
+          const take = voiceTakes[idx];
+          if (take.recorded) recCount++;
+          const pill = document.createElement('div');
+          pill.className = 'slide-pill-step' + (idx === currentVoiceSlideIdx ? ' active' : '');
+          pill.textContent = (take.recorded ? '✓' : '') + (idx + 1);
+          if (idx === currentVoiceSlideIdx) {
+            pill.style.background = '#7c3aed';
+            pill.style.borderColor = '#7c3aed';
+            pill.style.color = '#fff';
+          } else if (take.recorded) {
+            pill.style.background = '#ecfdf5';
+            pill.style.borderColor = '#10b981';
+            pill.style.color = '#059669';
+          }
+          pill.addEventListener('click', () => {
+            if (p5IsRecording) return;
+            currentVoiceSlideIdx = idx;
+            renderScreen5();
+          });
+          pillsEl.appendChild(pill);
+        });
+
+        document.getElementById('p5-recorded-badge').textContent = `${recCount} / ${slides.length} રેકોર્ડ`;
+
+        const curSlide = slides[currentVoiceSlideIdx];
+        const curTake = voiceTakes[currentVoiceSlideIdx];
+        document.getElementById('p5-cur-slide-title').textContent = `📌 સ્લાઇડ ${currentVoiceSlideIdx + 1}: ${curSlide.title}`;
+        document.getElementById('p5-mini-slide-badge').textContent = curSlide.badge;
+        document.getElementById('p5-mini-slide-sub').textContent = curSlide.subtitle;
+        document.getElementById('p5-mini-slide-icon').textContent = curSlide.photoIcon;
+        document.getElementById('p5-teleprompter-script').textContent = slideScripts[currentVoiceSlideIdx] || '';
+
+        const savedBadge = document.getElementById('p5-slide-saved-badge');
+        const playbackRow = document.getElementById('p5-playback-row');
+        const player = document.getElementById('p5-audio-player');
+        if (curTake.recorded) {
+          savedBadge.style.display = 'inline-block';
+          savedBadge.textContent = `✓ ${curTake.seconds}s સેવ${curTake.enhanced ? ' + ✨' : ''}`;
+          document.getElementById('p5-rec-timer').textContent = formatTimer5(curTake.seconds);
+          if (curTake.url) {
+            playbackRow.style.display = 'flex';
+            if (player.src !== curTake.url) player.src = curTake.url;
+          } else {
+            playbackRow.style.display = 'none';
+          }
+        } else {
+          savedBadge.style.display = 'none';
+          if (!p5IsRecording) document.getElementById('p5-rec-timer').textContent = '00:00';
+          playbackRow.style.display = 'none';
+        }
+      }
+
+      function updateRecUI() {
+        const btnRec = document.getElementById('p5-btn-record');
+        const btnPause = document.getElementById('p5-btn-pause');
+        const btnStop = document.getElementById('p5-btn-stop');
+        const status = document.getElementById('p5-rec-status');
+        const box = document.getElementById('p5-recorder-box');
+
+        if (p5IsRecording) {
+          btnRec.style.display = 'none';
+          btnPause.style.display = 'block';
+          btnStop.style.display = 'block';
+          btnPause.textContent = p5IsPaused ? '▶️ ફરી શરૂ' : '⏸️ થોભો';
+          status.textContent = p5IsPaused ? '⏸️ PAUSED' : '🔴 RECORDING LIVE...';
+          status.style.color = p5IsPaused ? '#fbbf24' : '#f87171';
+          box.style.borderColor = '#ef4444';
+        } else {
+          btnRec.style.display = 'block';
+          btnPause.style.display = 'none';
+          btnStop.style.display = 'none';
+          status.textContent = '🎙️ LIVE VOICE RECORDER';
+          status.style.color = '#38bdf8';
+          box.style.borderColor = '#7c3aed';
+          document.getElementById('p5-vu-bar').style.width = '0%';
+        }
+      }
+
+      document.getElementById('p5-btn-record').addEventListener('click', async () => {
+        p5IsRecording = true;
+        p5IsPaused = false;
+        p5RecSeconds = 0;
+        p5AudioChunks = [];
+        document.getElementById('p5-rec-timer').textContent = '00:00';
+        updateRecUI();
+
+        try {
+          if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            p5MediaRecorder = new MediaRecorder(stream);
+            p5MediaRecorder.ondataavailable = (e) => {
+              if (e.data && e.data.size > 0) p5AudioChunks.push(e.data);
+            };
+            p5MediaRecorder.onstop = () => {
+              stream.getTracks().forEach(t => t.stop());
+              const blob = new Blob(p5AudioChunks, { type: 'audio/webm' });
+              const url = URL.createObjectURL(blob);
+              voiceTakes[currentVoiceSlideIdx] = {
+                recorded: true,
+                seconds: Math.max(1, p5RecSeconds),
+                url,
+                enhanced: false
+              };
+              renderScreen5();
+            };
+            p5MediaRecorder.start();
+          }
+        } catch (_) {
+          // Fallback timer simulation if browser mic permission isn't granted
+        }
+
+        clearInterval(p5RecTimer);
+        p5RecTimer = setInterval(() => {
+          if (p5IsRecording && !p5IsPaused) {
+            p5RecSeconds++;
+            document.getElementById('p5-rec-timer').textContent = formatTimer5(p5RecSeconds);
+          }
+        }, 1000);
+
+        clearInterval(p5VuInterval);
+        p5VuInterval = setInterval(() => {
+          if (p5IsRecording && !p5IsPaused) {
+            const lvl = 25 + Math.floor(Math.random() * 65);
+            document.getElementById('p5-vu-bar').style.width = `${lvl}%`;
+          } else {
+            document.getElementById('p5-vu-bar').style.width = '0%';
+          }
+        }, 120);
+      });
+
+      document.getElementById('p5-btn-pause').addEventListener('click', () => {
+        if (!p5IsRecording) return;
+        p5IsPaused = !p5IsPaused;
+        if (p5MediaRecorder && p5MediaRecorder.state !== 'inactive') {
+          if (p5IsPaused && p5MediaRecorder.state === 'recording') p5MediaRecorder.pause();
+          else if (!p5IsPaused && p5MediaRecorder.state === 'paused') p5MediaRecorder.resume();
+        }
+        updateRecUI();
+      });
+
+      document.getElementById('p5-btn-stop').addEventListener('click', () => {
+        if (!p5IsRecording) return;
+        clearInterval(p5RecTimer);
+        clearInterval(p5VuInterval);
+        p5IsRecording = false;
+        p5IsPaused = false;
+        if (p5MediaRecorder && p5MediaRecorder.state !== 'inactive') {
+          p5MediaRecorder.stop();
+        } else {
+          voiceTakes[currentVoiceSlideIdx] = {
+            recorded: true,
+            seconds: Math.max(1, p5RecSeconds),
+            url: null,
+            enhanced: false
+          };
+          renderScreen5();
+        }
+        updateRecUI();
+        showToastP5(`સ્લાઇડ ${currentVoiceSlideIdx + 1} નો અવાજ સેવ થયો!`);
+      });
+
+      document.getElementById('p5-btn-retake').addEventListener('click', () => {
+        clearInterval(p5RecTimer);
+        clearInterval(p5VuInterval);
+        p5IsRecording = false;
+        p5IsPaused = false;
+        if (p5MediaRecorder && p5MediaRecorder.state !== 'inactive') {
+          try { p5MediaRecorder.stop(); } catch (_) {}
+        }
+        voiceTakes[currentVoiceSlideIdx] = { recorded: false, seconds: 0, url: null, enhanced: false };
+        updateRecUI();
+        renderScreen5();
+        showToastP5('ફરી રેકોર્ડ કરવા તૈયાર!');
+      });
+
+      document.querySelectorAll('#p5-enhancer-presets .preset-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#p5-enhancer-presets .preset-chip').forEach(c => c.classList.remove('active'));
+          btn.classList.add('active');
+          p5SelectedPreset = btn.getAttribute('data-preset') || 'anchor';
+        });
+      });
+
+      document.getElementById('p5-btn-enhance-save').addEventListener('click', () => {
+        if (!voiceTakes[currentVoiceSlideIdx].recorded) {
+          showToastP5('પહેલાં અવાજ રેકોર્ડ કરો!');
+          return;
+        }
+        voiceTakes[currentVoiceSlideIdx].enhanced = true;
+        renderScreen5();
+        showToastP5('✨ અવાજ એન્હાન્સ & સેવ થયો!');
+      });
+
+      navBtnS5.addEventListener('click', () => setViewMode('s5'));
+      sideBtnS5.addEventListener('click', () => setViewMode('s5'));
+      document.getElementById('p4-next-to-s5').addEventListener('click', () => setViewMode('s5'));
+      document.getElementById('p5-btn-back-to-s4').addEventListener('click', () => setViewMode('s4'));
+
+      // =========================================================
+      // SCREEN 6: AUDIO EDITING STUDIO (EXACT WEB DAW TOOLS)
+      // =========================================================
+      let p6SlideIdx = 0;
+      let p6Zoom = 1.0;
+
+      function showToastP6(msg) {
+        const el = document.getElementById('p6-toast');
+        document.getElementById('p6-toast-text').textContent = msg;
+        el.classList.add('show');
+        setTimeout(() => el.classList.remove('show'), 2200);
+      }
+
+      function renderScreen6() {
+        const pills = document.getElementById('p6-slide-pills');
+        pills.innerHTML = '';
+        slides.forEach((s, idx) => {
+          const pill = document.createElement('div');
+          pill.className = 'slide-pill-step' + (idx === p6SlideIdx ? ' active' : '');
+          pill.textContent = idx + 1;
+          if (idx === p6SlideIdx) {
+            pill.style.background = '#7c3aed';
+            pill.style.borderColor = '#7c3aed';
+            pill.style.color = '#fff';
+          }
+          pill.addEventListener('click', () => {
+            p6SlideIdx = idx;
+            renderScreen6();
+          });
+          pills.appendChild(pill);
+        });
+      }
+
+      document.querySelectorAll('#p6-tool-tabs .preset-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#p6-tool-tabs .preset-chip').forEach(c => c.classList.remove('active'));
+          btn.classList.add('active');
+          const tab = btn.getAttribute('data-tab');
+          ['enhancer', 'editor', 'bgm', 'quality', 'export'].forEach(t => {
+            document.getElementById('p6-panel-' + t).style.display = (t === tab) ? 'flex' : 'none';
+          });
+        });
+      });
+
+      document.querySelectorAll('#p6-enhancer-presets .preset-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#p6-enhancer-presets .preset-chip').forEach(c => c.classList.remove('active'));
+          btn.classList.add('active');
+        });
+      });
+
+      document.getElementById('p6-btn-apply-dsp').addEventListener('click', () => {
+        showToastP6(`✨ સ્લાઇડ ${p6SlideIdx + 1} પર DSP એન્હાન્સમેન્ટ લાગુ થયું!`);
+      });
+
+      document.querySelectorAll('.p6-ed-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          showToastP6(`${btn.getAttribute('data-act')} લાગુ થયું!`);
+        });
+      });
+
+      document.getElementById('p6-btn-zoom-in').addEventListener('click', () => {
+        p6Zoom = Math.min(4.0, p6Zoom + 0.5);
+        document.getElementById('p6-zoom-label').textContent = `Zoom: ${p6Zoom.toFixed(1)}x`;
+      });
+
+      document.getElementById('p6-btn-zoom-out').addEventListener('click', () => {
+        p6Zoom = Math.max(1.0, p6Zoom - 0.5);
+        document.getElementById('p6-zoom-label').textContent = `Zoom: ${p6Zoom.toFixed(1)}x`;
+      });
+
+      document.getElementById('p6-voice-vol').addEventListener('input', (e) => {
+        document.getElementById('p6-voice-vol-val').textContent = e.target.value + '%';
+      });
+      document.getElementById('p6-bgm-vol').addEventListener('input', (e) => {
+        document.getElementById('p6-bgm-vol-val').textContent = e.target.value + '%';
+      });
+
+      document.getElementById('p6-btn-audit').addEventListener('click', () => {
+        showToastP6('📊 ઓડિયો ક્વોલિટી ઓડિટ ૧૦૦% પાસ થયું!');
+      });
+
+      document.querySelectorAll('.p6-exp-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          showToastP6(`💾 ${btn.getAttribute('data-fmt')} એક્સપોર્ટ & સેવ થયું!`);
+        });
+      });
+
+      navBtnS6.addEventListener('click', () => setViewMode('s6'));
+      sideBtnS6.addEventListener('click', () => setViewMode('s6'));
+      document.getElementById('p5-next-to-s6').addEventListener('click', () => setViewMode('s6'));
+      document.getElementById('p6-btn-back-to-s5').addEventListener('click', () => setViewMode('s5'));
+
+      // =========================================================
+      // SCREEN 7: FINAL VIDEO RENDER, SAVE & SHARE
+      // =========================================================
+      let p7PlayInterval = null;
+      let p7IsPlaying = false;
+      let p7SlidePreviewIdx = 0;
+
+      function showToastP7(msg) {
+        const el = document.getElementById('p7-toast');
+        document.getElementById('p7-toast-text').textContent = msg;
+        el.classList.add('show');
+        setTimeout(() => el.classList.remove('show'), 2200);
+      }
+
+      function renderScreen7() {
+        document.getElementById('p7-active-topic-title').textContent = activeSlideTopic;
+        document.getElementById('p7-slide-num').textContent = `SLIDE ${p7SlidePreviewIdx + 1} / ${slides.length}`;
+        document.getElementById('p7-player-title').textContent = slides[p7SlidePreviewIdx].title;
+      }
+
+      document.getElementById('p7-btn-play').addEventListener('click', () => {
+        if (p7IsPlaying) {
+          clearInterval(p7PlayInterval);
+          p7IsPlaying = false;
+          document.getElementById('p7-btn-play').textContent = '▶️';
+        } else {
+          p7IsPlaying = true;
+          document.getElementById('p7-btn-play').textContent = '⏸️';
+          p7PlayInterval = setInterval(() => {
+            p7SlidePreviewIdx = (p7SlidePreviewIdx + 1) % slides.length;
+            renderScreen7();
+          }, 1800);
+        }
+      });
+
+      document.getElementById('p7-btn-render').addEventListener('click', () => {
+        const wrap = document.getElementById('p7-progress-wrap');
+        const bar = document.getElementById('p7-progress-bar');
+        const txt = document.getElementById('p7-progress-txt');
+        const badge = document.getElementById('p7-ready-badge');
+        wrap.style.display = 'block';
+        badge.textContent = '⏳ RENDERING...';
+        let pct = 0;
+        const t = setInterval(() => {
+          pct += 12;
+          if (pct >= 100) {
+            pct = 100;
+            clearInterval(t);
+            bar.style.width = '100%';
+            txt.textContent = '🎉 ૧૦૮૦p વિડીયો ૧૦૦% તૈયાર!';
+            badge.textContent = '✓ 1080p HD READY';
+            showToastP7('🎉 ૧૦૮૦p Full HD વિડીયો તૈયાર થઈ ગયો!');
+          } else {
+            bar.style.width = pct + '%';
+            txt.textContent = `વિડીયો બની રહ્યો છે... ${pct}%`;
+          }
+        }, 140);
+      });
+
+      document.getElementById('p7-btn-save-mp4').addEventListener('click', () => {
+        showToastP7('💾 1080p MP4 વિડીયો સેવ થયો! (/preview માં ઉપલબ્ધ)');
+      });
+
+      document.getElementById('p7-btn-share-wa').addEventListener('click', () => {
+        const shareUrl = `${window.location.origin}/preview`;
+        const text = encodeURIComponent(`🎬 *${activeSlideTopic}*\n\nજુઓ સંપૂર્ણ 1080p વિડીયો:\n${shareUrl}`);
+        window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+        showToastP7('💬 WhatsApp શેર ખૂલ્યું!');
+      });
+
+      document.getElementById('p7-btn-copy-link').addEventListener('click', () => {
+        const shareUrl = `${window.location.origin}/preview`;
+        navigator.clipboard.writeText(shareUrl);
+        showToastP7('🔗 વિડીયો લિંક કોપી થઈ!');
+      });
+
+      navBtnS7.addEventListener('click', () => setViewMode('s7'));
+      sideBtnS7.addEventListener('click', () => setViewMode('s7'));
+      document.getElementById('p6-next-to-s7').addEventListener('click', () => setViewMode('s7'));
+      document.getElementById('p7-btn-back-to-s6').addEventListener('click', () => setViewMode('s6'));
+
+      // =========================================================
+      // SCREEN 8: DEDICATED THUMBNAIL STUDIO
+      // =========================================================
+      const thumbPresets = [
+        { icon: '🏛️', sub: 'ગુજરાત હાઇકોર્ટ સોલા', badge: 'સત્તાવાર ચુકાદો', catchWords: 'પગાર ₹૨૪,૮૦૦! હાઇકોર્ટનો ઐતિહાસિક આદેશ', prompt: 'A minimalist 16:9 YouTube thumbnail. Pure solid white background (#FFFFFF). On the left: ONE real authentic photograph of Gujarat High Court / female Anganwadi officer. On the right: 4 bold words in navy blue: "HIGH COURT ORDER ₹24,800". Photorealistic, NO 3D cartoon, NO neon.' },
+        { icon: '🏢', sub: 'ગાંધીનગર સચિવાલય', badge: 'સત્તાવાર ઠરાવ', catchWords: '૫૦% DA મંજૂર! ખાતામાં ₹15,000 થી ₹45,000', prompt: 'A minimalist 16:9 YouTube thumbnail. Pure solid white background (#FFFFFF). On the left: ONE real authentic photograph of a senior Gujarat govt official at press briefing. On the right: 4 bold words: "GUJARAT SALARY DA 50% HIKE". Photorealistic.' },
+        { icon: '💰', sub: 'DBT બેંક સહાય', badge: 'DBT સહાય', catchWords: 'નવી સહાય જાહેર! ખાતામાં સીધા ₹૨,૦૦૦ જમા', prompt: 'A minimalist 16:9 YouTube thumbnail. Pure solid white background (#FFFFFF). On the left: ONE real authentic photograph of Indian beneficiary smiling. On the right: 4 bold words: "GOVT SCHEME ₹2,000 DBT". Photorealistic.' },
+        { icon: '📜', sub: 'પરીક્ષા મેરિટ લિસ્ટ', badge: 'ઓફિશિયલ નોટિસ', catchWords: 'સત્તાવાર મેરિટ લિસ્ટ જાહેર! કટ-ઓફ ચેક કરો', prompt: 'A minimalist 16:9 YouTube thumbnail. Pure solid white background (#FFFFFF). On the left: ONE real authentic photograph of exam board official at desk. On the right: 4 bold words: "OFFICIAL MERIT LIST 2026". Photorealistic.' }
+      ];
+      let p8PresetIdx = 0;
+
+      function showToastP8(msg) {
+        const el = document.getElementById('p8-toast');
+        document.getElementById('p8-toast-text').textContent = msg;
+        el.classList.add('show');
+        setTimeout(() => el.classList.remove('show'), 2200);
+      }
+
+      function renderScreen8() {
+        const cur = thumbPresets[p8PresetIdx];
+        document.getElementById('p8-photo-icon').textContent = cur.icon;
+        document.getElementById('p8-photo-sub').textContent = cur.sub;
+        document.getElementById('p8-badge').textContent = cur.badge;
+        const cw = document.getElementById('p8-catch-input').value;
+        document.getElementById('p8-catch-preview').textContent = cw;
+        document.getElementById('p8-prompt-text').value = `વિષય: "${activeSlideTopic}"\nટેક્સ્ટ: "${cw}"\n\n${cur.prompt}`;
+      }
+
+      document.querySelectorAll('#p8-presets .preset-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#p8-presets .preset-chip').forEach(c => c.classList.remove('active'));
+          btn.classList.add('active');
+          p8PresetIdx = parseInt(btn.getAttribute('data-idx') || '0', 10);
+          document.getElementById('p8-catch-input').value = thumbPresets[p8PresetIdx].catchWords;
+          renderScreen8();
+        });
+      });
+
+      document.getElementById('p8-catch-input').addEventListener('input', renderScreen8);
+
+      document.getElementById('p8-btn-copy-prompt').addEventListener('click', () => {
+        navigator.clipboard.writeText(document.getElementById('p8-prompt-text').value);
+        showToastP8('🎨 થંબનેલ AI પ્રોમ્પ્ટ કોપી થયો!');
+      });
+
+      document.getElementById('p8-btn-open-chatgpt').addEventListener('click', () => {
+        navigator.clipboard.writeText(document.getElementById('p8-prompt-text').value);
+        window.open('https://chatgpt.com', '_blank');
+        showToastP8('⚡ ChatGPT ખૂલ્યું & થંબનેલ પ્રોમ્પ્ટ કોપી થયો!');
+      });
+
+      document.getElementById('p8-btn-save-thumb').addEventListener('click', () => {
+        showToastP8('💾 ૧૬:૯ થંબનેલ ડિઝાઇન સેવ થઈ!');
+      });
+
+      // =========================================================
+      // SCREEN 9: DEDICATED TITLE, DESCRIPTION & SEO STUDIO
+      // =========================================================
+      let p9SelectedTitleIdx = 0;
+      const p9Titles = [
+        'આંગણવાડી બહેનોના પગાર વધારા અંગે હાઈકોર્ટનો ઐતિહાસિક આદેશ | ₹૨૪,૮૦૦ & એરિયર્સ 2026',
+        'ખુશખબર! આંગણવાડી કાર્યકર અને તેડાગર બહેનોનો પગાર વધારો — ગુજરાત હાઇકોર્ટ ઓર્ડર',
+        'ગુજરાત આંગણવાડી પગાર વધારો 2026: જૂનું vs નવું વેતન, GR પરિપત્ર & અમલ તારીખ'
+      ];
+
+      function showToastP9(msg) {
+        const el = document.getElementById('p9-toast');
+        document.getElementById('p9-toast-text').textContent = msg;
+        el.classList.add('show');
+        setTimeout(() => el.classList.remove('show'), 2200);
+      }
+
+      function renderScreen9() {
+        const listEl = document.getElementById('p9-titles-list');
+        listEl.innerHTML = '';
+        p9Titles.forEach((t, idx) => {
+          const row = document.createElement('div');
+          row.style.cssText = `padding:5px 7px; border-radius:6px; font-size:0.64rem; font-weight:${idx === p9SelectedTitleIdx ? '800' : '600'}; background:${idx === p9SelectedTitleIdx ? '#eff6ff' : '#f8fafc'}; border:1px solid ${idx === p9SelectedTitleIdx ? '#2563eb' : '#e2e8f0'}; display:flex; justify-content:space-between; align-items:center; gap:4px; cursor:pointer;`;
+          row.innerHTML = `<span style="flex:1;">${t}</span><button style="background:#fff; border:1px solid #cbd5e1; border-radius:4px; padding:2px 5px; font-size:0.58rem; cursor:pointer;">📋</button>`;
+          row.querySelector('span').addEventListener('click', () => {
+            p9SelectedTitleIdx = idx;
+            renderScreen9();
+          });
+          row.querySelector('button').addEventListener('click', () => {
+            navigator.clipboard.writeText(t);
+            showToastP9(`ટાઇટલ ${idx + 1} કોપી થયું!`);
+          });
+          listEl.appendChild(row);
+        });
+
+        document.getElementById('p9-desc-text').value = `🎯 ${activeSlideTopic}\n\n⏱️ ટાઇમસ્ટેમ્પ્સ:\n00:00 - હાઇકોર્ટનો ઐતિહાસિક ચુકાદો (LPA 363/2025)\n01:15 - જૂનું vs નવું વેતન (₹૨૪,૮૦૦)\n02:45 - એરિયર્સ & GR પરિપત્ર\n\n#GujaratNews #AnganwadiSalary #GyanYatra`;
+        document.getElementById('p9-tags-text').value = 'આંગણવાડી પગાર વધારો 2026, Gujarat Anganwadi Salary Hike, High Court LPA 363 2025, Gyan Yatra, ગુજરાત સરકારી યોજના';
+      }
+
+      document.getElementById('p9-btn-copy-desc').addEventListener('click', () => {
+        navigator.clipboard.writeText(document.getElementById('p9-desc-text').value);
+        showToastP9('ડિસ્ક્રિપ્શન કોપી થયું!');
+      });
+
+      document.getElementById('p9-btn-copy-tags').addEventListener('click', () => {
+        navigator.clipboard.writeText(document.getElementById('p9-tags-text').value);
+        showToastP9('બધા ટૅગ્સ કોપી થયા!');
+      });
+
+      document.getElementById('p9-btn-copy-seo-prompt').addEventListener('click', () => {
+        navigator.clipboard.writeText(`તમે ગુજરાતી YouTube SEO એક્સપર્ટ છો. વિષય: "${activeSlideTopic}". આ માટે ૩ હાઈ-CTR ટાઇટલ, ટાઇમસ્ટેમ્પ્સ સાથે ડિસ્ક્રિપ્શન અને ૧૫ વાયરલ ટૅગ્સ આપો.`);
+        showToastP9('SEO માસ્ટર પ્રોમ્પ્ટ કોપી થયો!');
+      });
+
+      document.getElementById('p9-btn-open-yt').addEventListener('click', () => {
+        window.open('https://studio.youtube.com', '_blank');
+        showToastP9('YouTube Studio ખૂલ્યું!');
+      });
+
+      function copyAllSeo9() {
+        const pkg = `TITLE:\n${p9Titles[p9SelectedTitleIdx]}\n\nDESCRIPTION:\n${document.getElementById('p9-desc-text').value}\n\nTAGS:\n${document.getElementById('p9-tags-text').value}`;
+        navigator.clipboard.writeText(pkg);
+        showToastP9('📦 સંપૂર્ણ Title + Description + Tags કોપી!');
+      }
+      document.getElementById('p9-btn-copy-all').addEventListener('click', copyAllSeo9);
+      document.getElementById('p9-btn-copy-all-hdr').addEventListener('click', copyAllSeo9);
+
+      navBtnS8.addEventListener('click', () => setViewMode('s8'));
+      sideBtnS8.addEventListener('click', () => setViewMode('s8'));
+      navBtnS9.addEventListener('click', () => setViewMode('s9'));
+      sideBtnS9.addEventListener('click', () => setViewMode('s9'));
+
+      document.getElementById('p7-next-to-s8').addEventListener('click', () => setViewMode('s8'));
+      document.getElementById('p8-btn-back-to-s7').addEventListener('click', () => setViewMode('s7'));
+      document.getElementById('p8-next-to-s9').addEventListener('click', () => setViewMode('s9'));
+      document.getElementById('p9-btn-back-to-s8').addEventListener('click', () => setViewMode('s8'));
+
+      // Zoom Scale
+      document.querySelectorAll('.btn-scale').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.btn-scale').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const scale = btn.getAttribute('data-scale') || '0.90';
+          [p1, p2, p3, p4, p5, p6, p7, p8, p9].forEach(phone => {
+            phone.style.transform = `scale(${scale})`;
+            phone.style.transformOrigin = 'top center';
+          });
+        });
+      });
+
+      // Initial Render
+      renderScreen1();
+      renderScreen2();
+      renderScreen3();
+      renderScreen4();
+      renderScreen5();
+      renderScreen6();
+      renderScreen7();
+      renderScreen8();
+      renderScreen9();
+      setViewMode('s8'); // Focus on newly built Screen 8 (can switch to s9 or All 9 anytime)
+    })();
+  </script>
+</body>
+</html>

@@ -51,38 +51,44 @@ export async function renderProjectPackage(container, navigateTo) {
         </div>
       </div>
 
-      <!-- 5-Asset Status Checklist Grid -->
+      <!-- Real Project Asset Status Checklist Grid -->
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; padding-top: 14px; border-top: 1px solid var(--border-color);">
-        <!-- 1. Script -->
+        <!-- 1. Presentation & Slides -->
+        <div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+            <span style="font-weight: 700; font-size: 0.85rem; color: #fff;">📊 સ્લાઇડ્સ PPT/PDF</span>
+            <span style="color: ${p.slide?.importedPresentation && (p.slide?.slides?.length > 0) ? '#10b981' : '#94a3b8'}; font-weight: 800; font-size: 0.8rem;">
+              ${p.slide?.importedPresentation && (p.slide?.slides?.length > 0) ? '✓ તૈયાર' : '⚪ બાકી'}
+            </span>
+          </div>
+          <span style="font-size: 0.75rem; color: var(--text-muted); word-break: break-all;">
+            ${p.slide?.importedPresentation ? `${p.slide.slides?.length || 0} સ્લાઇડ્સ (${p.slide.importedPresentation.filename})` : 'કોઈ PPT/PDF નથી'}
+          </span>
+        </div>
+
+        <!-- 2. Script -->
         <div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
             <span style="font-weight: 700; font-size: 0.85rem; color: #fff;">📝 સ્ક્રિપ્ટ</span>
-            <span style="color: #10b981; font-weight: 800; font-size: 0.8rem;">✓ તૈયાર</span>
+            <span style="color: ${p.script?.fullText || (p.script?.sections?.length > 0) ? '#10b981' : '#94a3b8'}; font-weight: 800; font-size: 0.8rem;">
+              ${p.script?.fullText || (p.script?.sections?.length > 0) ? '✓ તૈયાર' : '⚪ બાકી'}
+            </span>
           </div>
           <span style="font-size: 0.75rem; color: var(--text-muted);">
-            ${p.script?.sections?.length || 4} વિભાગો • ${p.script?.durationMinutes || 10} મિનિટ
+            ${p.script?.sections?.length ? `${p.script.sections.length} સ્લાઇડ સેક્શન્સ` : (p.script?.fullText ? 'સ્ક્રિપ્ટ તૈયાર' : 'સ્ક્રિપ્ટ બાકી')}
           </span>
         </div>
 
-        <!-- 2. Audio -->
+        <!-- 3. Audio -->
         <div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
             <span style="font-weight: 700; font-size: 0.85rem; color: #fff;">🎙️ વોઇસ ઓડિયો</span>
-            <span style="color: #ec4899; font-weight: 800; font-size: 0.8rem;">✓ તૈયાર</span>
+            <span style="color: ${p.voice?.hasSavedAudio || p.voice?.audioUrl || p.voiceAudio?.audioUrl ? '#ec4899' : '#94a3b8'}; font-weight: 800; font-size: 0.8rem;">
+              ${p.voice?.hasSavedAudio || p.voice?.audioUrl || p.voiceAudio?.audioUrl ? '✓ તૈયાર' : '⚪ બાકી'}
+            </span>
           </div>
           <span style="font-size: 0.75rem; color: var(--text-muted); word-break: break-all;">
-            ${p.voiceAudio?.filename || 'my_real_cloned_voice.mp3'}
-          </span>
-        </div>
-
-        <!-- 3. Slides -->
-        <div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
-            <span style="font-weight: 700; font-size: 0.85rem; color: #fff;">🎬 સ્લાઇડ્સ</span>
-            <span style="color: #38bdf8; font-weight: 800; font-size: 0.8rem;">✓ તૈયાર</span>
-          </div>
-          <span style="font-size: 0.75rem; color: var(--text-muted);">
-            ${p.slides?.length || 4} સ્લાઇડ્સ (16:9 HD)
+            ${p.voice?.filename || p.voiceAudio?.filename || (p.voice?.hasSavedAudio ? 'ઓડિયો રેકોર્ડ સેવ્ડ' : 'અવાજ રેકોર્ડ બાકી')}
           </span>
         </div>
 
@@ -90,10 +96,12 @@ export async function renderProjectPackage(container, navigateTo) {
         <div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
             <span style="font-weight: 700; font-size: 0.85rem; color: #fff;">🚀 YouTube SEO</span>
-            <span style="color: #f59e0b; font-weight: 800; font-size: 0.8rem;">✓ તૈયાર</span>
+            <span style="color: ${p.seo?.title && p.seo?.description ? '#f59e0b' : '#94a3b8'}; font-weight: 800; font-size: 0.8rem;">
+              ${p.seo?.title && p.seo?.description ? '✓ તૈયાર' : '⚪ બાકી'}
+            </span>
           </div>
           <span style="font-size: 0.75rem; color: var(--text-muted);">
-            Title + Desc + Tags
+            ${p.seo?.title ? 'Title + Desc + Tags તૈયાર' : 'SEO ડ્રાફ્ટ બાકી'}
           </span>
         </div>
 
@@ -101,12 +109,15 @@ export async function renderProjectPackage(container, navigateTo) {
         <div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
             <span style="font-weight: 700; font-size: 0.85rem; color: #fff;">🎨 થંબનેલ</span>
-            <span style="color: #a855f7; font-weight: 800; font-size: 0.8rem;">✓ તૈયાર</span>
+            <span style="color: ${p.thumbnail?.dalleShortPrompt || p.thumbnail?.gujaratiWords ? '#a855f7' : '#94a3b8'}; font-weight: 800; font-size: 0.8rem;">
+              ${p.thumbnail?.dalleShortPrompt || p.thumbnail?.gujaratiWords ? '✓ તૈયાર' : '⚪ બાકી'}
+            </span>
           </div>
           <span style="font-size: 0.75rem; color: var(--text-muted);">
-            ૧ ફોટો + ૪ બોલ્ડ શબ્દો
+            ${p.thumbnail?.gujaratiWords || (p.thumbnail?.dalleShortPrompt ? 'થંબનેલ કોન્સેપ્ટ તૈયાર' : 'થંબનેલ પ્લાન બાકી')}
           </span>
         </div>
+      </div>
       </div>
     </div>
 

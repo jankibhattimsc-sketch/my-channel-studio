@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="gu" data-theme="dark">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <title>YouTube Creator AI Studio | જ્ઞાન યાત્રા સ્ટુડિયો</title>
-  <meta name="description" content="All-in-One YouTube Creator AI Studio for Gujarati creators. 48-hour views & earnings analytics, trending topic finder, one-click SEO generator, AI thumbnail studio, sequential script writer, and built-in ChatGPT creator assistant.">
+  <meta name="description"
+    content="All-in-One YouTube Creator AI Studio for Gujarati creators. 48-hour views & earnings analytics, trending topic finder, one-click SEO generator, AI thumbnail studio, sequential script writer, and built-in ChatGPT creator assistant.">
   <meta name="theme-color" content="#0a0d14">
 
   <!-- PWA Manifest & Mobile Optimization -->
@@ -15,17 +17,53 @@
   <meta name="apple-mobile-web-app-title" content="Gyan Yatra Studio">
 
   <!-- Favicon -->
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>">
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>">
 
   <!-- Google Fonts: Outfit (UI) & Noto Sans Gujarati (Authentic Script) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
 
   <!-- Core Stylesheets -->
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/components.css">
+
+  <!-- Auto Cache-Purge & Guaranteed Fresh Load (v99.1) -->
+  <script>
+    (function () {
+      var CURRENT_VERSION = 'v99.1';
+      var isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+      if (isLocalhost && 'serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (registrations) {
+          for (var reg of registrations) { reg.unregister(); }
+        });
+      }
+
+      if (localStorage.getItem('gyan_app_version') !== CURRENT_VERSION) {
+        if ('caches' in window) {
+          caches.keys().then(function (keys) {
+            keys.forEach(function (k) { caches.delete(k); });
+          });
+        }
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function (registrations) {
+            for (var reg of registrations) { reg.unregister(); }
+          });
+        }
+        localStorage.setItem('gyan_app_version', CURRENT_VERSION);
+        if (!window.location.search.includes('v=99.0')) {
+          var sep = window.location.search ? '&' : '?';
+          window.location.replace(window.location.pathname + window.location.search + sep + 'v=99.0&t=' + Date.now() + window.location.hash);
+        }
+      }
+    })();
+  </script>
 </head>
+
 <body>
   <div id="app-layout">
     <!-- Streamlined Creator Sidebar -->
@@ -41,20 +79,34 @@
       </div>
 
       <nav class="nav-menu">
-        <a class="nav-item active" data-view="projects" id="nav-projects">
+        <a class="nav-item active" data-view="home" id="nav-home">
+          <span class="nav-icon">📊</span>
+          <span>ડેશબોર્ડ (48h AI Studio)</span>
+          <span class="badge-pill" style="background: #102A56; color: #fff;">Home</span>
+        </a>
+
+        <a class="nav-item" data-view="projects" id="nav-projects">
           <span class="nav-icon">📁</span>
           <span>બધા પ્રોજેક્ટ્સ (Projects)</span>
           <span class="badge-pill" style="background: #10b981;">Hub</span>
         </a>
 
-        <div style="font-size: 0.68rem; color: var(--text-muted); padding: 10px 12px 4px 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
+        <div
+          style="font-size: 0.68rem; color: var(--text-muted); padding: 10px 12px 4px 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
           પ્રોજેક્ટ ટૂલ્સ (Tools)
         </div>
 
         <a class="nav-item" data-view="topics" id="nav-topics">
           <span class="nav-icon">💡</span>
-          <span>૧. Idea (આઈડિયા & ChatGPT)</span>
-          <span class="badge-pill" style="background: var(--yt-red);">Hot</span>
+          <span>૧. Topic Ideas (આઈડિયા)</span>
+          <span class="badge-pill" style="background: var(--yt-red);">Tool 1</span>
+        </a>
+
+        <a class="nav-item" data-view="planner" id="nav-planner"
+          style="background: rgba(16, 42, 86, 0.08); border-left: 3px solid #102A56; margin: 3px 0;">
+          <span class="nav-icon">📋</span>
+          <span style="font-weight: 800; color: #102A56;">૨. Production Planner</span>
+          <span class="badge-pill" style="background: #102A56;">Tool 2</span>
         </a>
 
         <a class="nav-item" data-view="slideprompts" id="nav-slideprompts">
@@ -69,33 +121,40 @@
           <span class="badge-pill" style="background: #10b981;">PDF Master</span>
         </a>
 
-        <a class="nav-item" data-view="myvoice" id="nav-myvoice">
+        <a class="nav-item" href="javascript:void(0)" data-view="myvoice" id="nav-myvoice" style="display: none !important;">
           <span class="nav-icon">🎙️</span>
-          <span>૪. Voice (મારો અવાજ)</span>
-          <span class="badge-pill" style="background: #ec4899;">Cloned</span>
+          <span>૪. Live Audio (સ્લાઇડ ઓડિયો રેકોર્ડર)</span>
+          <span class="badge-pill" style="background: #8b5cf6;">Step 4</span>
         </a>
 
-        <a class="nav-item" data-view="editing" id="nav-editing">
-          <span class="nav-icon">🎬</span>
-          <span>૫. Editing (એડિટિંગ ગાઇડ)</span>
-          <span class="badge-pill" style="background: #f59e0b;">Cuts</span>
+        <a class="nav-item" href="javascript:void(0)" data-view="videoeditor" id="nav-videoeditor">
+          <span class="nav-icon">🎥</span>
+          <span>૪. Video Editor (સ્લાઇડ ક્લિપ જોડાણ)</span> <!-- ૫. Video Editor -->
+          <span class="badge-pill" style="background: #38bdf8;">Tool 4</span>
         </a>
 
-        <a class="nav-item" data-view="canva" id="nav-canva">
-          <span class="nav-icon">🎨</span>
-          <span>૬. Canva (કેન્વા ડિઝાઇન)</span>
-          <span class="badge-pill" style="background: #7d2ae8;">16:9</span>
-        </a>
-
-        <a class="nav-item" data-view="seodescription" id="nav-seodescription">
-          <span class="nav-icon">🚀</span>
-          <span>૭. SEO (ટાઈટલ & ડિસ્ક્રિપ્શન)</span>
-          <span class="badge-pill" style="background: #10b981;">ChatGPT</span>
-        </a>
-
-        <a class="nav-item" data-view="seo" id="nav-seo">
+        <a class="nav-item" href="javascript:void(0)" data-view="thumbnails" id="nav-thumbnails">
           <span class="nav-icon">🖼️</span>
-          <span>૮. Thumbnail (થંબનેલ)</span>
+          <span>૬. Thumbnail (થંબનેલ AI)</span>
+          <span class="badge-pill" style="background: #f59e0b;">Step 6</span>
+        </a>
+
+        <a class="nav-item" href="javascript:void(0)" data-view="seodescription" id="nav-seo">
+          <span class="nav-icon">🏷️</span>
+          <span>૭. SEO (ટાઇટલ, ડિસ્ક્રિપ્શન & Tags)</span>
+          <span class="badge-pill" style="background: #10b981;">Step 7</span>
+        </a>
+
+        <a class="nav-item" href="javascript:void(0)" data-view="savedhub" id="nav-savedhub">
+          <span class="nav-icon">💾</span>
+          <span>૮. Saved Videos & Audios</span>
+          <span class="badge-pill" style="background: #10b981;">Auto Hub</span>
+        </a>
+
+        <a class="nav-item" href="javascript:void(0)" data-view="savedaudios" id="nav-savedaudios">
+          <span class="nav-icon">🎙️</span>
+          <span>૯. Saved Audios Vault</span>
+          <span class="badge-pill" style="background: #a855f7;">Audios</span>
         </a>
       </nav>
 
@@ -115,24 +174,50 @@
       <!-- Sticky Top Bar -->
       <header class="top-bar">
         <div class="top-bar-left">
-          <button id="mobile-menu-toggle" class="btn btn-outline btn-sm" style="display: none; padding: 6px 10px;" aria-label="Toggle Menu">
+          <button id="mobile-menu-toggle" class="btn btn-outline btn-sm" style="display: none; padding: 6px 10px;"
+            aria-label="Toggle Menu">
             ☰
           </button>
-          <button id="top-project-badge-btn" class="btn btn-outline btn-sm" style="font-weight: 700; border-color: rgba(56,189,248,0.4); color: #38bdf8; background: rgba(56,189,248,0.08); font-size: 0.8rem; padding: 5px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;" title="બધા પ્રોજેક્ટ્સ જુઓ">
+          <button id="top-project-badge-btn" class="btn btn-outline btn-sm"
+            style="font-weight: 700; border-color: rgba(56,189,248,0.4); color: #38bdf8; background: rgba(56,189,248,0.08); font-size: 0.8rem; padding: 5px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;"
+            title="બધા પ્રોજેક્ટ્સ જુઓ">
             <span>📁</span> <span id="top-project-name">પ્રોજેક્ટ્સ મેનેજર</span>
           </button>
           <h1 class="page-title" id="top-page-title" style="margin-left: 8px;">📁 વિડીયો પ્રોજેક્ટ્સ મેનેજર</h1>
         </div>
 
-        <div class="top-bar-right">
+        <div class="top-bar-right" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <!-- Live Network Auto-Sync Status Badge -->
+          <div id="top-network-status-badge"
+            style="font-size: 0.72rem; font-weight: 800; padding: 4px 10px; border-radius: 20px; border: 1.5px solid rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.1); color: #34d399; display: inline-flex; align-items: center;">
+            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; margin-right:4px;"></span> ઓનલાઇન (Auto-Sync)
+          </div>
+
+          <!-- Share Mobile Link & Offline QR Modal Button -->
+          <button id="top-share-mobile-link-btn" class="btn btn-outline btn-sm"
+            style="font-weight: 800; padding: 6px 12px; font-size: 0.8rem; border-color: #38bdf8; color: #38bdf8; background: rgba(56, 189, 248, 0.12); cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 10px rgba(56,189,248,0.25);"
+            title="મોબાઇલ માટે લિંક & ઑફલાઇન સુવિધા">
+            <span>🔗</span> મોબાઇલ લિંક (Offline)
+          </button>
+
+          <!-- PWA Install Button (Mobile Add to Home Screen) -->
+          <button id="top-install-pwa-btn" class="btn btn-outline btn-sm"
+            style="display: none; font-weight: 800; padding: 6px 12px; font-size: 0.8rem; border-color: #10b981; color: #10b981; background: rgba(16, 185, 129, 0.15); cursor: pointer; align-items: center; gap: 5px;"
+            title="મોબાઇલ હોમ સ્ક્રીન પર ઍપ ઉમેરો">
+            <span>📲</span> ઍપ ઇન્સ્ટોલ
+          </button>
           <!-- Direct Android APK Download Button -->
-          <a href="/gyan_yatra_studio.apk" download="gyan_yatra_studio.apk" id="top-download-apk-btn" class="btn btn-outline btn-sm" style="font-weight: 700; padding: 6px 12px; font-size: 0.8rem; border-color: #38bdf8; color: #38bdf8; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 8px rgba(56,189,248,0.25);" title="મોબાઇલ માટે Android APK ફાઇલ ડાઉનલોડ કરો">
+          <a href="/gyan_yatra_studio.apk" download="gyan_yatra_studio.apk" id="top-download-apk-btn"
+            class="btn btn-outline btn-sm"
+            style="font-weight: 700; padding: 6px 12px; font-size: 0.8rem; border-color: #38bdf8; color: #38bdf8; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 8px rgba(56,189,248,0.25);"
+            title="મોબાઇલ માટે Android APK ફાઇલ ડાઉનલોડ કરો">
             <span>📱</span> APK ડાઉનલોડ
           </a>
 
           <!-- Channel Profile Quick Chip -->
           <div class="channel-chip" id="top-channel-chip" title="ચેનલ વિગત & સેટિંગ્સ">
-            <img id="top-channel-avatar" class="channel-avatar" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120" alt="Avatar">
+            <img id="top-channel-avatar" class="channel-avatar"
+              src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120" alt="Avatar">
             <div class="channel-info">
               <span class="channel-name" id="top-channel-name">જ્ઞાન યાત્રા</span>
               <span class="channel-status-badge" id="top-channel-badge">
@@ -158,7 +243,11 @@
     </a>
     <a class="mobile-nav-item" data-view="topics">
       <span class="mobile-icon">💡</span>
-      <span>આઈડિયા</span>
+      <span>૧.Ideas</span>
+    </a>
+    <a class="mobile-nav-item" data-view="planner" style="color: #60a5fa; font-weight: 800;">
+      <span class="mobile-icon">📋</span>
+      <span>૨.Planner</span>
     </a>
     <a class="mobile-nav-item" data-view="slideprompts">
       <span class="mobile-icon">📑</span>
@@ -168,25 +257,25 @@
       <span class="mobile-icon">📝</span>
       <span>સ્ક્રિપ્ટ</span>
     </a>
-    <a class="mobile-nav-item" data-view="myvoice">
-      <span class="mobile-icon">🎙️</span>
-      <span>અવાજ</span>
+    <a class="mobile-nav-item" href="javascript:void(0)" data-view="videoeditor"
+      style="color: #38bdf8; font-weight: 800;">
+      <span class="mobile-icon">🎥</span>
+      <span>૪.Video</span>
     </a>
-    <a class="mobile-nav-item" data-view="editing">
-      <span class="mobile-icon">🎬</span>
-      <span>એડિટિંગ</span>
-    </a>
-    <a class="mobile-nav-item" data-view="canva">
-      <span class="mobile-icon">🎨</span>
-      <span>કેન્વા</span>
-    </a>
-    <a class="mobile-nav-item" data-view="seodescription">
-      <span class="mobile-icon">🚀</span>
-      <span>SEO</span>
-    </a>
-    <a class="mobile-nav-item" data-view="seo">
+    <a class="mobile-nav-item" href="javascript:void(0)" data-view="thumbnails"
+      style="color: #f59e0b; font-weight: 800;">
       <span class="mobile-icon">🖼️</span>
-      <span>થંબનેલ</span>
+      <span>૫.Thumb</span>
+    </a>
+    <a class="mobile-nav-item" href="javascript:void(0)" data-view="seodescription"
+      style="color: #10b981; font-weight: 800;">
+      <span class="mobile-icon">🏷️</span>
+      <span>૬.SEO</span>
+    </a>
+    <a class="mobile-nav-item" href="javascript:void(0)" data-view="savedhub"
+      style="color: #34d399; font-weight: 800;">
+      <span class="mobile-icon">💾</span>
+      <span>સેવ</span>
     </a>
   </nav>
 
@@ -206,6 +295,7 @@
   <script src="/vendor/tesseract.min.js"></script>
 
   <!-- Main ES Module Script with Cache Busting -->
-  <script type="module" src="/js/app.js?v=2.2"></script>
+  <script type="module" src="/js/app.js?v=100.2"></script>
 </body>
+
 </html>

@@ -1,4 +1,24 @@
 const { createWorker } = require('tesseract.js');
+const path = require('path');
+
+function isCorruptedNoise(str) {
+  if (!str) return true;
+  const s = str.trim();
+  if (s.length < 4) return true;
+
+  // Patterns like "eC @P [+]", "5 pp ——", icon artifacts
+  if (/^[@#*~_=+[\]|•·–—\s]+$/.test(s)) return true;
+  if (/^(?:eC|@P|\[\+\]|\bpp\b|\bmais\b|\been\b|\bwan\b)/i.test(s)) return true;
+
+  const gujChars = (s.match(/[\u0A80-\u0AFF]/g) || []).length;
+  const engWords = (s.match(/[a-zA-Z]{3,}/g) || []).length;
+  if (gujChars < 2 && engWords < 1) return true;
+
+  const letters = (s.match(/[\u0A80-\u0AFFa-zA-Z]/g) || []).length;
+  if (letters / s.length < 0.35) return true;
+
+  return false;
+}
 
 function convertGujaratiDigits(str) {
   if (!str) return '';
@@ -37,8 +57,11 @@ const ignoredWords = [
 
 function isIgnored(text) {
   if (!text) return true;
+  if (isCorruptedNoise(text)) return true;
   const lower = text.toLowerCase().trim();
   if (isStatusBar(lower)) return true;
+  if (lower.includes('realtime') || lower.includes('real time') || lower.includes('રીઅલ ટાઇમ')) return true;
+  if (lower.includes('analytics') || lower.includes('overview') || lower.includes('subscribers') || lower.includes('સબસ્ક્રાઇબર')) return true;
   return ignoredWords.some(w => lower === w || lower.startsWith(w + ' ') || lower.endsWith(' ' + w));
 }
 
@@ -159,15 +182,35 @@ function matchWithChannelVideos(ocrTitle, channelVideos = []) {
   return bestMatch || cleanedOcr;
 }
 
+function isValidVideoTitle(title) {
+  if (!title || typeof title !== 'string') return false;
+  const clean = cleanGujaratiTitle(title);
+  if (clean.length < 8) return false;
+
+  const gujLetters = (clean.match(/[\u0A80-\u0AFF]/g) || []).length;
+  const engWords = (clean.match(/\b[a-zA-Z]{3,}\b/g) || []).length;
+  if (gujLetters < 5 && engWords < 2) return false;
+
+  const lower = clean.toLowerCase();
+  if (lower.includes('slide') || lower.includes('સ્લાઇડ્સ') || lower.includes('realtime') || lower.includes('analytics') || lower.includes('overview') || lower.includes('ppt')) return false;
+
+  const alphanumericCount = (clean.match(/[\u0A80-\u0AFFa-zA-Z0-9]/g) || []).length;
+  if (alphanumericCount / clean.length < 0.50) return false;
+
+  return true;
+}
+
 function deduplicateVideos(videoList, channelVideos = []) {
   const result = [];
 
   for (const item of videoList) {
     if (!item || !item.title) continue;
+    if (!isValidVideoTitle(item.title)) continue;
+
     // Enrich with official channel video title if available
     const enrichedTitle = matchWithChannelVideos(item.title, channelVideos);
     const norm = normalizeForDedup(enrichedTitle);
-    if (!norm || norm.length < 3) continue;
+    if (!norm || norm.length < 4) continue;
 
     const existingIdx = result.findIndex(existing => {
       const existingNorm = normalizeForDedup(existing.title);
@@ -188,7 +231,13 @@ function deduplicateVideos(videoList, channelVideos = []) {
         result[existingIdx].title = enrichedTitle;
       }
     } else {
-      result.push({ title: enrichedTitle, views48h: item.views48h || 0 });
+      result.push({
+        title: enrichedTitle,
+        views48h: item.views48h || null,
+        confidence: item.confidence || 75,
+        isConfidenceVerified: Boolean(item.isConfidenceVerified),
+        bbox: item.bbox || null
+      });
     }
   }
 
@@ -200,22 +249,22 @@ function extractVideoFromLine(raw) {
   const norm = convertGujaratiDigits(raw.trim());
   if (isIgnored(norm) || isStatusBar(norm) || isViewLine(norm)) return null;
 
-  // Pattern A: YouTube Studio line with Title ... [VIEWS] [optional trailing noise like icon/bar chart]
-  const dotsMatch = norm.match(/^(.*?)(?:…|\.{2,}|\s{2,}|\s*\|\s*)\s*([0-9]{1,3}(?:,[0-9]{3})+|[0-9]+(?:\.[0-9]+)?[kKmM]|[0-9]{1,6})(?:\b|[\s\W])/);
+  // Pattern A: YouTube Studio line with Title ... [VIEWS]
+  const dotsMatch = norm.match(/^(.*?)(?:…|\.{2,}|\s{2,}|\s*\|\s*)\s*([0-9]{1,3}(?:,[0-9]{3})+|[0-9]+(?:\.[0-9]+)?[kKmM]|[0-9]{2,6})(?:\b|[\s\W])/);
   if (dotsMatch) {
     const title = cleanGujaratiTitle(dotsMatch[1]);
     const views = parseVal(dotsMatch[2]);
-    if (views > 0 && (views < 2020 || views > 2035) && title.length >= 4) {
+    if (views >= 10 && (views < 2020 || views > 2035) && isValidVideoTitle(title)) {
       return { title, views48h: views };
     }
   }
 
-  // Pattern B: Title followed by views count with optional trailing characters
-  const endMatch = norm.match(/^(.*?)(?:[\s.…|·•:\-]+)([0-9]{1,3}(?:,[0-9]{3})+|[0-9]+(?:\.[0-9]+)?[kKmM]|[0-9]{1,6})(?:\s+[^\d]*)?$/);
+  // Pattern B: Title followed by views count
+  const endMatch = norm.match(/^(.*?)(?:[\s.…|·•:\-]+)([0-9]{1,3}(?:,[0-9]{3})+|[0-9]+(?:\.[0-9]+)?[kKmM]|[0-9]{2,6})(?:\s+[^\d]*)?$/);
   if (endMatch) {
     const title = cleanGujaratiTitle(endMatch[1]);
     const views = parseVal(endMatch[2]);
-    if (views > 0 && (views < 2020 || views > 2035) && title.length >= 4) {
+    if (views >= 10 && (views < 2020 || views > 2035) && isValidVideoTitle(title)) {
       return { title, views48h: views };
     }
   }
@@ -229,102 +278,124 @@ function extractTopVideosAndViews(lines, totalViews48h, totalViews60m) {
 
   console.log('[OCR Parser] Total lines to parse:', lines.length);
 
-  // Pass 1: Parse YouTube Studio Title + View line directly
-  for (let i = 0; i < lines.length; i++) {
-    const raw = (lines[i].text || '').trim();
-    const parsed = extractVideoFromLine(raw);
-    if (parsed && !isIgnored(parsed.title)) {
+  // Filter out noisy status bar and corrupted lines first
+  const candidateLines = lines.map((l, idx) => ({
+    ...l,
+    origIdx: idx,
+    cleanText: cleanGujaratiTitle(l.text || '')
+  })).filter(l => l.cleanText && !isIgnored(l.cleanText) && !isCorruptedNoise(l.cleanText));
+
+  // Pass 1: Parse YouTube Studio Title + View inline directly
+  for (let i = 0; i < candidateLines.length; i++) {
+    const l = candidateLines[i];
+    const parsed = extractVideoFromLine(l.text);
+    if (parsed && !isIgnored(parsed.title) && !isCorruptedNoise(parsed.title)) {
       console.log(`[Pass 1 YouTubeStudio] "${parsed.title}" => ${parsed.views48h}`);
-      results.push(parsed);
-      usedIndexes.add(i);
+      results.push({
+        ...parsed,
+        confidence: l.confidence || 75,
+        isConfidenceVerified: (l.confidence || 75) >= 65 && parsed.views48h > 0,
+        bbox: l.bbox || null
+      });
+      usedIndexes.add(l.origIdx);
     }
   }
 
-  // Pass 2: Horizontal Proximity (BBox Y on table layout)
+  // Pass 2: Vertical Row Grouping (BBox Y overlap on tabular screenshot layout)
   for (let i = 0; i < lines.length; i++) {
     if (usedIndexes.has(i)) continue;
-    const rawI = (lines[i].text || '').trim();
-    if (!rawI || isIgnored(rawI) || isStatusBar(rawI) || isViewLine(rawI) || rawI.length < 4) continue;
+    const lineI = lines[i];
+    const rawI = (lineI.text || '').trim();
+    if (!rawI || isIgnored(rawI) || isCorruptedNoise(rawI) || isStatusBar(rawI) || isViewLine(rawI) || rawI.length < 4) continue;
 
-    const bboxI = lines[i].bbox;
+    const bboxI = lineI.bbox;
+    let foundViews = null;
+    let bestViewIdx = -1;
+
     if (bboxI && typeof bboxI.y0 === 'number') {
-      let bestIdx = -1;
-      let minDiff = 45;
+      let minDiff = 40; // max pixel distance vertically for same row
       for (let j = 0; j < lines.length; j++) {
         if (i === j || usedIndexes.has(j)) continue;
-        const rawJ = (lines[j].text || '').trim();
+        const lineJ = lines[j];
+        const rawJ = (lineJ.text || '').trim();
         if (!isViewLine(rawJ)) continue;
-        const bboxJ = lines[j].bbox;
+        const bboxJ = lineJ.bbox;
         if (bboxJ && typeof bboxJ.y0 === 'number') {
           const diff = Math.abs(bboxI.y0 - bboxJ.y0);
           if (diff < minDiff) {
             minDiff = diff;
-            bestIdx = j;
+            bestViewIdx = j;
           }
         }
       }
 
-      if (bestIdx !== -1) {
-        const title = cleanGujaratiTitle(rawI);
-        const views = extractViews(lines[bestIdx].text);
-        if (views > 0 && title.length >= 4) {
-          console.log(`[Pass 2 BBoxY] "${title}" => ${views}`);
-          results.push({ title, views48h: views });
-          usedIndexes.add(i);
-          usedIndexes.add(bestIdx);
-        }
+      if (bestViewIdx !== -1) {
+        foundViews = extractViews(lines[bestViewIdx].text);
+        usedIndexes.add(bestViewIdx);
       }
     }
-  }
 
-  // Pass 3: Consecutive lines (Title on line i, Views on line i+1)
-  for (let i = 0; i < lines.length - 1; i++) {
-    if (usedIndexes.has(i)) continue;
-    const rawI = (lines[i].text || '').trim();
-    const rawNext = (lines[i + 1].text || '').trim();
-
-    if (!rawI || isIgnored(rawI) || isStatusBar(rawI) || isViewLine(rawI) || rawI.length < 4) continue;
-
-    if (isViewLine(rawNext)) {
-      const views = extractViews(rawNext);
-      if (views > 0) {
-        const title = cleanGujaratiTitle(rawI);
-        if (title.length >= 4 && !isIgnored(title)) {
-          console.log(`[Pass 3 Consecutive] "${title}" => ${views}`);
-          results.push({ title, views48h: views });
-          usedIndexes.add(i);
-          usedIndexes.add(i + 1);
-        }
+    // Pass 3: If no horizontal bbox match, check consecutive line i+1
+    if (foundViews === null && i + 1 < lines.length && !usedIndexes.has(i + 1)) {
+      const nextRaw = (lines[i + 1].text || '').trim();
+      if (isViewLine(nextRaw)) {
+        foundViews = extractViews(nextRaw);
+        usedIndexes.add(i + 1);
       }
     }
-  }
 
-  // Pass 4: Title wrapped across 2 lines followed by Views
-  for (let i = 0; i < lines.length - 2; i++) {
-    if (usedIndexes.has(i) || usedIndexes.has(i + 1)) continue;
-    const rawI = (lines[i].text || '').trim();
-    const rawI2 = (lines[i + 1].text || '').trim();
-    const rawV = (lines[i + 2].text || '').trim();
-
-    if (isIgnored(rawI) || isStatusBar(rawI) || isViewLine(rawI) || rawI.length < 3) continue;
-    if (isIgnored(rawI2) || isStatusBar(rawI2) || isViewLine(rawI2) || rawI2.length < 3) continue;
-
-    if (isViewLine(rawV)) {
-      const views = extractViews(rawV);
-      if (views > 0) {
-        const fullTitle = cleanGujaratiTitle(`${rawI} ${rawI2}`);
-        if (fullTitle.length >= 5 && !isIgnored(fullTitle)) {
-          console.log(`[Pass 4 Wrapped] "${fullTitle}" => ${views}`);
-          results.push({ title: fullTitle, views48h: views });
-          usedIndexes.add(i);
-          usedIndexes.add(i + 1);
-          usedIndexes.add(i + 2);
-        }
-      }
+    const title = cleanGujaratiTitle(rawI);
+    if (title.length >= 4 && !isIgnored(title) && !isCorruptedNoise(title)) {
+      usedIndexes.add(i);
+      const conf = lineI.confidence || 70;
+      results.push({
+        title,
+        views48h: (foundViews && foundViews > 0) ? foundViews : null,
+        confidence: conf,
+        isConfidenceVerified: conf >= 65 && Boolean(foundViews && foundViews > 0),
+        bbox: bboxI || null
+      });
     }
   }
 
   return results;
+}
+
+function parseDateFromLine(rawText) {
+  if (!rawText || typeof rawText !== 'string') return null;
+  const norm = convertGujaratiDigits(rawText.trim());
+
+  // Relative hours ago: "2 hours ago", "૨ કલાક પહેલા", "4h ago"
+  const hrMatch = norm.match(/(\d+)\s*(?:hours?|hrs?|h|કલાક|घंटे)\s*(?:ago|પહેલા|पहले)?/i);
+  if (hrMatch) {
+    const hrs = parseInt(hrMatch[1], 10);
+    if (!isNaN(hrs) && hrs >= 0 && hrs < 8760) {
+      return new Date(Date.now() - (hrs * 60 * 60 * 1000)).toISOString();
+    }
+  }
+
+  // Relative days ago: "3 days ago", "૩ દિવસ પહેલા", "3d ago"
+  const dayMatch = norm.match(/(\d+)\s*(?:days?|d|દિવસ|दिन)\s*(?:ago|પહેલા|पहले)?/i);
+  if (dayMatch) {
+    const days = parseInt(dayMatch[1], 10);
+    if (!isNaN(days) && days >= 0 && days < 365) {
+      return new Date(Date.now() - (days * 24 * 60 * 60 * 1000)).toISOString();
+    }
+  }
+
+  // Absolute Date: "28 Oct 2026", "Oct 28, 2026", "28/10/2026"
+  const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+  const monthRegex = new RegExp(`([0-9]{1,2})[\\s\\-]+(${months.join('|')})[\\s,]+([0-9]{4})`, 'i');
+  const mMatch = norm.match(monthRegex);
+  if (mMatch) {
+    const d = parseInt(mMatch[1], 10);
+    const m = months.indexOf(mMatch[2].toLowerCase());
+    const y = parseInt(mMatch[3], 10);
+    const parsed = new Date(Date.UTC(y, m, d, 6, 30));
+    if (!isNaN(parsed.getTime())) return parsed.toISOString();
+  }
+
+  return null;
 }
 
 async function extractFromMultipleImages(imagesBase64, knownChannelTitles = []) {
@@ -335,12 +406,17 @@ async function extractFromMultipleImages(imagesBase64, knownChannelTitles = []) 
   let allExtractedVideos = [];
   let maxHeaderViews = 0;
   let combinedRawTexts = [];
+  let detectedGlobalDate = null;
   let worker = null;
 
   try {
     console.log(`[Server OCR] Initializing worker for ${imagesBase64.length} screenshot(s)...`);
-    const workerPromise = createWorker(['guj', 'eng']);
-    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Server OCR Timeout / Cloud Container restricted')), 3500));
+    const langDir = path.resolve('.');
+    const workerPromise = createWorker(['guj', 'eng'], 1, {
+      langPath: langDir,
+      gzip: false
+    });
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Server OCR Timeout / Worker load restricted')), 8000));
     worker = await Promise.race([workerPromise, timeoutPromise]);
 
     for (let i = 0; i < imagesBase64.length; i++) {
@@ -351,13 +427,44 @@ async function extractFromMultipleImages(imagesBase64, knownChannelTitles = []) 
 
       try {
         console.log(`[Server OCR] Processing screenshot ${i + 1} of ${imagesBase64.length}...`);
-        const ret = await worker.recognize(buffer);
+        const ret = await worker.recognize(buffer, {}, { blocks: true });
         const text = ret.data.text || '';
-        const lines = ret.data.lines || [];
         combinedRawTexts.push(`--- Photo ${i + 1} ---\n` + text);
 
-        const lineTexts = (lines.length > 0 ? lines.map(l => (l.text || '').trim()) : text.split('\n').map(l => l.trim())).filter(Boolean);
-        const fullText = lineTexts.join(' ');
+        // Extract lines with true bounding boxes and confidence from blocks
+        const lines = [];
+        if (ret.data && ret.data.blocks) {
+          for (const block of ret.data.blocks) {
+            for (const para of (block.paragraphs || [])) {
+              for (const line of (para.lines || [])) {
+                const lineTxt = (line.text || '').trim();
+                if (lineTxt) {
+                  lines.push({
+                    text: lineTxt,
+                    bbox: line.bbox,
+                    confidence: Math.round(line.confidence || 0),
+                    words: line.words || []
+                  });
+                }
+              }
+            }
+          }
+        }
+
+        // If no blocks, fallback to text splitting
+        const effectiveLines = lines.length > 0 ? lines : text.split('\n').map(l => l.trim()).filter(Boolean).map(t => ({ text: t, confidence: 70 }));
+        const fullText = effectiveLines.map(l => l.text).join(' ');
+
+        // Check for date in text
+        if (!detectedGlobalDate) {
+          for (const lObj of effectiveLines) {
+            const pDate = parseDateFromLine(lObj.text);
+            if (pDate) {
+              detectedGlobalDate = pDate;
+              break;
+            }
+          }
+        }
 
         // Check 48h header
         const m48After = fullText.match(/48\s*h(?:ours?)?[^0-9]{1,25}([0-9]{1,3}(?:,[0-9]{3})+|[0-9]+(?:\.[0-9]+)?[kK]|[0-9]+)/i);
@@ -365,7 +472,15 @@ async function extractFromMultipleImages(imagesBase64, knownChannelTitles = []) 
         const val48 = Math.max(m48After ? parseVal(m48After[1]) : 0, m48Before ? parseVal(m48Before[1]) : 0);
         if (val48 > maxHeaderViews) maxHeaderViews = val48;
 
-        const videos = extractTopVideosAndViews(lines.length > 0 ? lines : lineTexts.map(t => ({ text: t })), val48, 0);
+        const videos = extractTopVideosAndViews(effectiveLines, val48, 0);
+        
+        // Attach detected dates to videos if present
+        videos.forEach(v => {
+          if (!v.sourcePublishedAt && detectedGlobalDate) {
+            v.sourcePublishedAt = detectedGlobalDate;
+          }
+        });
+
         console.log(`[Server OCR] Photo ${i + 1} yielded ${videos.length} videos`);
         allExtractedVideos.push(...videos);
       } catch (imgErr) {
@@ -388,14 +503,15 @@ async function extractFromMultipleImages(imagesBase64, knownChannelTitles = []) 
   const uniqueVideos = deduplicateVideos(allExtractedVideos, knownChannelTitles);
 
   const sumVideoViews = uniqueVideos.reduce((acc, cur) => acc + (cur.views48h || 0), 0);
-  const views48h = maxHeaderViews > sumVideoViews ? maxHeaderViews : sumVideoViews;
+  const views48h = maxHeaderViews > sumVideoViews ? maxHeaderViews : (sumVideoViews > 0 ? sumVideoViews : null);
 
   console.log(`[Server OCR Complete] Total combined unique videos from ${imagesBase64.length} photo(s): ${uniqueVideos.length}, total views: ${views48h}`);
 
   return {
     views48h,
     views60m: 0,
-    topVideos: uniqueVideos.slice(0, 40), // Up to 40 videos across all photos!
+    detectedDate: detectedGlobalDate || null,
+    topVideos: uniqueVideos.slice(0, 40),
     rawText: combinedRawTexts.join('\n\n')
   };
 }

@@ -19,6 +19,17 @@ export const api = {
     return data;
   },
 
+  async put(url, body) {
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Request failed');
+    return data;
+  },
+
   async delete(url) {
     const res = await fetch(url, { method: 'DELETE' });
     const data = await res.json();
@@ -50,7 +61,30 @@ export const api = {
   },
   saveTopic: (topic) => api.post('/api/topics/save', { topic }),
   getSavedTopics: () => api.get('/api/topics/saved'),
+  createTopic: (topic) => api.post('/api/topics/create', topic),
+  updateTopic: (id, updates) => api.put(`/api/topics/${id}`, updates),
+  deleteTopic: (id) => api.delete(`/api/topics/${id}`),
+  generateTop5Topics: (payload) => api.post('/api/topics/generate-top5', payload),
   analyze48hScreenshot: (imagesBase64, category = 'all', ocrData = null) => api.post('/api/topics/analyze-screenshot', { imagesBase64, category, ocrData }),
+  getViralTopics: (params = {}) => api.post('/api/topics/viral-topics', params),
+  searchSubTopics: (topic, count = 5) => api.post('/api/topics/subtopics-search', { topic, count }),
+
+  // Topic Production Planner
+  getPlannerCurrent: () => api.get('/api/planner/current'),
+  getPlannerBatches: () => api.get('/api/planner/batches'),
+  createPlannerBatch: (data = {}) => api.post('/api/planner/batches', data),
+  updatePlannerTopic: (id, updates = {}) => api.put(`/api/planner/topic/${id}`, updates),
+  deletePlannerTopic: (id, batchId = null) => api.delete(`/api/planner/topic/${id}${batchId ? `?batchId=${encodeURIComponent(batchId)}` : ''}`),
+  syncTopicsToPlanner: (topics = [], batchName = null) => api.post('/api/planner/sync', { topics, batchName }),
+
+  // Central Topic Repository (One unique topicId workflow)
+  getCentralTopics: () => api.get('/api/planner/topics'),
+  getCentralTopicById: (topicId) => api.get(`/api/planner/topics/${encodeURIComponent(topicId)}`),
+  addCentralTopic: (topicData) => api.post('/api/planner/topics', topicData),
+  batchAddCentralTopics: (topics) => api.post('/api/planner/topics/batch', { topics }),
+  updateCentralTopicStage: (topicId, stageName, isCompleted) => api.put(`/api/planner/topics/${encodeURIComponent(topicId)}/stage`, { stageName, isCompleted }),
+  updateCentralTopicData: (topicId, moduleKey, data) => api.put(`/api/planner/topics/${encodeURIComponent(topicId)}/data/${encodeURIComponent(moduleKey)}`, data),
+  deleteCentralTopic: (topicId) => api.delete(`/api/planner/topics/${encodeURIComponent(topicId)}`),
 
   // One-Click SEO
   generateSEO: (topic, category = 'general') => api.post('/api/seo/generate', { topic, category }),
@@ -60,9 +94,13 @@ export const api = {
   generateThumbnailImage: (prompt, conceptId = 1, topic = '') => api.post('/api/thumbnails/generate-image', { prompt, conceptId, topic }),
   smartOptimizeThumbnail: (topic, overrides = {}) => api.post('/api/thumbnails/smart-optimizer', { topic, overrides }),
 
-  // Script Generator
+  // Script Generator & Database Persistence
   generateScript: (params) => api.post('/api/scripts/generate', params),
+  generateSlideWiseScript: (params) => api.post('/api/scripts/generate-slidewise', params),
   saveScript: (script) => api.post('/api/scripts/save', { script }),
+  getProjectScript: (projectId) => api.get(`/api/scripts/project/${projectId}`),
+  getProjectScriptVersions: (projectId) => api.get(`/api/scripts/project/${projectId}/versions`),
+  restoreProjectScriptVersion: (projectId, scriptId) => api.post(`/api/scripts/project/${projectId}/restore/${scriptId}`, {}),
   getScripts: () => api.get('/api/scripts'),
   getScriptById: (id) => api.get(`/api/scripts/${id}`),
   deleteScript: (id) => api.delete(`/api/scripts/${id}`),
@@ -87,6 +125,7 @@ export const api = {
   generateSingleSlideVoiceoverPrompt: (data) => api.post('/api/research/slide-voiceover-prompt/single', data),
   uploadSlidePdf: (data) => api.post('/api/research/upload-slide-pdf', data),
   generateWhiteSlides: (data) => api.post('/api/research/generate-white-slides', data),
+  topicWebResearch: (data) => api.post('/api/research/topic-web-research', data),
 
   // Settings
   getSettings: () => api.get('/api/settings'),
