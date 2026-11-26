@@ -518,6 +518,7 @@ export async function renderVideoEditor(container, navigateTo) {
   let selectionEndSec = 0;
   let isDraggingSelection = false;
   let previewSourceNode = null;
+  let audioContinueMode = 'loop'; // 'loop' (repeat continuously) | 'next' (auto-advance slides) | 'off' (stop at end)
 
   // =========================================================================
   // Live Slide + Audio Recording State ("સ્લાઇડ અને ઓડિયો સાથે લાઈવ રેકોર્ડ થાય")
@@ -1674,6 +1675,23 @@ export async function renderVideoEditor(container, navigateTo) {
         }, 80);
 
         domAudioEl.onended = () => {
+          if (audioContinueMode === 'loop') {
+            waveformPlayheadPct = 0;
+            redrawAllWaveforms(0);
+            try {
+              domAudioEl.currentTime = 0;
+              domAudioEl.play().catch(() => {});
+              return;
+            } catch (_) {}
+          } else if (audioContinueMode === 'next') {
+            const nextIdx = generatedClips.findIndex((c, idx) => idx > slideIndex && (c.audioUrl || c.enhancedAudioUrl || c.originalAudioUrl || c.blob || c.rawBlob));
+            if (nextIdx !== -1) {
+              stopCurrentAudio();
+              selectSlideAndUpdate(nextIdx);
+              setTimeout(() => playAudioForClip(nextIdx), 120);
+              return;
+            }
+          }
           stopCurrentAudio();
           waveformPlayheadPct = 0;
           redrawAllWaveforms(0);
@@ -3441,6 +3459,9 @@ export async function renderVideoEditor(container, navigateTo) {
                         <span id="play-pause-icon">▶️</span> <span id="play-pause-text">સ્લાઇડ #${curClip.slideNumber} ક્લિપ ચલાવો</span>
                       </button>
                       <input type="range" id="audio-scrubber-input" min="0" max="${audioDur}" step="0.05" value="0" style="width: 95px; accent-color: #10b981; cursor: pointer;">
+                      <button type="button" id="btn-toggle-continue-play" style="background: ${audioContinueMode === 'off' ? '#334155' : '#0284c7'}; color: #ffffff; border: none; font-weight: 800; font-size: 0.74rem; padding: 5px 10px; border-radius: 6px; cursor: pointer;" title="લાઇન પૂરી થાય પછી સતત ફરીથી વાગતું રહે તે માટે">
+                        ${audioContinueMode === 'loop' ? '🔁 સતત ચાલુ' : (audioContinueMode === 'next' ? '⏭️ આગળની સ્લાઇડ' : '⏹️ ૧ વાર')}
+                      </button>
                       <span id="step1-dur-display" style="font-family: monospace; font-size: 0.8rem; font-weight: 800; color: #065f46;">
                         <span id="audio-current-time-display">00:00</span> / ${formatTime(audioDur)}
                       </span>
@@ -6384,6 +6405,24 @@ export async function renderVideoEditor(container, navigateTo) {
           b.style.background = Number(b.dataset.zoom) === waveformZoomLevel ? '#0284c7' : '#1e293b';
         });
         redrawAllWaveforms(waveformPlayheadPct);
+      };
+    });
+
+    // Continuous Play / Loop Toggle Button
+    container.querySelectorAll('#btn-toggle-continue-play').forEach(btn => {
+      btn.onclick = () => {
+        audioContinueMode = audioContinueMode === 'loop' ? 'next' : (audioContinueMode === 'next' ? 'off' : 'loop');
+        const label = audioContinueMode === 'loop' ? '🔁 સતત ચાલુ' : (audioContinueMode === 'next' ? '⏭️ આગળની સ્લાઇડ' : '⏹️ ૧ વાર');
+        container.querySelectorAll('#btn-toggle-continue-play').forEach(b => {
+          b.textContent = label;
+          b.style.background = audioContinueMode === 'off' ? '#334155' : '#0284c7';
+        });
+        showNoticeToast(
+          audioContinueMode === 'loop'
+            ? '🔁 સતત ચાલુ: ઓડિયો પૂરો થતા આપમેળે ફરીથી વાગશે'
+            : (audioContinueMode === 'next' ? '⏭️ આગળની સ્લાઇડ: એક પછી એક બધી સ્લાઇડ સતત વાગશે' : '⏹️ ૧ વાર વાગીને અટકશે'),
+          'info'
+        );
       };
     });
 
