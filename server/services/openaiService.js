@@ -36,7 +36,14 @@ class OpenAIService {
     const apiKey = this.getGeminiApiKey();
     if (!apiKey) return null;
     const primaryModel = this.getGeminiModel();
-    const candidates = [...new Set([primaryModel, 'gemini-3.8-flash', 'gemini-2.5-flash'])];
+    const candidates = [...new Set([
+      primaryModel,
+      'gemini-3.5-flash',
+      'gemini-flash-latest',
+      'gemini-2.5-flash-lite',
+      'gemini-3.8-flash',
+      'gemini-flash-lite-latest'
+    ])];
 
     const parts = [];
     if (userText) parts.push({ text: userText });
@@ -74,7 +81,7 @@ class OpenAIService {
         return { text, model };
       }
       lastErr = new Error(json?.error?.message || `Gemini HTTP ${res.status}`);
-      if (!/no longer available|not found|not supported/i.test(lastErr.message)) {
+      if (res.status === 401 || res.status === 403 || /API_KEY_INVALID/i.test(lastErr.message)) {
         throw lastErr;
       }
     }
