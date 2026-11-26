@@ -1783,19 +1783,21 @@ ${hashtags.join(' ')}`;
 
     if (openai) {
       try {
-        const instruction = `You are an expert Prompt Engineer who deeply understands Gujarati, Roman Gujarati (Gujlish like "mare aa photo ma su che te jankari joie"), Hindi, and English.
+        const instruction = `You are a world-class Prompt Engineer who deeply understands Gujarati, Roman Gujarati (Gujlish like "mare aa photo ma su che te jankari joie", "aa topic par video banavo che"), Hindi, and English.
 The user will give you:
-1) Their own natural words/question (maybe rough, short, or in Roman Gujarati/Gujarati/Hindi/English), and/or
+1) Their casual/rough words or question from their mind, and/or
 2) One or more uploaded photos/screenshots.
 
-Your job:
-1. Understand what the user truly wants (and carefully read/inspect every uploaded photo if photos are attached).
-2. Write ONE super clear, detailed, well-structured Prompt that ChatGPT can answer accurately.
-   - If photos are attached, explicitly describe what is in the photo(s) and what to analyze/explain/create from them inside the prompt.
-   - Specify in the prompt that the final answer should be in clear, easy-to-understand ${langLabel}.
-3. Output strictly valid JSON with keys:
-   - "detectedIntent": short 1-line summary in Gujarati of what the user is asking
-   - "generatedPrompt": the full ready-to-use prompt`;
+CRITICAL RULES:
+- NEVER just repeat or quote the user's raw words back. TRANSFORM their rough thought into a complete, professional, high-clarity Prompt!
+- Structure the generated prompt cleanly with:
+  1. Expert Role (e.g., Act as an expert ...)
+  2. Clear Objective & Context (rewrite what the user actually wants in polished, unambiguous language)
+  3. Photo Instructions (if photos are attached, inspect the photos first and explicitly state what visual details, text, tables, numbers, or scenes from the photos to analyze/use)
+  4. Required Output Format (bullet points, step-by-step guide, practical examples, clear summary in ${langLabel}).
+- Output strictly valid JSON with keys:
+  - "detectedIntent": short 1-line summary in Gujarati of what the user wants
+  - "generatedPrompt": the complete, ready-to-use professional prompt`;
 
         const userContent = [
           {
@@ -1844,17 +1846,52 @@ Your job:
       }
     }
 
-    const photoNote = validImages.length > 0
-      ? `\n\n[સાથે જોડેલા ${validImages.length} ફોટાનું વિશ્લેષણ કરીને તેમાં દેખાતી માહિતી/લખાણ/વિગતને આધારે જવાબ આપો.]`
+    // Smart Local Prompt Engineer Fallback (structured Role + Objective + Photo Analysis + Output Format)
+    const lower = cleanInput.toLowerCase();
+    const isVideoOrScript = /video|script|youtube|channel|સ્ક્રિપ્ટ|વિડિયો|વિડીયો|ચેનલ|ટાઇટલ|title|hook|હૂક|thumbnail|થંબનેલ/i.test(lower);
+    const isYojanaOrNews = /yojana|યોજના|ભરતી|bharti|પગાર|pagar|gr|પરિપત્ર|સરકાર|sarkar|khedut|ખેડૂત|sahay|સહાય|pension|પેન્શન|aanganwadi|આંગણવાડી/i.test(lower);
+    const hasPhotos = validImages.length > 0;
+
+    let roleLine = 'તમે એક નિષ્ણાત, અનુભવી અને વ્યવહારુ AI સલાહકાર (Expert Assistant) તરીકે જવાબ આપો.';
+    let intentLabel = 'તમારા પ્રશ્ન મુજબ પ્રોફેશનલ સ્માર્ટ પ્રોમ્પ્ટ';
+    let focusLines = [
+      '1. મુખ્ય વિષય અને પ્રશ્નનો સચોટ, સરળ અને મુદ્દાસર સારાંશ આપો.',
+      '2. દરેક મહત્વનો મુદ્દો સ્ટેપ-બાય-સ્ટેપ અને ઉદાહરણ સાથે સમજાવો.',
+      '3. અંતે વ્યવહારુ સલાહ, સાવચેતી અને આગળ શું કરવું તેની ટૂંકી ચેકલિસ્ટ આપો.'
+    ];
+
+    if (isVideoOrScript) {
+      roleLine = 'તમે એક અનુભવી YouTube Content Strategist, Viral Script Writer અને Audience Retention નિષ્ણાત તરીકે જવાબ આપો.';
+      intentLabel = 'YouTube વિડિયો / સ્ક્રિપ્ટ માટે સ્માર્ટ પ્રોમ્પ્ટ';
+      focusLines = [
+        '1. દર્શકોનું ધ્યાન ખેંચે તેવો દમદાર 30-45 સેકન્ડનો હૂક (Hook) અને ક્લિકેબલ ટાઇટલ આઈડિયા આપો.',
+        '2. વિડિયોનું આખું માળખું (શરૂઆત, મુખ્ય મુદ્દાઓ, સરખામણી/ઉદાહરણ, અંત/CTA) સ્પષ્ટ રીતે ગોઠવીને આપો.',
+        '3. ગુજરાતી દર્શકોને સરળતાથી સમજાય તેવી જીવંત અને બોલચાલની શૈલી વાપરો.'
+      ];
+    } else if (isYojanaOrNews) {
+      roleLine = 'તમે સરકારી યોજનાઓ, પરિપત્રો, ભરતી નિયમો અને જાહેર માહિતીના નિષ્ણાત વિશ્લેષક તરીકે જવાબ આપો.';
+      intentLabel = 'યોજના / ભરતી / પરિપત્ર વિશ્લેષણ પ્રોમ્પ્ટ';
+      focusLines = [
+        '1. સત્તાવાર નિયમ/ઘોષણાનો સાચો અને સરળ સારાંશ આપો (અફવા વગર માત્ર હકીકત).',
+        '2. પાત્રતા (કોને લાભ મળશે), રકમ/પગાર, જરૂરી ડોક્યુમેન્ટ્સ અને અરજી પ્રક્રિયા અલગ-અલગ મુદ્દામાં સમજાવો.',
+        '3. મહત્વની તારીખો અને સામાન્ય લોકોને મૂંઝવતા પ્રશ્નો (FAQs) ના જવાબ આપો.'
+      ];
+    }
+
+    const photoSection = hasPhotos
+      ? `\n\n[ફોટા વિશ્લેષણ સૂચના (${validImages.length} ફોટા)]:\n- સાથે જોડેલા દરેક ફોટા/સ્ક્રીનશોટને ધ્યાનથી વાંચો અને તેમાં રહેલું લખાણ, આંકડા, તારીખ, કોષ્ટક (Table) અથવા દ્રશ્ય વિગત ઓળખો.\n- ફોટામાંથી મળેલી સાચી માહિતીને આધારે જ મુખ્ય જવાબ અને નિષ્કર્ષ તૈયાર કરો.`
       : '';
-    const fallbackPrompt = cleanInput
-      ? `નીચે મુજબના મારા પ્રશ્નને સમજીને ${langLabel} ભાષામાં સ્પષ્ટ, સચોટ અને મુદ્દાસર જવાબ આપો:\n\n"${cleanInput}"${photoNote}`
-      : `સાથે જોડેલા ફોટા/સ્ક્રીનશોટને ધ્યાનથી તપાસીને તેમાં શું છે, તેનો મુખ્ય અર્થ અને ઉપયોગી માર્ગદર્શન ${langLabel} ભાષામાં સ્પષ્ટ રીતે સમજાવો.`;
+
+    const topicContext = cleanInput
+      ? `\n\n[વિષય / પૂછપરછનો સંદર્ભ]:\nવપરાશકર્તાની જરૂરિયાત: ${cleanInput}`
+      : `\n\n[વિષય / પૂછપરછનો સંદર્ભ]:\nસાથે જોડેલા ફોટામાં જે માહિતી, દસ્તાવેજ કે દ્રશ્ય દેખાય છે તેનું સંપૂર્ણ વિશ્લેષણ કરી ઉપયોગી માર્ગદર્શન આપો.`;
+
+    const fallbackPrompt = `${roleLine}${topicContext}${photoSection}\n\n[જવાબનું જરૂરી માળખું (${langLabel} ભાષામાં)]:\n${focusLines.join('\n')}\n\nભાષા અને શૈલી: જવાબ સંપૂર્ણપણે સ્પષ્ટ, શુદ્ધ અને સરળતાથી સમજાય તેવી ${langLabel} ભાષામાં આપો.`;
 
     return {
       generatedPrompt: fallbackPrompt,
-      detectedIntent: validImages.length > 0 ? 'ફોટા અને પ્રશ્ન મુજબ પ્રોમ્પ્ટ (Demo/Fallback)' : 'તમારા પ્રશ્ન મુજબ પ્રોમ્પ્ટ (Demo/Fallback)',
-      model: 'fallback',
+      detectedIntent: hasPhotos ? `📷 ફોટા + ${intentLabel}` : intentLabel,
+      model: 'smart-prompt-builder',
       source: 'fallback'
     };
   }
