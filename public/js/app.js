@@ -25,7 +25,7 @@ import { renderVideoEditor } from './views/videoeditor.js?v=101.0';
 import { renderVideoEditDemo } from './views/videoEditDemo.js?v=99.0';
 import { renderSavedHub } from './views/savedhub.js?v=1.0';
 import { renderSavedAudios } from './views/savedaudios.js?v=1.0';
-import { renderSmartAsk } from './views/smartask.js?v=101.0';
+import { renderSmartAsk } from './views/smartask.js?v=101.1';
 import { initMobileLinkAndOfflineSystem } from './utils/mobileLinkModal.js?v=99.0';
 
 class App {

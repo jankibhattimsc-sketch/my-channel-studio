@@ -65,8 +65,14 @@ export async function renderSmartAsk(container) {
               <option value="en">English</option>
             </select>
             <a href="#settings" class="btn btn-outline" style="padding: 8px 12px; border-radius: 10px; font-weight: 800; font-size: 0.82rem; border-color: #f59e0b; color: #f59e0b; text-decoration: none;">
-              ⚙️ OpenAI Key સેટ કરો
+              ⚙️ Key સેટ કરો
             </a>
+            <button type="button" class="btn btn-outline sa-open-chatgpt-btn" style="padding: 8px 12px; border-radius: 10px; font-weight: 800; font-size: 0.82rem; border-color: #10b981; color: #10b981; background: rgba(16, 185, 129, 0.12);" title="ChatGPT વેબસાઇટ સીધી ખોલો">
+              🤖 ChatGPT
+            </button>
+            <button type="button" class="btn btn-outline sa-open-gemini-btn" style="padding: 8px 12px; border-radius: 10px; font-weight: 800; font-size: 0.82rem; border-color: #38bdf8; color: #38bdf8; background: rgba(56, 189, 248, 0.12);" title="Google Gemini વેબસાઇટ સીધી ખોલો">
+              ✨ Gemini
+            </button>
           </div>
         </div>
       </div>
@@ -126,12 +132,18 @@ export async function renderSmartAsk(container) {
             <span style="font-weight: 800; color: #fbbf24; font-size: 1rem;">🪄 ટૂલે બનાવેલો સ્માર્ટ Prompt</span>
             <span id="sa-intent-badge" style="margin-left: 8px; font-size: 0.78rem; background: rgba(251, 191, 36, 0.16); color: #fde68a; padding: 3px 10px; border-radius: 999px;"></span>
           </div>
-          <div style="display: flex; gap: 8px;">
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button id="sa-btn-copy-prompt" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.82rem; font-weight: 700;">
               📋 Prompt કોપી કરો
             </button>
             <button id="sa-btn-send-prompt" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.85rem; font-weight: 800;">
-              🤖 આ Prompt પરથી ChatGPT જવાબ આપો
+              🤖 આ Prompt પરથી AI જવાબ આપો
+            </button>
+            <button type="button" class="btn btn-outline sa-open-chatgpt-btn" style="padding: 6px 12px; font-size: 0.82rem; font-weight: 800; border-color: #10b981; color: #10b981;">
+              🤖 ChatGPT ખોલો
+            </button>
+            <button type="button" class="btn btn-outline sa-open-gemini-btn" style="padding: 6px 12px; font-size: 0.82rem; font-weight: 800; border-color: #38bdf8; color: #38bdf8;">
+              ✨ Gemini ખોલો
             </button>
           </div>
         </div>
@@ -396,6 +408,29 @@ export async function renderSmartAsk(container) {
   });
 
   container.querySelector('#sa-btn-refresh-history').addEventListener('click', loadHistory);
+
+  container.querySelectorAll('.sa-open-chatgpt-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const text = (generatedPromptEl.value || userInputEl.value || '').trim();
+      if (text) {
+        try { copyToClipboard(text, 'Prompt કોપી થયો — ChatGPT ખૂલી રહ્યું છે ✓'); } catch (_) {}
+      }
+      const url = text
+        ? `https://chatgpt.com/?q=${encodeURIComponent(text.slice(0, 1500))}`
+        : 'https://chatgpt.com/';
+      window.open(url, '_blank', 'noopener');
+    });
+  });
+
+  container.querySelectorAll('.sa-open-gemini-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const text = (generatedPromptEl.value || userInputEl.value || '').trim();
+      if (text) {
+        try { copyToClipboard(text, 'Prompt કોપી થયો — Gemini માં Paste કરો ✓'); } catch (_) {}
+      }
+      window.open('https://gemini.google.com/app', '_blank', 'noopener');
+    });
+  });
 
   loadHistory();
 }

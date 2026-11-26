@@ -1,7 +1,7 @@
 // Gyan Yatra Studio — Offline-First Progressive Web App Service Worker
 // Enables 100% offline functionality on mobile devices even without Wi-Fi or Mobile Data!
 
-const CACHE_NAME = 'gyan-yatra-v101.0';
+const CACHE_NAME = 'gyan-yatra-v101.1';
 
 // Essential App Shell resources required to boot and run offline
 const APP_SHELL = [
@@ -22,7 +22,7 @@ const APP_SHELL = [
   '/js/views/videoeditor.js?v=101.0',
   '/js/views/savedhub.js?v=1.0',
   '/js/views/savedaudios.js?v=1.0',
-  '/js/views/smartask.js?v=101.0',
+  '/js/views/smartask.js?v=101.1',
   '/js/views/workspace.js?v=99.0',
   '/js/views/thumbnails.js?v=99.0',
   '/js/views/seo.js?v=99.0',
