@@ -57,13 +57,16 @@ export async function renderSmartAsk(container) {
               તમારા મનનો કોઈ પણ પ્રશ્ન તમારી પોતાની ભાષામાં લખો અથવા ફોટો ઉમેરો — ટૂલ જાતે સમજીને સ્માર્ટ <b>Prompt</b> બનાવશે અને <b>ChatGPT</b> તેનો સ્પષ્ટ જવાબ આપશે.
             </p>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <label for="sa-lang-select" style="font-size: 0.84rem; color: #cbd5e1; font-weight: 700;">જવાબની ભાષા:</label>
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <label for="sa-lang-select" style="font-size: 0.84rem; color: var(--text-primary, #1e293b); font-weight: 700;">જવાબની ભાષા:</label>
             <select id="sa-lang-select" class="input" style="padding: 8px 12px; border-radius: 10px; font-weight: 700; min-width: 125px;">
               <option value="gu" selected>ગુજરાતી</option>
               <option value="hi">हिन्दी (Hindi)</option>
               <option value="en">English</option>
             </select>
+            <a href="#settings" class="btn btn-outline" style="padding: 8px 12px; border-radius: 10px; font-weight: 800; font-size: 0.82rem; border-color: #f59e0b; color: #f59e0b; text-decoration: none;">
+              ⚙️ OpenAI Key સેટ કરો
+            </a>
           </div>
         </div>
       </div>
