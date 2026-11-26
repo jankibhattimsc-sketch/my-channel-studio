@@ -37,9 +37,10 @@ class OpenAIService {
     if (!apiKey) return null;
     const primaryModel = this.getGeminiModel();
     const candidates = [...new Set([
-      'gemini-2.5-flash-lite',
-      'gemini-flash-latest',
       'gemini-3.5-flash',
+      'gemini-flash-latest',
+      'gemini-2.5-flash',
+      'gemini-2.5-flash-lite',
       primaryModel,
       'gemini-flash-lite-latest'
     ])];
@@ -1861,24 +1862,33 @@ ${hashtags.join(' ')}`;
       img => typeof img === 'string' && img.startsWith('data:image/')
     ).slice(0, 4);
 
-    const langLabel = answerLanguage === 'en' ? 'English' : (answerLanguage === 'hi' ? 'Hindi' : 'Gujarati');
-    const promptInstruction = `You are a world-class Prompt Engineer who deeply understands Gujarati, Roman Gujarati (Gujlish like "tet 2 na 5 topic aapo", "mare aa photo ma su che te jankari joie", "aa topic par video banavo che"), Hindi, and English.
-The user will give you:
-1) Their casual/rough words or question from their mind, and/or
-2) One or more uploaded photos/screenshots.
+    const langLabel = answerLanguage === 'en' ? 'English' : (answerLanguage === 'hi' ? 'Hindi' : 'ગુજરાતી (Gujarati)');
+    const isGu = answerLanguage === 'gu' || !answerLanguage;
+    const promptInstruction = isGu
+      ? `તમે ગુજરાતના શ્રેષ્ઠ AI Prompt Engineer છો. તમે રોમન ગુજરાતી (જેમ કે "tet 2 na 5 topic aapo", "aa photo samjavo", "mare video banavo che"), શુદ્ધ ગુજરાતી, હિન્દી અને ઇંગ્લિશ બધું ઊંડાણથી સમજો છો.
 
+વપરાશકર્તા તમને તેમના પોતાના શબ્દોમાં સવાલ/વિચાર અને/અથવા ૧ થી ૪ ફોટા આપશે.
+તમારું કામ એના પરથી ChatGPT / Gemini ને આપવા માટે **એકદમ સચોટ, સ્પષ્ટ, કુદરતી અને પૂરો ગુજરાતી Prompt** તૈયાર કરવાનું છે.
+
+કડક નિયમો:
+1. વપરાશકર્તાએ જે વિષય કે સવાલ લખ્યો હોય તેનો **મૂળ વિષય બિલકુલ બદલવો નહીં** — તે જ વિષય પર પૂરો, સ્પષ્ટ અને સચોટ Prompt બનાવો.
+2. વપરાશકર્તાના અધૂરા કે રોમન-ગુજરાતી શબ્દો બેઠા કોપી કરશો નહીં — તેને શુદ્ધ, અર્થપૂર્ણ અને પ્રોફેશનલ ગુજરાતીમાં ફેરવીને લખો.
+3. આખો "generatedPrompt" **૧૦૦% ગુજરાતીમાં જ** લખો (અંગ્રેજી ફકરા કે લાંબા અંગ્રેજી હેડિંગ નહીં — ફક્ત જરૂરી ટેક્નિકલ શબ્દો જેમ કે TET-2, YouTube, PDF, CTR કૌંસમાં લખી શકાય).
+4. જો ફોટા જોડેલા હોય, તો **પહેલાં ફોટાની અંદર શું લખેલું/દેખાયેલું છે તે વાંચો** અને Prompt માં તે ફોટાની ચોક્કસ વિગતો ઉમેરો જેથી જવાબ બિલકુલ સચોટ આવે.
+5. "generatedPrompt" સીધો ChatGPT કે Gemini ને મોકલી શકાય તેવો સ્પષ્ટ આદેશ (Prompt) હોવો જોઈએ — વધારાની બિનજરૂરી ભૂમિકા કે ફાલતુ શબ્દો વગર, સંપૂર્ણ અને મુદ્દાસર.
+
+ફક્ત માન્ય JSON આપો:
+{
+  "detectedIntent": "વપરાશકર્તા શું પૂછવા માંગે છે તેનો ૧ ટૂંકો ગુજરાતી સારાંશ",
+  "generatedPrompt": "પૂરો, સ્પષ્ટ, સચોટ અને સીધો વાપરી શકાય તેવો ગુજરાતી Prompt"
+}`
+      : `You are a world-class Prompt Engineer who deeply understands Gujarati, Roman Gujarati (Gujlish), Hindi, and English.
+Transform the user's rough words and/or attached photos into ONE super clear, accurate, complete Prompt written strictly in ${langLabel}.
 CRITICAL RULES:
-- Keep the EXACT topic/intent the user typed (e.g., if they wrote "TET 2", keep it 100% focused on "TET 2" — NEVER switch or change their topic!).
-- NEVER repeat their broken Roman-Gujarati words back verbatim. Rewrite their idea into a crystal-clear, super-detailed, professional Prompt written IN ${langLabel}!
-- Structure "generatedPrompt" cleanly using readable ${langLabel} headings:
-  📌 વિષય / મુખ્ય હેતુ (Clear Goal)
-  👤 નિષ્ણાત ભૂમિકા (Role)
-  📷 ફોટા વિશ્લેષણ (only if photos attached — inspect the attached photo carefully and describe exact details/text to extract)
-  📋 જરૂરી માહિતી (Numbered concrete points tailored to the user's exact topic)
-  ✅ જવાબનું ફોર્મેટ (${langLabel} માં સરળ, સચોટ અને મુદ્દાસર).
-- Output strictly valid JSON with keys:
-  - "detectedIntent": short 1-line summary in Gujarati of the user's exact topic/question
-  - "generatedPrompt": the complete, ready-to-use professional prompt written in clean ${langLabel}`;
+- Keep the exact topic and intent from the user (never change their topic).
+- Never echo raw broken words back verbatim; rewrite into polished, actionable ${langLabel}.
+- If photos are attached, inspect the photos first and include concrete details/text visible in the photos inside the prompt.
+Output strictly valid JSON with keys: "detectedIntent" and "generatedPrompt".`;
 
     const promptUserText = cleanInput
       ? `User's message in their own words:\n"${cleanInput}"\n\nUploaded photos count: ${validImages.length}`

@@ -317,13 +317,34 @@ export async function renderSmartAsk(container) {
     }
   }
 
-  container.querySelector('#sa-btn-build-prompt').addEventListener('click', async () => {
+  const btnAskAll = container.querySelector('#sa-btn-ask-all');
+  const btnBuildPrompt = container.querySelector('#sa-btn-build-prompt');
+  const btnSendPrompt = container.querySelector('#sa-btn-send-prompt');
+
+  function setBusy(busy) {
+    [btnAskAll, btnBuildPrompt, btnSendPrompt].forEach(b => {
+      if (b) {
+        b.disabled = busy;
+        b.style.opacity = busy ? '0.6' : '1';
+      }
+    });
+  }
+
+  function sourceLabel(src) {
+    if (src === 'gemini') return '✨ Google Gemini Live';
+    if (src === 'openai') return '🤖 ChatGPT Live';
+    return '⚙️ Local Smart Builder';
+  }
+
+  btnBuildPrompt.addEventListener('click', async () => {
     const userInput = userInputEl.value.trim();
     if (!userInput && attachedImages.length === 0) {
       setStatus('કૃપા કરીને તમારો પ્રશ્ન લખો અથવા ફોટો ઉમેરો.', true);
       return;
     }
-    setStatus('🪄 તમારી ભાષા અને ફોટો સમજીને સ્માર્ટ Prompt બની રહ્યો છે...');
+    setBusy(true);
+    generatedPromptEl.value = '';
+    setStatus('🪄 તમારી ભાષા અને ફોટો સમજીને શુદ્ધ ગુજરાતી Prompt બની રહ્યો છે...');
     try {
       const res = await api.buildSmartPrompt({
         userInput,
@@ -331,22 +352,26 @@ export async function renderSmartAsk(container) {
         answerLanguage: langSelectEl.value
       });
       generatedPromptEl.value = res.generatedPrompt || '';
-      intentBadgeEl.textContent = res.detectedIntent || 'Prompt તૈયાર છે';
+      intentBadgeEl.textContent = `${res.detectedIntent || 'Prompt તૈયાર છે'} • ${sourceLabel(res.source)}`;
       promptCardEl.style.display = 'block';
-      setStatus('✅ Prompt તૈયાર છે! હવે ChatGPT જવાબ માટે બટન દબાવો.');
+      setStatus(`✅ Prompt તૈયાર છે (${sourceLabel(res.source)})! હવે AI જવાબ માટે બટન દબાવો.`);
     } catch (err) {
       setStatus(`ભૂલ: ${err.message}`, true);
+    } finally {
+      setBusy(false);
     }
   });
 
-  container.querySelector('#sa-btn-send-prompt').addEventListener('click', async () => {
+  btnSendPrompt.addEventListener('click', async () => {
     const prompt = generatedPromptEl.value.trim();
     const userInput = userInputEl.value.trim();
     if (!prompt && !userInput && attachedImages.length === 0) {
       setStatus('પહેલા Prompt બનાવો અથવા પ્રશ્ન લખો.', true);
       return;
     }
-    setStatus('🤖 ChatGPT તમારા Prompt અને ફોટા પરથી જવાબ તૈયાર કરી રહ્યું છે...');
+    setBusy(true);
+    answerBodyEl.textContent = '';
+    setStatus('🤖 AI તમારા Prompt અને ફોટા પરથી જવાબ તૈયાર કરી રહ્યું છે...');
     try {
       const res = await api.answerSmartPrompt({
         prompt,
@@ -356,20 +381,25 @@ export async function renderSmartAsk(container) {
       });
       answerBodyEl.textContent = res.answer || '';
       answerCardEl.style.display = 'block';
-      setStatus('✅ ChatGPT નો જવાબ તૈયાર છે!');
+      setStatus(`✅ જવાબ તૈયાર છે (${sourceLabel(res.source)})!`);
       loadHistory();
     } catch (err) {
       setStatus(`ભૂલ: ${err.message}`, true);
+    } finally {
+      setBusy(false);
     }
   });
 
-  container.querySelector('#sa-btn-ask-all').addEventListener('click', async () => {
+  btnAskAll.addEventListener('click', async () => {
     const userInput = userInputEl.value.trim();
     if (!userInput && attachedImages.length === 0) {
       setStatus('કૃપા કરીને તમારો પ્રશ્ન લખો અથવા ફોટો ઉમેરો.', true);
       return;
     }
-    setStatus('🚀 ટૂલ તમારી ભાષા & ફોટો સમજીને Prompt બનાવી રહ્યું છે અને ChatGPT જવાબ આપી રહ્યું છે...');
+    setBusy(true);
+    generatedPromptEl.value = '';
+    answerBodyEl.textContent = '';
+    setStatus('🚀 ટૂલ તમારી ભાષા & ફોટો સમજીને સચોટ Prompt અને AI જવાબ તૈયાર કરી રહ્યું છે...');
     try {
       const res = await api.smartAskAll({
         userInput,
@@ -377,14 +407,16 @@ export async function renderSmartAsk(container) {
         answerLanguage: langSelectEl.value
       });
       generatedPromptEl.value = res.generatedPrompt || '';
-      intentBadgeEl.textContent = res.detectedIntent || 'Prompt તૈયાર છે';
+      intentBadgeEl.textContent = `${res.detectedIntent || 'Prompt તૈયાર છે'} • ${sourceLabel(res.source)}`;
       promptCardEl.style.display = 'block';
       answerBodyEl.textContent = res.answer || '';
       answerCardEl.style.display = 'block';
-      setStatus('✅ Prompt અને ChatGPT જવાબ બંને તૈયાર છે!');
+      setStatus(`✅ Prompt અને જવાબ બંને તૈયાર છે (${sourceLabel(res.source)})!`);
       loadHistory();
     } catch (err) {
       setStatus(`ભૂલ: ${err.message}`, true);
+    } finally {
+      setBusy(false);
     }
   });
 
