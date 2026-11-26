@@ -513,6 +513,7 @@ export async function renderVideoEditor(container, navigateTo) {
   // Audio Waveform Editor State
   let activeDecodedBuffer = null;
   let waveformPlayheadPct = 0;
+  let waveformZoomLevel = 1;
   let selectionStartSec = 0;
   let selectionEndSec = 0;
   let isDraggingSelection = false;
@@ -1931,9 +1932,14 @@ export async function renderVideoEditor(container, navigateTo) {
         decodeAudioUrlToBuffer(candidateSource).then(buf => {
           if (currentSlideIndex !== targetIdx) return; // Prevent race conditions
           activeDecodedBuffer = buf;
+          if (clip && buf && buf.duration > 0) {
+            clip.duration = Number(buf.duration.toFixed(2));
+            clip.formattedDuration = formatTime(clip.duration);
+          }
           selectionStartSec = 0;
           selectionEndSec = buf ? Math.min(2.0, buf.duration) : 0;
           waveformPlayheadPct = 0;
+          syncSelectionRangeInputs();
           redrawAllWaveforms(0);
         }).catch(() => {});
       } else {
@@ -2394,14 +2400,16 @@ export async function renderVideoEditor(container, navigateTo) {
   // Redraw all active waveform canvases across Step 1 and Step 5
   function redrawAllWaveforms(playheadPct = waveformPlayheadPct) {
     if (!activeDecodedBuffer) return;
-    const s1Canvas = container.querySelector('#step1-audio-waveform-canvas');
-    if (s1Canvas) {
-      drawInteractiveWaveform(s1Canvas, activeDecodedBuffer, selectionStartSec, selectionEndSec, playheadPct);
-    }
-    const wfCanvas = container.querySelector('#audio-waveform-canvas');
-    if (wfCanvas) {
-      drawInteractiveWaveform(wfCanvas, activeDecodedBuffer, selectionStartSec, selectionEndSec, playheadPct);
-    }
+    const zoom = Math.max(1, Number(waveformZoomLevel) || 1);
+    const applyZoomAndDraw = (canvas) => {
+      if (!canvas) return;
+      const targetWidth = Math.round(980 * zoom);
+      if (canvas.width !== targetWidth) canvas.width = targetWidth;
+      canvas.style.width = `${100 * zoom}%`;
+      drawInteractiveWaveform(canvas, activeDecodedBuffer, selectionStartSec, selectionEndSec, playheadPct);
+    };
+    applyZoomAndDraw(container.querySelector('#step1-audio-waveform-canvas'));
+    applyZoomAndDraw(container.querySelector('#audio-waveform-canvas'));
   }
 
   // =========================================================================
@@ -3707,9 +3715,16 @@ export async function renderVideoEditor(container, navigateTo) {
                     </div>
                   ` : ''}
 
-                  <!-- Waveform HTML5 Canvas -->
-                  <div style="width: 100%; height: 110px; position: relative; overflow: hidden; border-radius: 8px; border: 1.5px solid #334155; margin-bottom: 10px; background: #000000;">
-                    <canvas id="step1-audio-waveform-canvas" width="980" height="110" style="width: 100%; height: 100%; display: block; cursor: crosshair;"></canvas>
+                  <!-- Waveform HTML5 Canvas (Full Audio + Zoom & Horizontal Scroll) -->
+                  <div style="display: flex; justify-content: flex-end; align-items: center; gap: 5px; margin-bottom: 6px; flex-wrap: wrap;">
+                    <span style="font-size: 0.72rem; color: #94a3b8; font-weight: 700;">🔍 વેવફોર્મ ઝૂમ:</span>
+                    <button type="button" class="btn-wf-zoom" data-zoom="1" style="background: ${waveformZoomLevel === 1 ? '#0284c7' : '#1e293b'}; color: #fff; border: 1px solid #475569; font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 4px; cursor: pointer;">1x પૂરો ઓડિયો</button>
+                    <button type="button" class="btn-wf-zoom" data-zoom="2" style="background: ${waveformZoomLevel === 2 ? '#0284c7' : '#1e293b'}; color: #fff; border: 1px solid #475569; font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 4px; cursor: pointer;">2x</button>
+                    <button type="button" class="btn-wf-zoom" data-zoom="4" style="background: ${waveformZoomLevel === 4 ? '#0284c7' : '#1e293b'}; color: #fff; border: 1px solid #475569; font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 4px; cursor: pointer;">4x</button>
+                    <button type="button" class="btn-wf-zoom" data-zoom="8" style="background: ${waveformZoomLevel === 8 ? '#0284c7' : '#1e293b'}; color: #fff; border: 1px solid #475569; font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 4px; cursor: pointer;">8x</button>
+                  </div>
+                  <div style="width: 100%; height: 118px; position: relative; overflow-x: auto; overflow-y: hidden; border-radius: 8px; border: 1.5px solid #334155; margin-bottom: 10px; background: #000000;">
+                    <canvas id="step1-audio-waveform-canvas" width="${Math.round(980 * (waveformZoomLevel || 1))}" height="110" style="width: ${100 * (waveformZoomLevel || 1)}%; height: 110px; display: block; cursor: crosshair;"></canvas>
                   </div>
 
                   <!-- Waveform Selection Range Inputs, Micro-Nudges & Silence Detect -->
@@ -3718,7 +3733,7 @@ export async function renderVideoEditor(container, navigateTo) {
                       <span>⏱️ સમય:</span>
                       <span style="font-family: monospace; color: #38bdf8; font-weight: 700;">00:00.00</span>
                       <span>/</span>
-                      <span style="font-family: monospace; color: #10b981; font-weight: 700;">${formatTimePrecise(audioDur)}</span>
+                      <span id="step1-total-audio-dur" style="font-family: monospace; color: #10b981; font-weight: 700;">${formatTimePrecise(audioDur)}</span>
                     </div>
 
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
@@ -5003,9 +5018,9 @@ export async function renderVideoEditor(container, navigateTo) {
                       </span>
                     </div>
 
-                    <!-- Waveform HTML5 Canvas -->
-                    <div style="width: 100%; height: 110px; position: relative; overflow: hidden; border-radius: 6px;">
-                      <canvas id="audio-waveform-canvas" width="980" height="110" style="width: 100%; height: 100%; display: block; cursor: crosshair;"></canvas>
+                    <!-- Waveform HTML5 Canvas (Full Audio + Zoom & Scroll) -->
+                    <div style="width: 100%; height: 118px; position: relative; overflow-x: auto; overflow-y: hidden; border-radius: 6px;">
+                      <canvas id="audio-waveform-canvas" width="${Math.round(980 * (waveformZoomLevel || 1))}" height="110" style="width: ${100 * (waveformZoomLevel || 1)}%; height: 110px; display: block; cursor: crosshair;"></canvas>
                     </div>
 
                     <!-- Range Controls Below Canvas with Micro-Nudges & Auto Silence -->
@@ -5355,14 +5370,20 @@ export async function renderVideoEditor(container, navigateTo) {
 
     // Draw initial waveforms if canvas and buffer exist
     if (activeDecodedBuffer) {
+      syncSelectionRangeInputs();
       redrawAllWaveforms(waveformPlayheadPct);
     } else if (curClip?.audioUrl) {
       decodeAudioUrlToBuffer(curClip.audioUrl).then(buf => {
         if (!buf) return;
         activeDecodedBuffer = buf;
+        if (curClip && buf.duration > 0) {
+          curClip.duration = Number(buf.duration.toFixed(2));
+          curClip.formattedDuration = formatTime(curClip.duration);
+        }
         selectionStartSec = 0;
         selectionEndSec = Math.min(2.0, buf.duration);
         waveformPlayheadPct = 0;
+        syncSelectionRangeInputs();
         redrawAllWaveforms(0);
       });
     }
@@ -5372,6 +5393,7 @@ export async function renderVideoEditor(container, navigateTo) {
   // Smooth Audio Waveform Selection Engine (Draggable Handles, Window Panning & Auto Silence)
   // =========================================================================
   function syncSelectionRangeInputs() {
+    const realDur = activeDecodedBuffer ? activeDecodedBuffer.duration : 0;
     const s = Math.min(selectionStartSec, selectionEndSec);
     const e = Math.max(selectionStartSec, selectionEndSec);
     const diff = Math.abs(e - s);
@@ -5379,11 +5401,20 @@ export async function renderVideoEditor(container, navigateTo) {
     const startInputs = container.querySelectorAll('#input-step1-sel-start, #input-sel-start');
     const endInputs = container.querySelectorAll('#input-step1-sel-end, #input-sel-end');
     startInputs.forEach(inp => {
+      if (realDur > 0) inp.max = realDur.toFixed(2);
       if (typeof document !== 'undefined' && document.activeElement !== inp) inp.value = s.toFixed(2);
     });
     endInputs.forEach(inp => {
+      if (realDur > 0) inp.max = realDur.toFixed(2);
       if (typeof document !== 'undefined' && document.activeElement !== inp) inp.value = e.toFixed(2);
     });
+
+    if (realDur > 0) {
+      const scrubber = container.querySelector('#audio-scrubber-input');
+      if (scrubber) scrubber.max = realDur.toFixed(2);
+      const step1Total = container.querySelector('#step1-total-audio-dur');
+      if (step1Total) step1Total.textContent = formatTimePrecise(realDur);
+    }
 
     const rangeInfos = container.querySelectorAll('#step1-sel-range-info');
     rangeInfos.forEach(info => {
@@ -6341,9 +6372,20 @@ export async function renderVideoEditor(container, navigateTo) {
 
     // Step 1 Smooth Interactive Waveform Canvas Drag & Selection
     const step1WfCanvas = container.querySelector('#step1-audio-waveform-canvas');
-    if (step1WfCanvas && activeDecodedBuffer) {
+    if (step1WfCanvas) {
       setupWaveformInteraction(step1WfCanvas, 'step1');
     }
+
+    // Waveform Zoom Buttons (1x Full Audio, 2x, 4x, 8x)
+    container.querySelectorAll('.btn-wf-zoom').forEach(btn => {
+      btn.onclick = () => {
+        waveformZoomLevel = Math.max(1, Number(btn.dataset.zoom) || 1);
+        container.querySelectorAll('.btn-wf-zoom').forEach(b => {
+          b.style.background = Number(b.dataset.zoom) === waveformZoomLevel ? '#0284c7' : '#1e293b';
+        });
+        redrawAllWaveforms(waveformPlayheadPct);
+      };
+    });
 
     // Micro-Nudges for Selection Start & End (Smooth Adjustment for Silence Cutting)
     container.querySelectorAll('.btn-nudge-start-left').forEach(btn => {
@@ -8116,7 +8158,7 @@ export async function renderVideoEditor(container, navigateTo) {
 
     // Step 5 Interactive Waveform Selection (Smooth Dragging handles, Window Drag & Micro-Nudges)
     const wfCanvas = container.querySelector('#audio-waveform-canvas');
-    if (wfCanvas && activeDecodedBuffer) {
+    if (wfCanvas) {
       setupWaveformInteraction(wfCanvas, 'step5');
     }
 
