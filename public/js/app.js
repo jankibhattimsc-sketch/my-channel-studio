@@ -25,7 +25,7 @@ import { renderVideoEditor } from './views/videoeditor.js?v=101.4';
 import { renderVideoEditDemo } from './views/videoEditDemo.js?v=99.0';
 import { renderSavedHub } from './views/savedhub.js?v=1.0';
 import { renderSavedAudios } from './views/savedaudios.js?v=101.4';
-import { renderSmartAsk } from './views/smartask.js?v=101.8';
+import { renderSmartAsk } from './views/smartask.js?v=101.9';
 import { renderFacebookTool } from './views/facebook.js?v=101.5';
 import { initMobileLinkAndOfflineSystem } from './utils/mobileLinkModal.js?v=99.0';
 

@@ -330,10 +330,10 @@ export async function renderSmartAsk(container) {
     });
   }
 
-  function sourceLabel(src) {
-    if (src === 'gemini') return '✨ Google Gemini Live';
-    if (src === 'openai') return '🤖 ChatGPT Live';
-    return '⚙️ Local Smart Builder';
+  function sourceLabel(src, model = '') {
+    if (src === 'gemini') return `✨ Gemini API Live${model ? ' (' + model + ')' : ''}`;
+    if (src === 'openai') return `🤖 ChatGPT API Live${model ? ' (' + model + ')' : ''}`;
+    return '⚙️ Local Fallback';
   }
 
   btnBuildPrompt.addEventListener('click', async () => {
@@ -352,9 +352,9 @@ export async function renderSmartAsk(container) {
         answerLanguage: langSelectEl.value
       });
       generatedPromptEl.value = res.generatedPrompt || '';
-      intentBadgeEl.textContent = `${res.detectedIntent || 'Prompt તૈયાર છે'} • ${sourceLabel(res.source)}`;
+      intentBadgeEl.textContent = `${res.detectedIntent || 'Prompt તૈયાર છે'} • ${sourceLabel(res.source, res.model)}`;
       promptCardEl.style.display = 'block';
-      setStatus(`✅ Prompt તૈયાર છે (${sourceLabel(res.source)})! હવે AI જવાબ માટે બટન દબાવો.`);
+      setStatus(`✅ Master Prompt તૈયાર છે (${sourceLabel(res.source, res.model)})!`);
     } catch (err) {
       setStatus(`ભૂલ: ${err.message}`, true);
     } finally {
@@ -407,11 +407,11 @@ export async function renderSmartAsk(container) {
         answerLanguage: langSelectEl.value
       });
       generatedPromptEl.value = res.generatedPrompt || '';
-      intentBadgeEl.textContent = `${res.detectedIntent || 'Prompt તૈયાર છે'} • ${sourceLabel(res.source)}`;
+      intentBadgeEl.textContent = `${res.detectedIntent || 'Prompt તૈયાર છે'} • ${sourceLabel(res.source, res.model)}`;
       promptCardEl.style.display = 'block';
       answerBodyEl.textContent = res.answer || '';
       answerCardEl.style.display = 'block';
-      setStatus(`✅ Prompt અને જવાબ બંને તૈયાર છે (${sourceLabel(res.source)})!`);
+      setStatus(`✅ Prompt અને જવાબ બંને તૈયાર છે (${sourceLabel(res.source, res.model)})!`);
       loadHistory();
     } catch (err) {
       setStatus(`ભૂલ: ${err.message}`, true);
