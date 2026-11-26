@@ -9079,6 +9079,108 @@ export async function renderVideoEditor(container, navigateTo) {
       totalDur = Math.max(totalDur, 2);
       renderTotalTimeSec = totalDur;
 
+      // FAST SERVER-SIDE FFMPEG RENDERER (Joins FULL audio of each slide 10x-30x faster than real-time MediaRecorder)
+      try {
+        const fastBar = container.querySelector('#live-render-progress-bar');
+        const fastTimeDisp = container.querySelector('#live-render-time-display');
+        showNoticeToast('⚡ ઝડપી HD MP4 વિડીયો બની રહ્યો છે (દરેક સ્લાઇડનો આખો ઓડિયો જોડાઈ રહ્યો છે)...', 'info');
+
+        const slidePayloads = [];
+        for (let idx = 0; idx < preparedTracks.length; idx++) {
+          const track = preparedTracks[idx];
+          drawFrame(track.clip);
+          if (liveCtx && liveCanvas) {
+            try { liveCtx.drawImage(exportCanvas, 0, 0, liveCanvas.width, liveCanvas.height); } catch (_) {}
+          }
+          const imageBase64 = exportCanvas.toDataURL('image/jpeg', 0.92);
+          let audioBase64 = '';
+          if (track.buffer) {
+            const wavResult = audioBufferToWav(track.buffer);
+            const wavBlob = wavResult instanceof Blob ? wavResult : new Blob([wavResult], { type: 'audio/wav' });
+            audioBase64 = await new Promise((resolve) => {
+              const rd = new FileReader();
+              rd.onloadend = () => resolve(rd.result || '');
+              rd.onerror = () => resolve('');
+              rd.readAsDataURL(wavBlob);
+            });
+          }
+          slidePayloads.push({
+            imageBase64,
+            audioBase64,
+            duration: track.buffer ? track.buffer.duration : track.duration
+          });
+          const prepPct = Math.min(60, Math.round(((idx + 1) / preparedTracks.length) * 60));
+          if (fastBar) fastBar.style.width = `${prepPct}%`;
+          if (fastTimeDisp) fastTimeDisp.textContent = `સ્લાઇડ ${idx + 1}/${preparedTracks.length} તૈયાર...`;
+        }
+
+        if (fastBar) fastBar.style.width = '75%';
+        if (fastTimeDisp) fastTimeDisp.textContent = `MP4 જોડાઈ રહ્યો છે (${formatTime(totalDur)})...`;
+
+        const safeProjName = (project.name || 'Gyan_Yatra_Video').replace(/[^a-zA-Z0-9_\u0A80-\u0AFF]/g, '_');
+        const downloadFilename = `${safeProjName}_${clipsToRender.length}SelectedSlides_1080p.mp4`;
+        const fastResp = await fetch('/api/voice/render-slides-video', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            filename: downloadFilename,
+            topicId: project.id || 'default',
+            slides: slidePayloads
+          })
+        });
+        const fastData = await fastResp.json().catch(() => null);
+        if (fastResp.ok && fastData && fastData.success && fastData.videoUrl) {
+          if (fastBar) fastBar.style.width = '100%';
+          try { keepaliveOsc.stop(); } catch (_) {}
+          try { limiter.disconnect(); } catch (_) {}
+          try { masterGain.disconnect(); } catch (_) {}
+          try { audioCtx.close(); } catch (_) {}
+
+          savedVideoUrl = fastData.videoUrl;
+          savedVideoFilename = fastData.filename || downloadFilename;
+          project.editing.lastExportedVideoUrl = savedVideoUrl;
+          project.editing.lastExportedFilename = savedVideoFilename;
+          project.editing.savedVideo = {
+            videoUrl: savedVideoUrl,
+            filename: savedVideoFilename,
+            duration: fastData.duration || totalDur,
+            resolution: '1920x1080 Full HD (Fast FFmpeg)',
+            sizeBytes: fastData.fileSize || 0,
+            createdAt: new Date().toISOString()
+          };
+          project.editing.generatedClips = generatedClips;
+          project.editing.exportHistory.push({
+            filename: savedVideoFilename,
+            duration: fastData.duration || totalDur,
+            createdAt: new Date().toISOString()
+          });
+          projectState.updateTool('editing', project.editing);
+
+          const realMp4Url = `/api/voice/download-video?file=${encodeURIComponent(savedVideoFilename)}&name=${encodeURIComponent(downloadFilename)}`;
+          const dl = document.createElement('a');
+          dl.href = realMp4Url;
+          dl.setAttribute('download', downloadFilename);
+          document.body.appendChild(dl);
+          dl.click();
+          document.body.removeChild(dl);
+
+          isRendering = false;
+          activeViewMode = 'saved';
+          renderView();
+          showNoticeToast('⚡ આખો 1080p MP4 વિડીયો ફટાફટ બનીને Saved Hub માં સેવ થઈ ગયો છે!', 'success');
+          try {
+            localStorage.setItem('gyan_last_saved_video_file', savedVideoFilename || '');
+            localStorage.setItem('gyan_last_saved_video_topic', project.topic || project.name || '');
+          } catch (_) {}
+          if (typeof navigateTo === 'function') {
+            setTimeout(() => navigateTo('savedhub'), 600);
+          }
+          return;
+        }
+      } catch (fastErr) {
+        console.warn('[Fast FFmpeg Render fallback to MediaRecorder]:', fastErr.message);
+      }
+
       // Ensure audioCtx is running before starting recording & scheduling
       if (audioCtx.state === 'suspended') {
         try { await audioCtx.resume(); } catch (_) {}

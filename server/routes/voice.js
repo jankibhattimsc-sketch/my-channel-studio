@@ -812,6 +812,175 @@ router.post('/upload-video-blob', async (req, res) => {
   }
 });
 
+// Fast Server-Side FFmpeg Slide + Full Audio Video Stitcher (10x-30x faster than real-time browser MediaRecorder)
+router.post('/render-slides-video', async (req, res) => {
+  const fs = require('fs');
+  const path = require('path');
+  const os = require('os');
+  const { spawnSync } = require('child_process');
+  let workDir = '';
+
+  try {
+    const { slides = [], filename = 'presentation_video.mp4', topicId = 'default' } = req.body || {};
+    if (!Array.isArray(slides) || slides.length === 0) {
+      return res.status(400).json({ success: false, error: 'વિડીયો બનાવવા માટે ઓછામાં ઓછી ૧ સ્લાઇડ જરૂરી છે.' });
+    }
+
+    const ffmpeg = require('ffmpeg-static');
+    if (!ffmpeg || !fs.existsSync(ffmpeg)) {
+      return res.status(503).json({ success: false, error: 'FFmpeg binary not available on server' });
+    }
+
+    const outDir = path.join(__dirname, '..', '..', 'public', 'videos');
+    if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+
+    workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gyan-vid-'));
+    const segmentPaths = [];
+    let totalDuration = 0;
+
+    for (let i = 0; i < slides.length; i++) {
+      const s = slides[i] || {};
+      const dur = Math.max(0.5, Number(s.duration) || 5);
+      totalDuration += dur;
+
+      const imgB64 = String(s.imageBase64 || '');
+      const imgComma = imgB64.indexOf('base64,');
+      const imgClean = (imgComma !== -1 ? imgB64.slice(imgComma + 7) : imgB64).replace(/\s/g, '');
+      const imgPath = path.join(workDir, `slide_${i}.jpg`);
+      fs.writeFileSync(imgPath, Buffer.from(imgClean, 'base64'));
+
+      const segPath = path.join(workDir, `seg_${i}.mp4`);
+      const audioB64 = String(s.audioBase64 || '');
+      let ffArgs;
+
+      if (audioB64.length > 64) {
+        const aComma = audioB64.indexOf('base64,');
+        const aClean = (aComma !== -1 ? audioB64.slice(aComma + 7) : audioB64).replace(/\s/g, '');
+        const audioPath = path.join(workDir, `audio_${i}.wav`);
+        fs.writeFileSync(audioPath, Buffer.from(aClean, 'base64'));
+
+        ffArgs = [
+          '-y',
+          '-loop', '1',
+          '-framerate', '2',
+          '-i', imgPath,
+          '-i', audioPath,
+          '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,format=yuv420p',
+          '-c:v', 'libx264',
+          '-tune', 'stillimage',
+          '-preset', 'ultrafast',
+          '-crf', '22',
+          '-r', '30',
+          '-c:a', 'aac',
+          '-b:a', '192k',
+          '-ar', '44100',
+          '-ac', '2',
+          '-shortest',
+          segPath
+        ];
+      } else {
+        ffArgs = [
+          '-y',
+          '-loop', '1',
+          '-framerate', '2',
+          '-t', String(dur),
+          '-i', imgPath,
+          '-f', 'lavfi',
+          '-t', String(dur),
+          '-i', 'anullsrc=r=44100:cl=stereo',
+          '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,format=yuv420p',
+          '-c:v', 'libx264',
+          '-tune', 'stillimage',
+          '-preset', 'ultrafast',
+          '-crf', '22',
+          '-r', '30',
+          '-c:a', 'aac',
+          '-b:a', '192k',
+          '-ar', '44100',
+          '-ac', '2',
+          '-shortest',
+          segPath
+        ];
+      }
+
+      const r = spawnSync(ffmpeg, ffArgs, { timeout: 120000 });
+      if (r.status !== 0 || !fs.existsSync(segPath)) {
+        const errTxt = (r.stderr || '').toString().slice(-300);
+        throw new Error(`FFmpeg segment ${i} failed: ${errTxt}`);
+      }
+      segmentPaths.push(segPath);
+    }
+
+    const cleanBase = String(filename).replace(/\.(webm|mp4)$/i, '').replace(/[^a-zA-Z0-9._-]/g, '_');
+    const finalMp4Name = `video_${Date.now()}_${cleanBase}.mp4`;
+    const finalMp4Path = path.join(outDir, finalMp4Name);
+    const latestPath = path.join(outDir, 'latest_video.mp4');
+
+    if (segmentPaths.length === 1) {
+      const remux = spawnSync(ffmpeg, ['-y', '-i', segmentPaths[0], '-c', 'copy', '-movflags', '+faststart', finalMp4Path], { timeout: 60000 });
+      if (remux.status !== 0) fs.copyFileSync(segmentPaths[0], finalMp4Path);
+    } else {
+      const concatListPath = path.join(workDir, 'concat.txt');
+      fs.writeFileSync(concatListPath, segmentPaths.map(p => `file '${p.replace(/\\/g, '/').replace(/'/g, "'\\''")}'`).join('\n'), 'utf8');
+      const concatRes = spawnSync(ffmpeg, [
+        '-y',
+        '-f', 'concat',
+        '-safe', '0',
+        '-i', concatListPath,
+        '-c', 'copy',
+        '-movflags', '+faststart',
+        finalMp4Path
+      ], { timeout: 120000 });
+      if (concatRes.status !== 0 || !fs.existsSync(finalMp4Path)) {
+        throw new Error(`FFmpeg concat failed: ${(concatRes.stderr || '').toString().slice(-300)}`);
+      }
+    }
+
+    try { fs.copyFileSync(finalMp4Path, latestPath); } catch (_) { }
+    const finalSizeBytes = fs.statSync(finalMp4Path).size;
+    const finalVideoUrl = `/videos/${finalMp4Name}`;
+
+    try {
+      const db = require('../db');
+      if (!db.data.topicVideos) db.data.topicVideos = {};
+      if (topicId) {
+        db.data.topicVideos[topicId] = {
+          videoUrl: finalVideoUrl,
+          filename: finalMp4Name,
+          sizeBytes: finalSizeBytes,
+          duration: totalDuration,
+          createdAt: new Date().toISOString()
+        };
+      }
+      db.updateCentralTopicData(topicId, 'videos', {
+        videoUrl: finalVideoUrl,
+        filename: finalMp4Name,
+        sizeBytes: finalSizeBytes,
+        duration: totalDuration,
+        createdAt: new Date().toISOString()
+      });
+      db.updateCentralTopicStage(topicId, 'videoEditing', true);
+    } catch (_) { }
+
+    try { fs.rmSync(workDir, { recursive: true, force: true }); } catch (_) { }
+
+    res.json({
+      success: true,
+      videoUrl: finalVideoUrl,
+      latestVideoUrl: '/videos/latest_video.mp4',
+      filename: finalMp4Name,
+      fileSize: finalSizeBytes,
+      duration: totalDuration
+    });
+  } catch (err) {
+    if (workDir) {
+      try { fs.rmSync(workDir, { recursive: true, force: true }); } catch (_) { }
+    }
+    console.error('[VoiceRoute] render-slides-video error:', err);
+    res.status(500).json({ success: false, error: err.message || 'વિડીયો બનાવવામાં સમસ્યા આવી.' });
+  }
+});
+
 // Retrieve existing / latest video for a specific topic (Strict isolation to prevent foreign video bleed)
 router.get('/project-video', (req, res) => {
   try {
