@@ -1862,21 +1862,23 @@ ${hashtags.join(' ')}`;
     ).slice(0, 4);
 
     const langLabel = answerLanguage === 'en' ? 'English' : (answerLanguage === 'hi' ? 'Hindi' : 'Gujarati');
-    const promptInstruction = `You are a world-class Prompt Engineer who deeply understands Gujarati, Roman Gujarati (Gujlish like "mare aa photo ma su che te jankari joie", "aa topic par video banavo che"), Hindi, and English.
+    const promptInstruction = `You are a world-class Prompt Engineer who deeply understands Gujarati, Roman Gujarati (Gujlish like "tet 2 na 5 topic aapo", "mare aa photo ma su che te jankari joie", "aa topic par video banavo che"), Hindi, and English.
 The user will give you:
 1) Their casual/rough words or question from their mind, and/or
 2) One or more uploaded photos/screenshots.
 
 CRITICAL RULES:
-- NEVER just repeat or quote the user's raw words back. TRANSFORM their rough thought into a complete, professional, high-clarity Prompt!
-- Structure the generated prompt cleanly with:
-  1. Expert Role (e.g., Act as an expert ...)
-  2. Clear Objective & Context (rewrite what the user actually wants in polished, unambiguous language)
-  3. Photo Instructions (if photos are attached, inspect the photos first and explicitly state what visual details, text, tables, numbers, or scenes from the photos to analyze/use)
-  4. Required Output Format (bullet points, step-by-step guide, practical examples, clear summary in ${langLabel}).
+- Keep the EXACT topic/intent the user typed (e.g., if they wrote "TET 2", keep it 100% focused on "TET 2" — NEVER switch or change their topic!).
+- NEVER repeat their broken Roman-Gujarati words back verbatim. Rewrite their idea into a crystal-clear, super-detailed, professional Prompt written IN ${langLabel}!
+- Structure "generatedPrompt" cleanly using readable ${langLabel} headings:
+  📌 વિષય / મુખ્ય હેતુ (Clear Goal)
+  👤 નિષ્ણાત ભૂમિકા (Role)
+  📷 ફોટા વિશ્લેષણ (only if photos attached — inspect the attached photo carefully and describe exact details/text to extract)
+  📋 જરૂરી માહિતી (Numbered concrete points tailored to the user's exact topic)
+  ✅ જવાબનું ફોર્મેટ (${langLabel} માં સરળ, સચોટ અને મુદ્દાસર).
 - Output strictly valid JSON with keys:
-  - "detectedIntent": short 1-line summary in Gujarati of what the user wants
-  - "generatedPrompt": the complete, ready-to-use professional prompt`;
+  - "detectedIntent": short 1-line summary in Gujarati of the user's exact topic/question
+  - "generatedPrompt": the complete, ready-to-use professional prompt written in clean ${langLabel}`;
 
     const promptUserText = cleanInput
       ? `User's message in their own words:\n"${cleanInput}"\n\nUploaded photos count: ${validImages.length}`

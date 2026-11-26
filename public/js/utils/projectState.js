@@ -2319,20 +2319,32 @@ class ProjectStateManager {
   }
 
   // Backwards compatibility methods
-  setTopic(topic, masterPrompt = '') {
+  setTopic(topic, masterPrompt = '', options = {}) {
     const cleanTopic = (topic || '').trim();
     if (!cleanTopic) return;
-    this.updateTool('idea', { topic: cleanTopic, masterPrompt });
-    const active = this.getActiveProject();
+
+    // Resolve current active project WITHOUT letting stale gyan_active_topic_name snap it back
+    let active = this.projects.find(item => item && (item.id === this.activeProjectId || item.topicId === this.activeProjectId));
+    if (!active) active = this.getActiveProject();
+
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('gyan_active_topic_name', cleanTopic);
+        if (active?.id) localStorage.setItem('gyan_active_topic_id', active.id);
+      }
+      if (typeof window !== 'undefined') window.prefillTopic = cleanTopic;
+    } catch (_) {}
+
     if (active) {
       const prevTopic = (active.topic || active.name || '').trim();
       active.topic = cleanTopic;
       active.name = cleanTopic;
       active.recommendedTitle = cleanTopic;
+      active.idea = { ...(active.idea || {}), topic: cleanTopic, masterPrompt: masterPrompt || active.idea?.masterPrompt || '' };
       active.updatedAt = new Date().toISOString();
 
-      // If the topic fundamentally changed, adapt the slides, script, prompt, SEO to the new topic!
-      if (prevTopic && prevTopic !== cleanTopic) {
+      // Only rebuild project kit when explicitly requested (never discard slides/PDF mid-typing)
+      if (options.rebuildKit && prevTopic && prevTopic !== cleanTopic && !active.slide?.importedPresentation) {
         const refreshed = buildTopicProjectKit(cleanTopic, active.id, active);
         if (refreshed) {
           active.slide = refreshed.slide;
@@ -2342,10 +2354,6 @@ class ProjectStateManager {
         }
       }
       this.saveProjects();
-      try {
-        if (typeof localStorage !== 'undefined') localStorage.setItem('gyan_active_topic_name', cleanTopic);
-        if (typeof window !== 'undefined') window.prefillTopic = cleanTopic;
-      } catch (_) {}
       window.dispatchEvent(new CustomEvent('topicContextChanged', { detail: { topicId: active.id, project: active } }));
       window.dispatchEvent(new CustomEvent('projectStateUpdated', { detail: active }));
     }

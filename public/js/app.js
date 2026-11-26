@@ -1,6 +1,6 @@
 import { api } from './api.js?v=101.6';
 import { copyToClipboard } from './utils/clipboard.js?v=90.0';
-import { projectState } from './utils/projectState.js?v=90.0';
+import { projectState } from './utils/projectState.js?v=101.7';
 import { renderProjects } from './views/projects.js?v=90.0';
 import { renderHome } from './views/home.js?v=100.2';
 import { renderPasteTopics } from './views/pastetopics.js?v=99.9';
@@ -12,7 +12,7 @@ import { renderSEO } from './views/seo.js?v=90.0';
 import { renderThumbnails } from './views/thumbnails.js?v=90.0';
 import { renderScriptWriter } from './views/scriptwriter.js?v=101.6';
 import { renderChatGPT } from './views/chatgpt.js?v=90.0';
-import { renderSlidePrompts } from './views/slideprompts.js?v=90.0';
+import { renderSlidePrompts } from './views/slideprompts.js?v=101.7';
 import { renderResearch } from './views/research.js?v=90.0';
 import { renderSettings } from './views/settings.js?v=101.0';
 import { renderMyVoice } from './views/myvoice.js?v=99.0';

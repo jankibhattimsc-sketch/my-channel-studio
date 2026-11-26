@@ -529,7 +529,7 @@ export function renderSlidePrompts(container, navigateTo) {
             </h2>
             <div style="margin-top: 6px; display: inline-flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.15); border: 1.5px solid #10b981; padding: 4px 12px; border-radius: 8px;">
               <span style="font-size: 0.78rem; font-weight: 800; color: #6ee7b7;">🎯 સક્રિય વિષય (ACTIVE TOPIC):</span>
-              <strong style="color: #ffffff; font-size: 0.95rem;">${activeTopic}</strong>
+              <strong id="sp-active-topic-display" style="color: #ffffff; font-size: 0.95rem;">${activeTopic}</strong>
             </div>
             <p style="color: #cbd5e1; font-size: 0.8rem; margin: 6px 0 0 0;">
               ChatGPT અને NotebookLM માટે ફક્ત સ્લાઇડ પ્રમાણે કન્ટેન્ટ સર્ચ પ્રોમ્પ્ટ — વક્તાસ્પીચ વગર ફક્ત સ્લાઇડ કન્ટેન્ટ & ૧૬:૯ વાસ્તવિક ફોટા!
@@ -1822,13 +1822,16 @@ export function renderSlidePrompts(container, navigateTo) {
       const val = e.target.value.trim();
       if (!val) return;
       activeTopic = val;
-      projectState.setTopic(activeTopic);
+      const badgeTopicEl = container.querySelector('#sp-active-topic-display');
+      if (badgeTopicEl) badgeTopicEl.textContent = activeTopic;
       try {
         if (typeof localStorage !== 'undefined') localStorage.setItem('gyan_active_topic_name', activeTopic);
+        if (typeof window !== 'undefined') window.prefillTopic = activeTopic;
       } catch (_) {}
 
       clearTimeout(topicDebounceTimer);
       topicDebounceTimer = setTimeout(() => {
+        projectState.setTopic(activeTopic, '', { rebuildKit: false });
         const generated = generatePromptData(activeTopic, slideCountChoice);
         currentUploadedSourcePrompt = generated.uploadedSourcePrompt;
         currentSearchPrompt = generated.pptDeckPrompt;
