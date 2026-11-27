@@ -29,3 +29,5 @@ test_*.js
 ai_engines/SadTalker/
 public/uploads/avatars/
 data/avatar_jobs/
+kids-pdf-store/data/
+kids-pdf-store/uploads/

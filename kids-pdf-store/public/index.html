@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LittleStars Kids PDF Books — Online Store</title>
+  <link rel="stylesheet" href="/store.css?v=1.0" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a href="/" class="brand">
+        <div class="brand-icon">📚</div>
+        <div>
+          <div id="store-brand-name" class="brand-title">LittleStars Kids PDF Store</div>
+          <div id="store-brand-tagline" class="brand-sub">બાળકો માટે શ્રેષ્ઠ લર્નિંગ &amp; કલરિંગ PDF બુક્સ</div>
+        </div>
+      </a>
+
+      <div class="top-actions">
+        <input id="search-input" type="search" class="search-box" placeholder="🔍 બુક શોધો (દા.ત. કક્કો, ABCD, ગણિત)..." />
+        <button id="btn-open-orders" class="btn btn-outline">📦 મારો ઓર્ડર / PDF શોધો</button>
+        <a id="top-wa-support" href="#" target="_blank" class="btn btn-buy" style="display:none;">💬 WhatsApp મદદ</a>
+        <a href="/admin" class="btn btn-outline" style="color: #6366f1; border-color: #c7d2fe;">⚙️ Seller Admin</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div>
+        <h1 id="hero-title">બાળકોના મોબાઇલનો સ્ક્રીન ટાઇમ ઘટાડો — ઘરે બેઠા શીખવો મજેદાર Printable PDF Books! 🎨✨</h1>
+        <p id="hero-sub">૨ થી ૧૨ વર્ષના બાળકો માટે કક્કો, ABCD, રંગપૂરણી, ગણિત અને બ્રેઈન પઝલ્સની હાઈ-ક્વોલિટી PDF બુક્સ — ચૂકવણી કરતાં જ તરત મોબાઇલમાં ડાઉનલોડ કરો!</p>
+        <div class="trust-pills">
+          <span class="trust-pill">⚡ પેમેન્ટ પછી તુરંત PDF</span>
+          <span class="trust-pill">🖨️ A4 Print-Ready HD</span>
+          <span class="trust-pill">📲 GPay / PhonePe / UPI / Link</span>
+          <span class="trust-pill">👶 ઉંમર મુજબ ખાસ બુક્સ</span>
+        </div>
+      </div>
+      <div class="hero-card">
+        <div style="font-weight: 900; font-size: 1.05rem; margin-bottom: 8px;">🎁 વાલીઓ કેમ પસંદ કરે છે?</div>
+        <ul style="margin: 0; padding-left: 18px; line-height: 1.75; font-size: 0.9rem;">
+          <li>એકવાર PDF ખરીદો → ગમે તેટલી વાર પ્રિન્ટ કાઢો</li>
+          <li>ખરીદતા પહેલા મફત <b>Sample PDF</b> જુઓ</li>
+          <li>માત્ર <b>₹49</b> થી શરૂ થતી બુક્સ</li>
+          <li>WhatsApp સપોર્ટ અને સરળ ડાઉનલોડ</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="filters-bar">
+      <div class="chip-row" id="age-filters">
+        <span class="chip-label">👶 ઉંમર:</span>
+        <button class="chip active" data-age="all">બધી ઉંમર</button>
+        <button class="chip" data-age="2-5">2–5 વર્ષ</button>
+        <button class="chip" data-age="4-6">4–6 વર્ષ</button>
+        <button class="chip" data-age="6-8">6–8 વર્ષ</button>
+        <button class="chip" data-age="8-12">8–12 વર્ષ</button>
+      </div>
+      <div class="chip-row" id="cat-filters">
+        <span class="chip-label">📂 કેટેગરી:</span>
+        <button class="chip active" data-cat="all">બધી બુક્સ</button>
+      </div>
+    </section>
+
+    <section id="books-grid" class="books-grid">
+      <div style="grid-column: 1/-1; text-align:center; padding:40px; color:#64748b;">📚 બુક્સ લોડ થઈ રહી છે...</div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div id="footer-text">© 2026 LittleStars Kids PDF Book Store • Instant Digital PDF Delivery • Made with ❤️ for Kids</div>
+  </footer>
+
+  <!-- Book Detail + Checkout Modal -->
+  <div id="checkout-modal" class="modal-backdrop">
+    <div class="modal">
+      <button id="btn-close-checkout" class="modal-close">✕</button>
+      <div id="checkout-content"></div>
+    </div>
+  </div>
+
+  <!-- Order Lookup Modal -->
+  <div id="orders-modal" class="modal-backdrop">
+    <div class="modal">
+      <button id="btn-close-orders" class="modal-close">✕</button>
+      <h2 style="margin:0 0 8px;">📦 તમારો ઓર્ડર / PDF ફરી ડાઉનલોડ કરો</h2>
+      <p style="margin:0 0 14px; font-size:0.88rem; color:#475569;">તમારો WhatsApp મોબાઇલ નંબર અથવા Order Code (દા.ત. KB1234...) લખીને શોધો:</p>
+      <div style="display:flex; gap:8px;">
+        <input id="lookup-input" type="text" placeholder="મોબાઇલ નંબર અથવા KB... કોડ" style="flex:1; padding:10px 12px; border-radius:10px; border:1.5px solid #cbd5e1;" />
+        <button id="btn-do-lookup" class="btn btn-primary">🔍 શોધો</button>
+      </div>
+      <div id="lookup-results" style="margin-top:16px; display:flex; flex-direction:column; gap:10px;"></div>
+    </div>
+  </div>
+
+  <script src="/store.js?v=1.0"></script>
+</body>
+</html>

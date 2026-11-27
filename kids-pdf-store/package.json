@@ -1,0 +1,14 @@
+{
+  "name": "kids-pdf-book-store",
+  "version": "1.0.0",
+  "description": "Standalone Kids PDF Book Storefront, Checkout, UPI QR, Payment Links & Seller Admin Panel",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.3.0",
+    "qrcode": "^1.5.4"
+  }
+}
