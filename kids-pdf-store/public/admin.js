@@ -5,6 +5,8 @@
   const loginView = document.getElementById('login-view');
   const dashboardView = document.getElementById('dashboard-view');
   const btnLogout = document.getElementById('btn-logout');
+  const pageTitleEl = document.getElementById('adm-page-title');
+  const pendingBadgeEl = document.getElementById('nav-pending-badge');
 
   function esc(str) {
     return String(str || '')
@@ -49,8 +51,7 @@
     adminPin = pin;
     sessionStorage.setItem('kids_store_admin_pin', pin);
     loginView.style.display = 'none';
-    dashboardView.style.display = 'block';
-    btnLogout.style.display = 'inline-flex';
+    dashboardView.style.display = 'flex';
     await loadDashboard();
   }
 
@@ -70,18 +71,22 @@
     sessionStorage.removeItem('kids_store_admin_pin');
     adminPin = '';
     dashboardView.style.display = 'none';
-    loginView.style.display = 'block';
-    btnLogout.style.display = 'none';
+    loginView.style.display = 'flex';
   });
 
-  document.querySelectorAll('.tab-btn').forEach(btn => {
+  document.querySelectorAll('.adm-nav-btn[data-tab]').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.adm-nav-btn[data-tab]').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       const t = btn.getAttribute('data-tab');
       document.querySelectorAll('.tab-pane').forEach(p => {
         p.style.display = p.id === `tab-${t}` ? 'block' : 'none';
       });
+      if (pageTitleEl) {
+        pageTitleEl.textContent = t === 'orders'
+          ? '🧾 ગ્રાહકોના ઓર્ડર્સ & PDF ડિલિવરી'
+          : (t === 'settings' ? '💳 પેમેન્ટ લિંક, UPI QR & સ્ટોર સેટિંગ્સ' : '📚 Kids PDF Books Manager');
+      }
     });
   });
 
@@ -94,11 +99,16 @@
   }
 
   function renderStats(s) {
+    if (pendingBadgeEl) {
+      const pend = Number(s.pendingCount) || 0;
+      pendingBadgeEl.textContent = String(pend);
+      pendingBadgeEl.style.display = pend > 0 ? 'inline-block' : 'none';
+    }
     document.getElementById('stats-grid').innerHTML = `
       <div class="stat-card"><div class="stat-val" style="color:#059669;">₹${s.totalRevenue || 0}</div><div class="stat-lbl">કુલ કમાણી (Revenue)</div></div>
-      <div class="stat-card"><div class="stat-val" style="color:#0284c7;">${s.paidCount || 0}</div><div class="stat-lbl">સફળ વેચાણ (Paid Orders)</div></div>
-      <div class="stat-card"><div class="stat-val" style="color:#f59e0b;">${s.pendingCount || 0}</div><div class="stat-lbl">બાકી મંજૂરી (Pending)</div></div>
-      <div class="stat-card"><div class="stat-val">${s.totalBooks || 0}</div><div class="stat-lbl">કુલ બુક્સ (PDF Books)</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:#0284C7;">${s.paidCount || 0}</div><div class="stat-lbl">સફળ વેચાણ (Paid Orders)</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:#F59E0B;">${s.pendingCount || 0}</div><div class="stat-lbl">બાકી મંજૂરી (Pending)</div></div>
+      <div class="stat-card"><div class="stat-val">${s.totalBooks || 0}</div><div class="stat-lbl">કુલ PDF બુક્સ</div></div>
       <div class="stat-card"><div class="stat-val">${s.totalDownloads || 0}</div><div class="stat-lbl">કુલ PDF ડાઉનલોડ્સ</div></div>
     `;
   }
@@ -106,21 +116,21 @@
   function renderBooks(books) {
     const el = document.getElementById('admin-books-list');
     if (!books.length) {
-      el.innerHTML = '<div style="color:#64748b;">હજી કોઈ બુક ઉમેરેલી નથી.</div>';
+      el.innerHTML = '<div style="color:#64748B;">હજી કોઈ બુક ઉમેરેલી નથી.</div>';
       return;
     }
     el.innerHTML = books.map(b => `
       <div class="book-row">
-        <img src="${esc(b.coverUrl)}" alt="" style="width:54px; height:70px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;" />
+        <img src="${esc(b.coverUrl)}" alt="" style="width:54px; height:70px; object-fit:cover; border-radius:8px; border:1px solid #CBD5E1;" />
         <div style="flex:1; min-width:200px;">
-          <div style="font-weight:900; font-size:0.98rem;">${esc(b.title)} ${b.published === false ? '<span style="color:#dc2626;">(Hidden)</span>' : ''}</div>
+          <div style="font-weight:900; font-size:0.98rem;">${esc(b.title)} ${b.published === false ? '<span style="color:#DC2626;">(Hidden)</span>' : ''}</div>
           <div style="font-size:0.82rem; color:#475569;">${esc(b.category)} • ઉંમર ${esc(b.ageGroup)} • <strong>₹${b.price}</strong> (MRP ₹${b.mrp}) • વેચાણ: ${b.salesCount || 0}</div>
-          ${b.paymentLink ? `<div style="font-size:0.76rem; color:#0284c7;">💳 Link: ${esc(b.paymentLink)}</div>` : ''}
+          ${b.paymentLink ? `<div style="font-size:0.76rem; color:#0284C7;">💳 Link: ${esc(b.paymentLink)}</div>` : ''}
         </div>
         <div style="display:flex; gap:6px; flex-wrap:wrap;">
           <button class="btn btn-outline" style="padding:6px 10px; font-size:0.78rem;" data-copy-book="${esc(b.id)}">🔗 ડાયરેક્ટ લિંક</button>
           <button class="btn btn-outline" style="padding:6px 10px; font-size:0.78rem;" data-edit-book="${esc(b.id)}">✏️ એડિટ</button>
-          <button class="btn btn-outline" style="padding:6px 10px; font-size:0.78rem; color:#dc2626;" data-del-book="${esc(b.id)}">🗑️</button>
+          <button class="btn btn-outline" style="padding:6px 10px; font-size:0.78rem; color:#DC2626;" data-del-book="${esc(b.id)}">🗑️</button>
         </div>
       </div>
     `).join('');
@@ -168,7 +178,7 @@
 
   function resetBookForm() {
     document.getElementById('bk-edit-id').value = '';
-    document.getElementById('book-form-heading').textContent = '➕ નવી Kids PDF બુક ઉમેરો';
+    document.getElementById('book-form-heading').textContent = '➕ નવી Kids PDF બુક અપલોડ કરો';
     ['bk-title', 'bk-subtitle', 'bk-paylink', 'bk-desc', 'bk-highlights', 'bk-pdf-file', 'bk-cover-file', 'bk-sample-file'].forEach(id => {
       document.getElementById(id).value = '';
     });
@@ -180,7 +190,7 @@
     const editId = document.getElementById('bk-edit-id').value;
     const msgEl = document.getElementById('bk-form-msg');
     msgEl.style.display = 'block';
-    msgEl.style.color = '#0284c7';
+    msgEl.style.color = '#0284C7';
     msgEl.textContent = '⏳ બુક અપલોડ & સેવ થઈ રહી છે...';
 
     try {
@@ -217,7 +227,7 @@
       resetBookForm();
       await loadDashboard();
     } catch (err) {
-      msgEl.style.color = '#dc2626';
+      msgEl.style.color = '#DC2626';
       msgEl.textContent = '⚠️ ' + err.message;
     }
   });
@@ -225,7 +235,7 @@
   function renderOrders(orders) {
     const el = document.getElementById('admin-orders-list');
     if (!orders.length) {
-      el.innerHTML = '<div style="color:#64748b;">હજી સુધી કોઈ ઓર્ડર આવ્યો નથી.</div>';
+      el.innerHTML = '<div style="color:#64748B;">હજી સુધી કોઈ ઓર્ડર આવ્યો નથી.</div>';
       return;
     }
     el.innerHTML = orders.map(o => {
@@ -238,7 +248,7 @@
         <div class="order-row">
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
             <strong>${esc(o.orderCode)} — ${esc(o.bookTitle)} (₹${o.amount})</strong>
-            <span style="padding:3px 10px; border-radius:999px; font-size:0.78rem; font-weight:800; background:${o.status === 'paid' ? '#dcfce7' : (o.status === 'rejected' ? '#fee2e2' : '#fef3c7')}; color:${o.status === 'paid' ? '#166534' : (o.status === 'rejected' ? '#991b1b' : '#92400e')};">
+            <span style="padding:3px 10px; border-radius:999px; font-size:0.78rem; font-weight:800; background:${o.status === 'paid' ? '#DCFCE7' : (o.status === 'rejected' ? '#FEE2E2' : '#FEF3C7')}; color:${o.status === 'paid' ? '#166534' : (o.status === 'rejected' ? '#991B1B' : '#92400E')};">
               ${o.status.toUpperCase()}
             </span>
           </div>
@@ -247,7 +257,7 @@
           </div>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
             ${o.status !== 'paid' ? `<button class="btn btn-buy" style="padding:6px 12px; font-size:0.8rem;" data-approve-ord="${esc(o.id)}">✅ Approve &amp; Unlock PDF</button>` : ''}
-            ${o.status !== 'rejected' && o.status !== 'paid' ? `<button class="btn btn-outline" style="padding:6px 12px; font-size:0.8rem; color:#dc2626;" data-reject-ord="${esc(o.id)}">❌ Reject</button>` : ''}
+            ${o.status !== 'rejected' && o.status !== 'paid' ? `<button class="btn btn-outline" style="padding:6px 12px; font-size:0.8rem; color:#DC2626;" data-reject-ord="${esc(o.id)}">❌ Reject</button>` : ''}
             ${dlUrl && waTarget ? `<a href="https://wa.me/${waTarget}?text=${waMsg}" target="_blank" class="btn btn-primary" style="padding:6px 12px; font-size:0.8rem;">📲 WhatsApp માં PDF લિંક મોકલો</a>` : ''}
             ${dlUrl ? `<button class="btn btn-outline" style="padding:6px 12px; font-size:0.8rem;" data-copy-dl="${esc(dlUrl)}">📋 PDF લિંક કોપી</button>` : ''}
           </div>
@@ -313,7 +323,7 @@
       msgEl.textContent = '✅ બધા સ્ટોર & પેમેન્ટ સેટિંગ્સ સેવ થઈ ગયા છે!';
     } catch (err) {
       msgEl.style.display = 'block';
-      msgEl.style.color = '#dc2626';
+      msgEl.style.color = '#DC2626';
       msgEl.textContent = '⚠️ ' + err.message;
     }
   });
@@ -334,7 +344,7 @@
     const data = await res.json();
     if (data.success) {
       box.style.display = 'block';
-      box.innerHTML = `<div style="font-weight:800; color:#0284c7; margin-bottom:8px;">✅ આ ₹49 નો લાઇવ ટેસ્ટ QR છે — GPay/PhonePe થી સ્કેન કરીને ચકાસો</div>
+      box.innerHTML = `<div style="font-weight:800; color:#0284C7; margin-bottom:8px;">✅ આ ₹49 નો લાઇવ ટેસ્ટ QR છે — GPay/PhonePe થી સ્કેન કરીને ચકાસો</div>
         <img src="${data.qrDataUrl}" alt="Test UPI QR" />
         <div style="font-size:0.8rem; color:#475569; margin-top:6px;">${esc(upiId)}</div>`;
     }
