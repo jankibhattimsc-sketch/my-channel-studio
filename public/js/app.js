@@ -1,4 +1,4 @@
-import { api } from './api.js?v=102.1';
+import { api } from './api.js?v=103.0';
 import { copyToClipboard } from './utils/clipboard.js?v=90.0';
 import { projectState } from './utils/projectState.js?v=101.7';
 import { renderProjects } from './views/projects.js?v=90.0';
@@ -27,6 +27,7 @@ import { renderSavedHub } from './views/savedhub.js?v=1.0';
 import { renderSavedAudios } from './views/savedaudios.js?v=101.4';
 import { renderSmartAsk } from './views/smartask.js?v=102.1';
 import { renderFacebookTool } from './views/facebook.js?v=101.5';
+import { renderTalkingAvatar } from './views/talkingavatar.js?v=103.0';
 import { initMobileLinkAndOfflineSystem } from './utils/mobileLinkModal.js?v=99.0';
 
 class App {
@@ -169,6 +170,7 @@ class App {
         'script', 'scriptwriter', 'scripteditor', 'voice', 'myvoice', 'videoeditor', 'editing',
         'videoeditdemo', 'workspace', 'thumbnails', 'thumbnail', 'seodescription', 'seo',
         'savedhub', 'saved', 'savedaudios', 'audios', 'smartask', 'promptgpt', 'askgpt', 'facebook', 'fb',
+        'talkingavatar', 'avatar',
         'publish', 'publishing', 'chatgpt', 'analytics', 'research', 'settings'
       ];
       if (hash && validViews.includes(hash) && hash !== this.currentView) {
@@ -325,6 +327,8 @@ class App {
       askgpt: '✨ ૧૨. મારો પ્રશ્ન & ફોટો AI (Prompt → ChatGPT)',
       facebook: '📘 ૧૩. Facebook Video & SEO Tool',
       fb: '📘 ૧૩. Facebook Video & SEO Tool',
+      talkingavatar: '🗣️ ૧૪. AI Talking Avatar (ફોટો + Speech → અસલી વિડિયો)',
+      avatar: '🗣️ ૧૪. AI Talking Avatar (ફોટો + Speech → અસલી વિડિયો)',
       home: '📊 ૧. 48h YouTube AI Studio',
       dashboard: '📊 ૧. 48h YouTube AI Studio',
       pastetopics: '📝 ૨. Paste Topics (મારા વિષયો પેસ્ટ કરો)',
@@ -438,6 +442,10 @@ class App {
         case 'facebook':
         case 'fb':
           await renderFacebookTool(this.container, navCallback);
+          break;
+        case 'talkingavatar':
+        case 'avatar':
+          await renderTalkingAvatar(this.container, navCallback);
           break;
         case 'analytics':
           await renderAnalytics(this.container, navCallback);

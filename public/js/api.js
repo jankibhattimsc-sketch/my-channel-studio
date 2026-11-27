@@ -149,5 +149,11 @@ export const api = {
   answerSmartPrompt: (payload) => api.post('/api/chat/smart-answer', payload),
   smartAskAll: (payload) => api.post('/api/chat/smart-ask-all', payload),
   getSmartAskHistory: () => api.get('/api/chat/smart-ask/history'),
-  deleteSmartAskEntry: (id) => api.delete(`/api/chat/smart-ask/${encodeURIComponent(id)}`)
+  deleteSmartAskEntry: (id) => api.delete(`/api/chat/smart-ask/${encodeURIComponent(id)}`),
+
+  // AI Talking Avatar Studio
+  getAvatarStatus: () => api.get('/api/avatar/status'),
+  getAvatarAudios: () => api.get('/api/avatar/audios'),
+  renderTalkingAvatar: (payload) => api.post('/api/avatar/render', payload),
+  getAvatarJob: (jobId) => api.get(`/api/avatar/job/${encodeURIComponent(jobId)}`)
 };

@@ -25,3 +25,7 @@ public/temp_read.txt
 scratch_*.txt
 scratch_build.js
 test_*.js
+.venv_avatar/
+ai_engines/SadTalker/
+public/uploads/avatars/
+data/avatar_jobs/
