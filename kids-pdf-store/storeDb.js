@@ -279,12 +279,14 @@ function lookupOrders(query) {
     .slice(0, 15);
 }
 
-function addFeedback({ parentName, relation, message }) {
+function addFeedback({ parentName, relation, email, rating, message }) {
   const db = readDb();
   const entry = {
     id: 'fb-' + Date.now() + '-' + crypto.randomBytes(2).toString('hex'),
     parentName: String(parentName || '').trim(),
     relation: String(relation || 'Parent').trim(),
+    email: String(email || '').trim(),
+    rating: Math.min(5, Math.max(1, Number(rating) || 5)),
     message: String(message || '').trim(),
     isSample: false,
     createdAt: new Date().toISOString()

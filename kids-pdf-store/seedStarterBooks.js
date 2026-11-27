@@ -29,8 +29,8 @@ function createPrintableWorksheetPdf(filePath, { heading, subheading, pagesText 
 
     const streamLines = [
       'q',
-      '0.98 0.97 0.96 rg 0 0 595 842 re f',
-      '0.91 0.95 1.00 rg 32 732 531 78 re f',
+      '1.0 1.0 1.0 rg 0 0 595 842 re f',
+      '0.92 0.96 1.00 rg 32 732 531 78 re f',
       '0.22 0.48 0.71 rg 32 732 531 4 re f',
       '0.15 0.22 0.29 rg BT /F1 19 Tf 48 776 Td (' + escapePdfText(heading) + ') Tj ET',
       '0.40 0.47 0.54 rg BT /F1 11 Tf 48 752 Td (' + escapePdfText(subheading + '  |  Page ' + (i + 1) + ' of ' + pageCount) + ') Tj ET',
@@ -40,12 +40,12 @@ function createPrintableWorksheetPdf(filePath, { heading, subheading, pagesText 
     let y = 678;
     for (const line of pageLines) {
       streamLines.push(`BT /F1 14 Tf 48 ${y} Td (${escapePdfText(line)}) Tj ET`);
-      streamLines.push(`0.82 0.87 0.92 rg 48 ${y - 12} 499 1 re f`);
+      streamLines.push(`0.84 0.88 0.93 rg 48 ${y - 14} 499 1 re f`);
       streamLines.push('0.15 0.22 0.29 rg');
-      y -= 54;
+      y -= 58;
     }
 
-    streamLines.push('0.40 0.47 0.54 rg BT /F1 10 Tf 48 56 Td (Special Kids Worksheets - Printable A4 Resource | Personal & Home Educational Use) Tj ET');
+    streamLines.push('0.40 0.47 0.54 rg BT /F1 10 Tf 48 52 Td (Special Kids Worksheets - Printable A4 Educational Resource | www.specialkidsworksheets.in) Tj ET');
     streamLines.push('Q');
 
     const streamStr = streamLines.join('\n');
@@ -71,11 +71,9 @@ function createPrintableWorksheetPdf(filePath, { heading, subheading, pagesText 
 }
 
 function writeWorksheetThumbnailSvg(filePath, svgBody) {
-  const full = `<svg xmlns="http://www.w3.org/2000/svg" width="480" height="320" viewBox="0 0 480 320">
-  <rect width="480" height="320" fill="#FAF8F5"/>
-  <rect x="34" y="18" width="412" height="284" rx="14" fill="#FFFFFF" stroke="#D8E2EC" stroke-width="2"/>
-  <rect x="34" y="18" width="412" height="44" rx="14" fill="#EAF4FF"/>
-  <rect x="34" y="48" width="412" height="14" fill="#EAF4FF"/>
+  const full = `<svg xmlns="http://www.w3.org/2000/svg" width="460" height="320" viewBox="0 0 460 320">
+  <rect width="460" height="320" fill="#F8FAFC"/>
+  <rect x="24" y="14" width="412" height="292" rx="14" fill="#FFFFFF" stroke="#DCE5F0" stroke-width="2"/>
   ${svgBody}
 </svg>`;
   fs.writeFileSync(filePath, full, 'utf8');
@@ -93,90 +91,105 @@ function seedIfEmpty() {
       file: 'line_tracing_practice.pdf',
       cover: 'thumb_line_tracing.svg',
       svg: `
-        <text x="54" y="45" font-family="sans-serif" font-size="16" font-weight="700" fill="#26384A">Line Tracing Practice</text>
-        <text x="424" y="45" font-family="sans-serif" font-size="12" font-weight="700" fill="#397BB5" text-anchor="end">A4 Printable</text>
-        <circle cx="82" cy="108" r="18" fill="#FFF2C9" stroke="#F59E0B" stroke-width="2"/>
-        <text x="82" y="114" font-size="18" text-anchor="middle">🐝</text>
-        <path d="M114 108 Q165 82 216 108 T318 108 T382 108" fill="none" stroke="#397BB5" stroke-width="3.5" stroke-dasharray="7 7" stroke-linecap="round"/>
-        <circle cx="404" cy="108" r="16" fill="#E4F5EA"/>
-        <text x="404" y="114" font-size="16" text-anchor="middle">🌸</text>
-
-        <circle cx="82" cy="176" r="18" fill="#FFE9E4"/>
-        <text x="82" y="182" font-size="18" text-anchor="middle">🦋</text>
-        <polyline points="114,176 156,154 198,196 240,154 282,196 324,154 382,176" fill="none" stroke="#EC4899" stroke-width="3.5" stroke-dasharray="7 7" stroke-linecap="round"/>
-        <circle cx="404" cy="176" r="16" fill="#FFF2C9"/>
-        <text x="404" y="182" font-size="16" text-anchor="middle">🌼</text>
-
-        <circle cx="82" cy="244" r="18" fill="#EAF4FF"/>
-        <text x="82" y="250" font-size="18" text-anchor="middle">🚗</text>
-        <line x1="114" y1="244" x2="382" y2="244" stroke="#25805B" stroke-width="3.5" stroke-dasharray="8 8" stroke-linecap="round"/>
-        <circle cx="404" cy="244" r="16" fill="#F2EAFE"/>
-        <text x="404" y="250" font-size="16" text-anchor="middle">🏠</text>
+        <path d="M58 74 C98 44, 138 104, 178 74 C218 44, 258 104, 340 74" fill="none" stroke="#475569" stroke-width="4" stroke-dasharray="7 7" stroke-linecap="round"/>
+        <text x="382" y="84" font-size="36" text-anchor="middle">🐝</text>
+        <text x="72" y="162" font-size="34" text-anchor="middle">🦋</text>
+        <polyline points="116,154 166,128 216,178 266,128 316,178 390,154" fill="none" stroke="#475569" stroke-width="4" stroke-dasharray="7 7" stroke-linecap="round"/>
+        <text x="72" y="248" font-size="34" text-anchor="middle">🚗</text>
+        <line x1="118" y1="242" x2="360" y2="242" stroke="#475569" stroke-width="4" stroke-dasharray="8 8" stroke-linecap="round"/>
+        <text x="394" y="250" font-size="32" text-anchor="middle">🏁</text>
       `,
       pdfOpts: {
-        heading: 'Line Tracing Practice Workbook',
-        subheading: 'Ages 3-5 Years | Fine Motor Support',
+        heading: 'Line Tracing Practice',
+        subheading: 'Ages 4 - 6 Years | Fine Motor Skill | Autism Support',
         pagesText: [
-          ['Activity 1: Trace the straight dashed path from the Bee to the Flower.', 'Practice slow, steady pencil strokes from left to right.'],
-          ['Activity 2: Trace the gentle waves from the Butterfly to the Sun.', 'Take breaks anytime and go at your own pace.'],
-          ['Activity 3: Guide the Car along the straight road to Home.']
+          ['Page 1: Curved Wave Line Tracing (Bee to Flower)', 'Trace along the smooth dashed hills from left to right.'],
+          ['Page 2: Zig-Zag Mountain Tracing (Butterfly Path)', 'Follow the up-and-down peaks carefully without rushing.'],
+          ['Page 3: Straight Line Control (Red Car Track)', 'Drive along the straight dotted path with steady pencil pressure.']
         ]
       },
       book: {
         title: 'Line Tracing Practice',
-        subtitle: 'Gentle dotted paths to strengthen pencil grip and hand control',
-        learningGoal: 'Pencil control & hand-eye coordination',
-        ageGroup: '3-5',
+        subtitle: 'Autism Support',
+        learningGoal: 'Pencil control, tracing, hand-eye coordination',
+        ageGroup: '4-6',
         category: 'Tracing',
-        learningNeed: 'Fine Motor Skills',
-        skillArea: 'Motor',
+        learningNeed: 'Autism Support',
+        skillArea: 'Fine Motor',
         pages: 10,
-        mrp: 0,
         price: 0,
-        description: 'Calm, uncluttered tracing paths featuring bees, butterflies, and roads designed for early fine-motor practice.',
-        highlights: ['Clear high-contrast dashed guide lines', 'Spacious A4 layout with minimal distractions'],
+        description: 'Clear, spacious line tracing worksheets featuring bees, butterflies, and cars to build pencil control step by step.',
+        highlights: ['10 Pages (PDF)', 'Printable (A4)', 'Pencil control & hand-eye coordination'],
         featured: true
       }
     },
     {
-      file: 'shape_matching_pack.pdf',
-      cover: 'thumb_shape_matching.svg',
+      file: 'match_same_fruits.pdf',
+      cover: 'thumb_match_fruits.svg',
       svg: `
-        <text x="54" y="45" font-family="sans-serif" font-size="16" font-weight="700" fill="#26384A">Shape Matching</text>
-        <text x="424" y="45" font-family="sans-serif" font-size="12" font-weight="700" fill="#25805B" text-anchor="end">A4 Printable</text>
-        <circle cx="110" cy="108" r="24" fill="#FFF2C9" stroke="#D97706" stroke-width="3"/>
-        <polygon points="110,152 84,198 136,198" fill="#EAF4FF" stroke="#397BB5" stroke-width="3"/>
-        <rect x="86" y="224" width="48" height="44" rx="6" fill="#E4F5EA" stroke="#25805B" stroke-width="3"/>
-
-        <line x1="154" y1="108" x2="322" y2="176" stroke="#94A3B8" stroke-width="2.5" stroke-dasharray="6 6"/>
-        <line x1="154" y1="176" x2="322" y2="246" stroke="#94A3B8" stroke-width="2.5" stroke-dasharray="6 6"/>
-        <line x1="154" y1="246" x2="322" y2="108" stroke="#94A3B8" stroke-width="2.5" stroke-dasharray="6 6"/>
-
-        <rect x="342" y="86" width="48" height="44" rx="6" fill="none" stroke="#25805B" stroke-width="3" stroke-dasharray="5 4"/>
-        <circle cx="366" cy="176" r="24" fill="none" stroke="#D97706" stroke-width="3" stroke-dasharray="5 4"/>
-        <polygon points="366,224 340,270 392,270" fill="none" stroke="#397BB5" stroke-width="3" stroke-dasharray="5 4"/>
+        <text x="95" y="108" font-size="44" text-anchor="middle">🍎</text>
+        <text x="230" y="108" font-size="44" text-anchor="middle">🍌</text>
+        <text x="365" y="108" font-size="44" text-anchor="middle">🍇</text>
+        <line x1="95" y1="128" x2="230" y2="222" stroke="#397BB5" stroke-width="3" stroke-dasharray="6 6"/>
+        <line x1="230" y1="128" x2="365" y2="222" stroke="#25805B" stroke-width="3" stroke-dasharray="6 6"/>
+        <line x1="365" y1="128" x2="95" y2="222" stroke="#D97706" stroke-width="3" stroke-dasharray="6 6"/>
+        <text x="95" y="256" font-size="42" text-anchor="middle">🍇</text>
+        <text x="230" y="256" font-size="42" text-anchor="middle">🍎</text>
+        <text x="365" y="256" font-size="42" text-anchor="middle">🍌</text>
       `,
       pdfOpts: {
-        heading: 'Shape Matching & Visual Discrimination',
-        subheading: 'Ages 4-6 Years | Focus & Visual Skills',
+        heading: 'Match the Same (Fruits)',
+        subheading: 'Ages 4 - 6 Years | Cognitive Skills | Autism Support',
         pagesText: [
-          ['Match each colorful shape on the left to its dotted twin on the right.', 'Circle -> Circle  |  Triangle -> Triangle  |  Square -> Square'],
-          ['Bonus Activity: Color each matched pair the same soft color!']
+          ['Draw a line connecting each fruit on the top row to the matching fruit below.', 'Apple -> Apple  |  Banana -> Banana  |  Grapes -> Grapes'],
+          ['Bonus Task: Name the color of each fruit aloud together!']
         ]
       },
       book: {
-        title: 'Shape Matching',
-        subtitle: 'Match circles, squares, stars, and triangles step by step',
-        learningGoal: 'Visual recognition & steady focus',
+        title: 'Match the Same (Fruits)',
+        subtitle: 'Cognitive Skills',
+        learningGoal: 'Visual matching & object recognition',
         ageGroup: '4-6',
+        category: 'Matching',
+        learningNeed: 'Autism Support',
+        skillArea: 'Cognitive Skills',
+        pages: 8,
+        price: 0,
+        description: 'Bright, recognizable fruit matching sheets designed for calm cognitive sorting and visual focus.',
+        highlights: ['8 Pages (PDF)', 'Printable (A4)', 'Visual matching practice'],
+        featured: true
+      }
+    },
+    {
+      file: 'shapes_recognition.pdf',
+      cover: 'thumb_shapes_recognition.svg',
+      svg: `
+        <polygon points="230,36 244,72 282,72 252,94 263,130 230,108 197,130 208,94 178,72 216,72" fill="#FACC15" stroke="#CA8A04" stroke-width="3"/>
+        <polygon points="150,154 104,234 196,234" fill="#38BDF8" stroke="#0284C7" stroke-width="3"/>
+        <rect x="268" y="156" width="76" height="76" rx="8" fill="#FB923C" stroke="#C2410C" stroke-width="3"/>
+        <circle cx="152" cy="272" r="24" fill="#F472B6" stroke="#BE185D" stroke-width="3"/>
+        <polygon points="310,250 286,294 334,294" fill="#4ADE80" stroke="#15803D" stroke-width="3"/>
+      `,
+      pdfOpts: {
+        heading: 'Shapes Recognition',
+        subheading: 'Ages 3 - 5 Years | Early Learning | ADHD Activities',
+        pagesText: [
+          ['Identify Star, Triangle, Square, and Circle on each printable card.', 'Trace around the outside borders and say each shape name.'],
+          ['Color all Triangles light blue and Squares soft orange!']
+        ]
+      },
+      book: {
+        title: 'Shapes Recognition',
+        subtitle: 'Early Learning',
+        learningGoal: 'Shape naming, sorting & early focus',
+        ageGroup: '3-5',
         category: 'Matching',
         learningNeed: 'ADHD Activities',
         skillArea: 'Focus',
-        pages: 8,
-        mrp: 0,
+        pages: 10,
         price: 0,
-        description: 'Structured visual matching activities that support visual attention without distracting page clutter.',
-        highlights: ['Clean shapes with clear dotted targets', 'Builds visual discrimination at child pace'],
+        description: 'Friendly primary shapes arranged with generous white space for early recognition without overwhelm.',
+        highlights: ['10 Pages (PDF)', 'Printable (A4)', 'Early learning foundations'],
         featured: true
       }
     },
@@ -184,74 +197,102 @@ function seedIfEmpty() {
       file: 'alphabet_tracing_az.pdf',
       cover: 'thumb_alphabet_tracing.svg',
       svg: `
-        <text x="54" y="45" font-family="sans-serif" font-size="16" font-weight="700" fill="#26384A">Alphabet Tracing (A–Z)</text>
-        <text x="424" y="45" font-family="sans-serif" font-size="12" font-weight="700" fill="#397BB5" text-anchor="end">A4 Printable</text>
-        <rect x="58" y="84" width="110" height="110" rx="14" fill="#FFE9E4"/>
-        <text x="113" y="156" font-size="60" text-anchor="middle">🍎</text>
-        <text x="236" y="158" font-family="sans-serif" font-size="86" font-weight="800" fill="none" stroke="#397BB5" stroke-width="3" stroke-dasharray="6 5">A</text>
-        <text x="330" y="158" font-family="sans-serif" font-size="76" font-weight="800" fill="none" stroke="#687789" stroke-width="2.5" stroke-dasharray="5 5">a</text>
-        <line x1="58" y1="230" x2="422" y2="230" stroke="#CBD5E1" stroke-width="2"/>
-        <line x1="58" y1="252" x2="422" y2="252" stroke="#94A3B8" stroke-width="2" stroke-dasharray="6 6"/>
-        <line x1="58" y1="274" x2="422" y2="274" stroke="#CBD5E1" stroke-width="2"/>
-        <text x="90" y="266" font-family="sans-serif" font-size="30" font-weight="700" fill="#94A3B8">A   a   A   a</text>
+        <text x="128" y="176" font-family="sans-serif" font-size="140" font-weight="800" fill="#FFFFFF" stroke="#334155" stroke-width="4" stroke-dasharray="9 7" text-anchor="middle">A</text>
+        <circle cx="128" cy="118" r="14" fill="none" stroke="#94A3B8" stroke-width="2" stroke-dasharray="4 4"/>
+        <text x="328" y="168" font-size="96" text-anchor="middle">🍎</text>
+        <line x1="64" y1="234" x2="396" y2="234" stroke="#CBD5E1" stroke-width="2"/>
+        <line x1="64" y1="262" x2="396" y2="262" stroke="#94A3B8" stroke-width="2" stroke-dasharray="6 6"/>
+        <line x1="64" y1="288" x2="396" y2="288" stroke="#CBD5E1" stroke-width="2"/>
+        <text x="230" y="278" font-family="sans-serif" font-size="30" font-weight="700" fill="#94A3B8" text-anchor="middle">A   a   A   a   A   a</text>
       `,
       pdfOpts: {
-        heading: 'Alphabet Tracing Workbook (A to Z)',
-        subheading: 'Ages 4-6 Years | Letter Formation',
+        heading: 'Alphabet Tracing (A to Z)',
+        subheading: 'Ages 4 - 6 Years | Learning Disability | Letter Practice',
         pagesText: [
-          ['Letter A - Apple: Trace uppercase A and lowercase a inside the wide lines.', 'A   A   A   |   a   a   a'],
-          ['Letter B - Ball: Trace uppercase B and lowercase b carefully.', 'B   B   B   |   b   b   b']
+          ['Letter A - Apple: Trace the large dotted A then follow the lined row.', 'A   A   A   |   a   a   a'],
+          ['Letter B - Ball: Follow the numbered arrow strokes gently.', 'B   B   B   |   b   b   b']
         ]
       },
       book: {
-        title: 'Alphabet Tracing',
-        subtitle: 'Large dotted letters with clear stroke space for comfortable writing',
-        learningGoal: 'Letter recognition & writing practice',
+        title: 'Alphabet Tracing (A to Z)',
+        subtitle: 'Letter Formation',
+        learningGoal: 'Alphabet recognition & guided tracing',
         ageGroup: '4-6',
         category: 'Tracing',
         learningNeed: 'Learning Disability',
         skillArea: 'Motor',
         pages: 26,
-        mrp: 0,
         price: 0,
-        description: 'Every letter from A to Z gets its own calm, spacious page with clear picture cues and gentle tracing rows.',
-        highlights: ['Full A–Z uppercase & lowercase practice', 'Extra-wide baseline spacing for easy writing'],
+        description: 'Complete A to Z printable workbook with large clear letter outlines and picture anchors.',
+        highlights: ['26 Pages (PDF)', 'Printable (A4)', 'Full A–Z uppercase & lowercase'],
         featured: true
       }
     },
     {
-      file: 'number_recognition_1_10.pdf',
-      cover: 'thumb_number_recognition.svg',
+      file: 'numbers_tracing_1_10.pdf',
+      cover: 'thumb_numbers_tracing.svg',
       svg: `
-        <text x="54" y="45" font-family="sans-serif" font-size="16" font-weight="700" fill="#26384A">Number Recognition (1–10)</text>
-        <text x="424" y="45" font-family="sans-serif" font-size="12" font-weight="700" fill="#25805B" text-anchor="end">A4 Printable</text>
-        <rect x="56" y="84" width="110" height="90" rx="14" fill="#FFF2C9"/>
-        <text x="111" y="148" font-family="sans-serif" font-size="56" font-weight="800" fill="none" stroke="#397BB5" stroke-width="3" stroke-dasharray="6 4" text-anchor="middle">3</text>
-        <text x="235" y="138" font-size="34">⭐ ⭐ ⭐</text>
-        <rect x="56" y="196" width="368" height="84" rx="12" fill="#E4F5EA"/>
-        <text x="240" y="246" font-family="sans-serif" font-size="24" font-weight="700" fill="#26384A" text-anchor="middle">1   •   2   •   3   •   4   •   5</text>
+        <text x="148" y="198" font-family="sans-serif" font-size="148" font-weight="800" fill="#FFFFFF" stroke="#334155" stroke-width="4" stroke-dasharray="9 7" text-anchor="middle">1</text>
+        <text x="316" y="182" font-size="92" text-anchor="middle">🐞</text>
+        <rect x="64" y="232" width="332" height="52" rx="10" fill="#F1F5F9"/>
+        <text x="230" y="268" font-family="sans-serif" font-size="28" font-weight="700" fill="#64748B" text-anchor="middle">1  •  2  •  3  •  4  •  5  •  6</text>
       `,
       pdfOpts: {
-        heading: 'Number Recognition & Counting (1 to 10)',
-        subheading: 'Ages 3-6 Years | Early Numeracy',
+        heading: 'Numbers Tracing (1 to 10)',
+        subheading: 'Ages 4 - 6 Years | Number Recognition & Counting',
         pagesText: [
-          ['Number 1 & 2: Trace the number and count the friendly stars.', 'Number 3: Point and count 1, 2, 3!'],
-          ['Circle the groups that show 4 objects.']
+          ['Number 1: Trace the tall number 1 and count the 1 friendly ladybug.', 'Number 2: Trace 2 and count 2 stars.'],
+          ['Numbers 1 to 10 dotted practice rows.']
         ]
       },
       book: {
-        title: 'Number Recognition',
-        subtitle: 'Countable visual groups paired with bold tracing numbers 1 to 10',
-        learningGoal: 'Early counting & number recognition',
-        ageGroup: '3-6',
-        category: 'Coloring',
+        title: 'Numbers Tracing (1 to 10)',
+        subtitle: 'Number Recognition',
+        learningGoal: 'Counting 1–10 & number tracing',
+        ageGroup: '4-6',
+        category: 'Numbers',
         learningNeed: 'Autism Support',
         skillArea: 'Focus',
-        pages: 12,
-        mrp: 0,
+        pages: 10,
         price: 0,
-        description: 'Clear 1-to-1 counting visuals help children connect written numbers with concrete quantities.',
-        highlights: ['One number per section for calm focus', 'Trace, count, and color activities combined'],
+        description: 'Countable visual bugs and objects paired with clean dotted numerals from 1 to 10.',
+        highlights: ['10 Pages (PDF)', 'Printable (A4)', '1-to-1 counting support'],
+        featured: true
+      }
+    },
+    {
+      file: 'colouring_fun_animals.pdf',
+      cover: 'thumb_colouring_animals.svg',
+      svg: `
+        <circle cx="230" cy="154" r="66" fill="#FFFFFF" stroke="#334155" stroke-width="3.5"/>
+        <circle cx="230" cy="154" r="46" fill="#FFFFFF" stroke="#334155" stroke-width="3"/>
+        <circle cx="212" cy="146" r="5" fill="#334155"/>
+        <circle cx="248" cy="146" r="5" fill="#334155"/>
+        <path d="M216 168 Q230 180 244 168" fill="none" stroke="#334155" stroke-width="3" stroke-linecap="round"/>
+        <text x="86" y="102" font-size="40" text-anchor="middle">☀️</text>
+        <text x="366" y="246" font-size="40" text-anchor="middle">🌼</text>
+        <text x="230" y="274" font-family="sans-serif" font-size="16" font-weight="700" fill="#687789" text-anchor="middle">Calm Outline Lion Coloring Sheet</text>
+      `,
+      pdfOpts: {
+        heading: 'Colouring Fun (Animals)',
+        subheading: 'Ages 3 - 6 Years | Fine Motor & Creativity',
+        pagesText: [
+          ['Page 1: Friendly Lion & Sunshine — Use soft yellow, orange, and green crayons!', 'Stay comfortably inside bold easy outlines.'],
+          ['Page 2: Happy Elephant & Butterfly Garden coloring page.']
+        ]
+      },
+      book: {
+        title: 'Colouring Fun (Animals)',
+        subtitle: 'Fine Motor & Calm Focus',
+        learningGoal: 'Coloring inside wide bold animal outlines',
+        ageGroup: '3-6',
+        category: 'Colouring',
+        learningNeed: 'Fine Motor Skills',
+        skillArea: 'Motor',
+        pages: 12,
+        price: 0,
+        description: 'Thick black-and-white friendly animal outlines designed for effortless home printing and joyful coloring.',
+        highlights: ['12 Pages (PDF)', 'Printable (A4)', 'Ink-friendly white background'],
         featured: true
       }
     },
@@ -259,45 +300,39 @@ function seedIfEmpty() {
       file: 'emotion_matching_sel.pdf',
       cover: 'thumb_emotion_matching.svg',
       svg: `
-        <text x="54" y="45" font-family="sans-serif" font-size="16" font-weight="700" fill="#26384A">Emotion Matching</text>
-        <text x="424" y="45" font-family="sans-serif" font-size="12" font-weight="700" fill="#397BB5" text-anchor="end">A4 Printable</text>
-        <rect x="62" y="84" width="166" height="90" rx="14" fill="#FFF2C9"/>
-        <text x="145" y="132" font-size="38" text-anchor="middle">😊</text>
-        <text x="145" y="160" font-family="sans-serif" font-size="14" font-weight="700" fill="#26384A" text-anchor="middle">Happy</text>
-
-        <rect x="252" y="84" width="166" height="90" rx="14" fill="#EAF4FF"/>
-        <text x="335" y="132" font-size="38" text-anchor="middle">😌</text>
-        <text x="335" y="160" font-family="sans-serif" font-size="14" font-weight="700" fill="#26384A" text-anchor="middle">Calm</text>
-
-        <rect x="62" y="192" width="166" height="90" rx="14" fill="#FFE9E4"/>
-        <text x="145" y="240" font-size="38" text-anchor="middle">😢</text>
-        <text x="145" y="268" font-family="sans-serif" font-size="14" font-weight="700" fill="#26384A" text-anchor="middle">Sad</text>
-
-        <rect x="252" y="192" width="166" height="90" rx="14" fill="#F2EAFE"/>
-        <text x="335" y="240" font-size="38" text-anchor="middle">😮</text>
-        <text x="335" y="268" font-family="sans-serif" font-size="14" font-weight="700" fill="#26384A" text-anchor="middle">Surprised</text>
+        <rect x="52" y="42" width="166" height="98" rx="14" fill="#FFF2C9"/>
+        <text x="135" y="96" font-size="42" text-anchor="middle">😊</text>
+        <text x="135" y="124" font-family="sans-serif" font-size="15" font-weight="700" fill="#26384A" text-anchor="middle">Happy</text>
+        <rect x="242" y="42" width="166" height="98" rx="14" fill="#EAF4FF"/>
+        <text x="325" y="96" font-size="42" text-anchor="middle">😌</text>
+        <text x="325" y="124" font-family="sans-serif" font-size="15" font-weight="700" fill="#26384A" text-anchor="middle">Calm</text>
+        <rect x="52" y="164" width="166" height="98" rx="14" fill="#FFE9E4"/>
+        <text x="135" y="218" font-size="42" text-anchor="middle">😢</text>
+        <text x="135" y="246" font-family="sans-serif" font-size="15" font-weight="700" fill="#26384A" text-anchor="middle">Sad</text>
+        <rect x="242" y="164" width="166" height="98" rx="14" fill="#F2EAFE"/>
+        <text x="325" y="218" font-size="42" text-anchor="middle">😮</text>
+        <text x="325" y="246" font-family="sans-serif" font-size="15" font-weight="700" fill="#26384A" text-anchor="middle">Surprised</text>
       `,
       pdfOpts: {
-        heading: 'Emotion Matching & Social Cues',
-        subheading: 'Ages 4-8 Years | Social & Emotional Learning',
+        heading: 'Emotion Matching',
+        subheading: 'Ages 4 - 8 Years | Emotional & Social Skills',
         pagesText: [
-          ['Look at each friendly face: Happy, Calm, Sad, Surprised.', 'Draw a line to match the face with how the child feels today.'],
-          ['Parent Prompt: Ask your child what helps them feel calm when upset.']
+          ['Match each expressive face (Happy, Calm, Sad, Surprised) with everyday situations.'],
+          ['Parent Guide: Ask your child to point to how they feel right now.']
         ]
       },
       book: {
         title: 'Emotion Matching',
-        subtitle: 'Clear expressive faces to explore everyday feelings safely',
-        learningGoal: 'Identifying feelings & communication',
+        subtitle: 'Social & Emotional Skills',
+        learningGoal: 'Recognizing feelings & social communication',
         ageGroup: '4-8',
-        category: 'Matching',
-        learningNeed: 'Social & Emotional Learning',
+        category: 'Life Skills',
+        learningNeed: 'Emotional & Social Skills',
         skillArea: 'Communication',
         pages: 10,
-        mrp: 0,
         price: 0,
-        description: 'Friendly emotion cards and matching sheets designed to support communication and talking about everyday feelings.',
-        highlights: ['Supports emotion naming & verbal cues', 'Great for home conversations & visual schedules'],
+        description: 'Supportive visual cards helping children recognize and talk about Happy, Calm, Sad, and Surprised emotions.',
+        highlights: ['10 Pages (PDF)', 'Printable (A4)', 'Social communication cards'],
         featured: true
       }
     },
@@ -305,48 +340,43 @@ function seedIfEmpty() {
       file: 'visual_pattern_activities.pdf',
       cover: 'thumb_visual_patterns.svg',
       svg: `
-        <text x="54" y="45" font-family="sans-serif" font-size="16" font-weight="700" fill="#26384A">Visual Pattern Activities</text>
-        <text x="424" y="45" font-family="sans-serif" font-size="12" font-weight="700" fill="#25805B" text-anchor="end">A4 Printable</text>
-        <rect x="54" y="84" width="372" height="58" rx="12" fill="#F2EAFE"/>
-        <circle cx="96" cy="113" r="15" fill="#397BB5"/>
-        <polygon points="154,97 137,128 171,128" fill="#F59E0B"/>
-        <circle cx="212" cy="113" r="15" fill="#397BB5"/>
-        <polygon points="270,97 253,128 287,128" fill="#F59E0B"/>
-        <rect x="330" y="94" width="38" height="38" rx="8" fill="#FFFFFF" stroke="#26384A" stroke-width="2" stroke-dasharray="4 3"/>
-        <text x="349" y="120" font-family="sans-serif" font-size="18" font-weight="800" fill="#687789" text-anchor="middle">?</text>
+        <rect x="50" y="64" width="360" height="72" rx="12" fill="#F2EAFE"/>
+        <circle cx="96" cy="100" r="18" fill="#397BB5"/>
+        <polygon points="156,82 136,118 176,118" fill="#F59E0B"/>
+        <circle cx="216" cy="100" r="18" fill="#397BB5"/>
+        <polygon points="276,82 256,118 296,118" fill="#F59E0B"/>
+        <rect x="330" y="79" width="42" height="42" rx="8" fill="#FFFFFF" stroke="#397BB5" stroke-width="2.5" stroke-dasharray="4 3"/>
+        <text x="351" y="108" font-family="sans-serif" font-size="20" font-weight="800" fill="#397BB5" text-anchor="middle">?</text>
 
-        <rect x="54" y="162" width="372" height="58" rx="12" fill="#E4F5EA"/>
-        <rect x="82" y="177" width="28" height="28" rx="5" fill="#25805B"/>
-        <rect x="140" y="177" width="28" height="28" rx="5" fill="#25805B"/>
-        <circle cx="212" cy="191" r="15" fill="#EC4899"/>
-        <rect x="256" y="177" width="28" height="28" rx="5" fill="#25805B"/>
-        <rect x="330" y="172" width="38" height="38" rx="8" fill="#FFFFFF" stroke="#26384A" stroke-width="2" stroke-dasharray="4 3"/>
-        <text x="349" y="198" font-family="sans-serif" font-size="18" font-weight="800" fill="#687789" text-anchor="middle">?</text>
-
-        <text x="240" y="266" font-family="sans-serif" font-size="14" font-weight="700" fill="#687789" text-anchor="middle">Complete the sequence pattern step by step</text>
+        <rect x="50" y="164" width="360" height="72" rx="12" fill="#E4F5EA"/>
+        <rect x="80" y="184" width="32" height="32" rx="6" fill="#25805B"/>
+        <rect x="140" y="184" width="32" height="32" rx="6" fill="#25805B"/>
+        <circle cx="216" cy="200" r="18" fill="#EC4899"/>
+        <rect x="260" y="184" width="32" height="32" rx="6" fill="#25805B"/>
+        <rect x="330" y="179" width="42" height="42" rx="8" fill="#FFFFFF" stroke="#25805B" stroke-width="2.5" stroke-dasharray="4 3"/>
+        <text x="351" y="208" font-family="sans-serif" font-size="20" font-weight="800" fill="#25805B" text-anchor="middle">?</text>
       `,
       pdfOpts: {
         heading: 'Visual Pattern Activities',
-        subheading: 'Ages 5-8 Years | Cognitive Sequencing',
+        subheading: 'Ages 5 - 8 Years | Logical Sequencing & Focus',
         pagesText: [
-          ['Pattern Row 1: Circle - Triangle - Circle - Triangle - What comes next?', 'Draw or circle the missing shape in the box.'],
-          ['Pattern Row 2: Big - Small - Big - Small sequence puzzles.']
+          ['Complete each ABAB and AABA pattern row by circling the missing shape.'],
+          ['Cut-and-paste pattern strip practice for hands-on engagement.']
         ]
       },
       book: {
         title: 'Visual Pattern Activities',
-        subtitle: 'Step-by-step ABAB and ABC visual sequence completion sheets',
-        learningGoal: 'Logical sequencing & problem solving',
+        subtitle: 'Communication & Logic',
+        learningGoal: 'Sequence thinking & visual focus',
         ageGroup: '5-8',
         category: 'Matching',
         learningNeed: 'Communication & Language',
         skillArea: 'Focus',
         pages: 14,
-        mrp: 0,
         price: 0,
-        description: 'Predictable visual pattern grids encourage children to spot sequences and build confidence step by step.',
-        highlights: ['Predictable low-stress visual puzzles', 'Progressive difficulty from ABAB to ABC'],
-        featured: true
+        description: 'Predictable visual pattern grids that help children spot logical order calmly.',
+        highlights: ['14 Pages (PDF)', 'Printable (A4)', 'Step-by-step patterns'],
+        featured: false
       }
     }
   ];

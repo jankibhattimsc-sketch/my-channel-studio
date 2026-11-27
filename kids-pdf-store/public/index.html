@@ -4,43 +4,38 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Special Kids Worksheets — Printable Learning Worksheets for Special Kids</title>
-  <meta name="description" content="Simple, fun and effective printable PDF learning worksheets for children with Autism, ADHD, Learning Disabilities and other special learning needs." />
-  <link rel="stylesheet" href="/store.css?v=4.0" />
+  <meta name="description" content="Simple, fun and effective printable PDF learning materials for children with Autism, ADHD, Learning Disabilities and other special needs." />
+  <link rel="stylesheet" href="/store.css?v=5.0" />
 </head>
 <body>
   <a href="#main-content" class="skip-link">Skip to main content</a>
 
-  <!-- SECTION 1: STICKY HEADER / NAVIGATION -->
+  <!-- STICKY WHITE HEADER ACROSS ALL 9 PAGES -->
   <header class="site-header">
     <div class="header-inner">
-      <a href="#home" class="brand-logo" aria-label="Special Kids Worksheets Home">
-        <svg width="38" height="38" viewBox="0 0 40 40" aria-hidden="true">
-          <rect width="40" height="40" rx="12" fill="#EAF4FF"/>
-          <path d="M20 31s-9-5.6-9-12.1C11 15.1 14 12.5 17.1 12.5c1.8 0 3.1.9 3.9 2.1.8-1.2 2.1-2.1 3.9-2.1C28 12.5 31 15.1 31 18.9 31 25.4 20 31 20 31z" fill="#397BB5"/>
-          <circle cx="15.5" cy="17.5" r="2.2" fill="#FFF2C9"/>
-          <circle cx="24.5" cy="17.5" r="2.2" fill="#E4F5EA"/>
-          <path d="M17 22l3 2.5 3-2.5" stroke="#FFFFFF" stroke-width="2" fill="none" stroke-linecap="round"/>
-        </svg>
-        <span>Special Kids Worksheets</span>
+      <a href="#home" class="brand-logo" data-route="home" aria-label="Special Kids Worksheets Home">
+        <span id="brand-logo-svg"></span>
+        <span class="brand-text-stack">
+          <span class="brand-text-top">Special Kids</span>
+          <span class="brand-text-bot">Worksheets</span>
+        </span>
       </a>
 
       <nav class="main-nav" aria-label="Primary Navigation">
-        <a href="#home" class="nav-link active" data-nav="home">Home</a>
-        <a href="#worksheets" class="nav-link" data-nav="worksheets">Worksheets</a>
-        <a href="#categories" class="nav-link" data-nav="categories">Categories</a>
-        <a href="#resources" class="nav-link" data-nav="resources">Resources</a>
-        <a href="#about" class="nav-link" data-nav="about">About Us</a>
-        <a href="#contact" class="nav-link" data-nav="contact">Contact</a>
+        <a href="#home" class="nav-link active" data-route="home">Home</a>
+        <a href="#worksheets" class="nav-link" data-route="worksheets">Worksheets</a>
+        <a href="#categories" class="nav-link" data-route="categories">Categories</a>
+        <a href="#resources" class="nav-link" data-route="resources">Resources</a>
+        <a href="#about" class="nav-link" data-route="about">About</a>
+        <a href="#contact" class="nav-link" data-route="contact">Contact</a>
       </nav>
 
       <div class="header-actions">
-        <button id="header-search-btn" type="button" class="icon-btn" aria-label="Jump to worksheet search">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-          </svg>
+        <button id="header-search-btn" type="button" class="icon-btn" aria-label="Search worksheets">
+          <span id="header-search-icon"></span>
         </button>
-        <button id="hamburger-btn" type="button" class="icon-btn hamburger-btn" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="mobile-drawer">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+        <button id="hamburger-btn" type="button" class="icon-btn hamburger-btn" aria-label="Toggle menu" aria-expanded="false" aria-controls="mobile-drawer">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" aria-hidden="true">
             <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
           </svg>
         </button>
@@ -48,381 +43,21 @@
     </div>
 
     <nav id="mobile-drawer" class="mobile-drawer" aria-label="Mobile Navigation">
-      <a href="#home" class="nav-link active" data-nav="home">Home</a>
-      <a href="#worksheets" class="nav-link" data-nav="worksheets">Worksheets</a>
-      <a href="#categories" class="nav-link" data-nav="categories">Categories</a>
-      <a href="#resources" class="nav-link" data-nav="resources">Resources</a>
-      <a href="#about" class="nav-link" data-nav="about">About Us</a>
-      <a href="#contact" class="nav-link" data-nav="contact">Contact</a>
+      <a href="#home" class="nav-link active" data-route="home">Home</a>
+      <a href="#worksheets" class="nav-link" data-route="worksheets">Worksheets</a>
+      <a href="#categories" class="nav-link" data-route="categories">Categories</a>
+      <a href="#resources" class="nav-link" data-route="resources">Resources</a>
+      <a href="#about" class="nav-link" data-route="about">About</a>
+      <a href="#contact" class="nav-link" data-route="contact">Contact</a>
+      <a href="#free" class="nav-link" data-route="free">Free Downloads</a>
+      <a href="#faq" class="nav-link" data-route="faq">FAQ &amp; Policies</a>
     </nav>
   </header>
 
-  <main id="main-content">
-    <!-- SECTION 2: HERO SECTION -->
-    <section id="home" class="hero-section" aria-labelledby="hero-heading">
-      <div class="container">
-        <div class="hero-grid">
-          <div>
-            <h1 id="hero-heading" class="hero-title">Printable Learning Worksheets for Special Kids</h1>
-            <p class="hero-desc">Simple, fun and effective learning materials for children with Autism, ADHD, Learning Disabilities and other special learning needs.</p>
-            <div class="hero-actions">
-              <a href="#worksheets" class="btn btn-primary">Free Worksheets Download</a>
-              <a href="#categories" class="btn btn-outline">Explore Worksheets</a>
-            </div>
-          </div>
+  <!-- DYNAMIC 9-PAGE CONTAINER -->
+  <main id="main-content" class="container page-wrap"></main>
 
-          <div class="hero-art-box">
-            <svg class="hero-clouds" viewBox="0 0 500 360" preserveAspectRatio="none" aria-hidden="true">
-              <path d="M-20 190 A 190 190 0 0 1 360 190" fill="none" stroke="#FFF2C9" stroke-width="14" opacity="0.7"/>
-              <path d="M5 190 A 165 165 0 0 1 335 190" fill="none" stroke="#FFE9E4" stroke-width="10" opacity="0.6"/>
-              <ellipse cx="420" cy="54" rx="52" ry="22" fill="#FFFFFF" opacity="0.85"/>
-              <ellipse cx="75" cy="48" rx="44" ry="18" fill="#FFFFFF" opacity="0.8"/>
-            </svg>
-            <div class="hero-img-frame">
-              <img src="/assets/hero-child-learning.jpg" alt="Smiling young child learning with colorful hand-painted crayons and printable activity worksheets" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- SECTION 3: SEARCH BAR -->
-    <section class="search-section" aria-label="Search Worksheets">
-      <div class="container">
-        <div class="search-panel">
-          <form id="ws-search-form" class="search-form" role="search">
-            <label for="ws-search-input" class="sr-only">Search printable worksheets</label>
-            <div class="search-input-wrap">
-              <span class="search-input-icon" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-                </svg>
-              </span>
-              <input id="ws-search-input" type="search" class="search-input" placeholder="Search worksheets... (e.g. Tracing, Matching, Emotions)" />
-            </div>
-            <button type="submit" class="btn btn-primary">Search</button>
-          </form>
-          <div class="search-suggestions" aria-label="Popular search suggestions">
-            <span class="suggest-label">Suggestions:</span>
-            <button type="button" class="chip-btn" data-suggest="Tracing">Tracing</button>
-            <button type="button" class="chip-btn" data-suggest="Matching">Matching</button>
-            <button type="button" class="chip-btn" data-suggest="Emotions">Emotions</button>
-            <button type="button" class="chip-btn" data-suggest="Alphabet">Alphabet</button>
-            <button type="button" class="chip-btn" data-suggest="Number">Number Recognition</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- SECTION 4: EXPLORE BY CATEGORY -->
-    <section id="categories" class="section-pad" aria-labelledby="cat-heading">
-      <div class="container">
-        <div class="section-header">
-          <h2 id="cat-heading">Find the Right Worksheets for Your Child</h2>
-          <p>Choose how you want to browse printable resources tailored for comfort, focus, and steady progress.</p>
-        </div>
-
-        <div class="cat-4-grid">
-          <button type="button" class="cat-card yellow" data-cat-group="age">
-            <span class="cat-icon-circle" aria-hidden="true">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            </span>
-            <div>
-              <h3>By Age</h3>
-              <p>Find activities by age group.</p>
-            </div>
-          </button>
-
-          <button type="button" class="cat-card blue" data-cat-group="need">
-            <span class="cat-icon-circle" aria-hidden="true">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.439 7.85c-.049.322.059.648.289.878l1.568 1.568c.47.47.706 1.087.706 1.704s-.235 1.233-.706 1.704l-1.611 1.611a.98.98 0 0 1-.837.276c-.47-.07-.802.48-.968.925a2.501 2.501 0 1 1-3.214-3.214c.446-.166.995-.497.925-.968a.979.979 0 0 1 .276-.837l1.522-1.522a2.4 2.4 0 0 1 1.704-.706c.385 0 .763.09 1.11.268Z"/><path d="M14 5.5a2.5 2.5 0 0 0-5 0c0 .47.13.91.35 1.29.22.37-.11.83-.53.83H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h3.82c.42 0 .75.46.53.83-.22.38-.35.82-.35 1.29a2.5 2.5 0 0 0 5 0"/></svg>
-            </span>
-            <div>
-              <h3>By Learning Needs</h3>
-              <p>Explore different learning needs.</p>
-            </div>
-          </button>
-
-          <button type="button" class="cat-card mint" data-cat-group="skill">
-            <span class="cat-icon-circle" aria-hidden="true">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-            </span>
-            <div>
-              <h3>By Skills</h3>
-              <p>Motor, Focus, Communication.</p>
-            </div>
-          </button>
-
-          <button type="button" class="cat-card purple" data-cat-group="activity">
-            <span class="cat-icon-circle" aria-hidden="true">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
-            </span>
-            <div>
-              <h3>By Activity</h3>
-              <p>Tracing, Matching, Coloring.</p>
-            </div>
-          </button>
-        </div>
-
-        <div id="subfilter-drawer" class="subfilter-drawer" aria-live="polite"></div>
-      </div>
-    </section>
-
-    <!-- SECTION 5: LEARNING NEEDS -->
-    <section class="section-pad" aria-labelledby="needs-heading">
-      <div class="container">
-        <div class="section-header">
-          <h2 id="needs-heading">Explore Learning Activities</h2>
-          <p>Thoughtfully organized printable practice packs designed to encourage confidence at home.</p>
-        </div>
-
-        <div class="needs-6-grid">
-          <button type="button" class="need-card" data-need-filter="Autism Support">
-            <span class="need-illus" style="background: var(--soft-blue);" aria-hidden="true">
-              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#397BB5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
-            </span>
-            <div>
-              <h3>Autism Support</h3>
-              <p>Clear visual routines, matching sheets, and structured tasks.</p>
-            </div>
-          </button>
-
-          <button type="button" class="need-card" data-need-filter="ADHD Activities">
-            <span class="need-illus" style="background: var(--warm-yellow);" aria-hidden="true">
-              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            </span>
-            <div>
-              <h3>ADHD Activities</h3>
-              <p>Short, calm focus games and bite-sized visual challenges.</p>
-            </div>
-          </button>
-
-          <button type="button" class="need-card" data-need-filter="Learning Disability">
-            <span class="need-illus" style="background: var(--mint-green);" aria-hidden="true">
-              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#25805B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-            </span>
-            <div>
-              <h3>Learning Disability</h3>
-              <p>Spacious letter tracing, counting steps, and steady repetition.</p>
-            </div>
-          </button>
-
-          <button type="button" class="need-card" data-need-filter="Communication & Language">
-            <span class="need-illus" style="background: var(--soft-purple);" aria-hidden="true">
-              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#6D28D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            </span>
-            <div>
-              <h3>Communication &amp; Language</h3>
-              <p>Picture matching, sequencing, and word association prompts.</p>
-            </div>
-          </button>
-
-          <button type="button" class="need-card" data-need-filter="Fine Motor Skills">
-            <span class="need-illus" style="background: var(--soft-peach);" aria-hidden="true">
-              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#C2410C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/></svg>
-            </span>
-            <div>
-              <h3>Fine Motor Skills</h3>
-              <p>Line tracing paths, shapes, and pencil control practice.</p>
-            </div>
-          </button>
-
-          <button type="button" class="need-card" data-need-filter="Social & Emotional Learning">
-            <span class="need-illus" style="background: var(--soft-blue);" aria-hidden="true">
-              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#397BB5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-            </span>
-            <div>
-              <h3>Social &amp; Emotional Learning</h3>
-              <p>Friendly emotion cards and feeling recognition exercises.</p>
-            </div>
-          </button>
-        </div>
-
-        <p class="edu-disclaimer">
-          <strong>Educational Note:</strong> These printable materials are designed for general home learning support only and do not diagnose, treat, or cure any medical condition.
-        </p>
-      </div>
-    </section>
-
-    <!-- SECTION 6: POPULAR WORKSHEETS -->
-    <section id="worksheets" class="section-pad" aria-labelledby="ws-heading">
-      <div class="container">
-        <div class="section-header">
-          <h2 id="ws-heading">Popular Printable Worksheets</h2>
-          <p>Preview any worksheet before downloading, or print clean A4 pages straight away.</p>
-        </div>
-
-        <div id="active-filter-bar" class="active-filter-bar" aria-live="polite">
-          <span id="active-filter-text">Showing all worksheets</span>
-          <button id="clear-filters-btn" type="button" class="btn btn-outline" style="min-height:40px; padding:6px 14px;">Show All Worksheets</button>
-        </div>
-
-        <div id="worksheets-grid" class="worksheets-grid">
-          <p style="grid-column: 1 / -1; text-align: center; color: var(--text-secondary);">Loading printable worksheets...</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- SECTION 7: HOW IT WORKS -->
-    <section id="resources" class="section-pad" aria-labelledby="how-heading">
-      <div class="container">
-        <div class="section-header">
-          <h2 id="how-heading">Learning Made Simple</h2>
-          <p>Three straightforward steps from discovery to table-ready printing.</p>
-        </div>
-
-        <div class="steps-3-grid">
-          <div class="how-card">
-            <span class="step-num-badge">01. Step One</span>
-            <h3>Explore Worksheets</h3>
-            <p>Find activities according to your child's learning goals.</p>
-          </div>
-          <div class="how-card">
-            <span class="step-num-badge" style="background: var(--mint-green); color: var(--success-green);">02. Step Two</span>
-            <h3>Preview the PDF</h3>
-            <p>See the worksheet before downloading.</p>
-          </div>
-          <div class="how-card">
-            <span class="step-num-badge" style="background: var(--warm-yellow); color: var(--text-main);">03. Step Three</span>
-            <h3>Download &amp; Print</h3>
-            <p>Download your printable PDF and start learning.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- SECTION 8: PARENT TRUST SECTION -->
-    <section id="about" class="section-pad" aria-labelledby="trust-heading">
-      <div class="container">
-        <div class="section-header">
-          <h2 id="trust-heading">Supporting Every Child's Learning Journey</h2>
-          <p>Calm, parent-friendly printables built for everyday encouragement at home.</p>
-        </div>
-
-        <div class="trust-3-grid">
-          <div class="trust-card">
-            <div class="trust-icon" style="background: var(--soft-blue); color: var(--primary-blue);" aria-hidden="true">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
-            </div>
-            <h3>Easy-to-Use Resources</h3>
-            <p>Clear instructions and clean page layouts mean parents can sit down and start together right away.</p>
-          </div>
-
-          <div class="trust-card">
-            <div class="trust-icon" style="background: var(--mint-green); color: var(--success-green);" aria-hidden="true">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-            </div>
-            <h3>Printable Learning Materials</h3>
-            <p>Standard A4 PDF format designed for sharp home printing without dark ink-heavy backgrounds.</p>
-          </div>
-
-          <div class="trust-card">
-            <div class="trust-icon" style="background: var(--warm-yellow); color: var(--text-main);" aria-hidden="true">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            </div>
-            <h3>Flexible Learning Activities</h3>
-            <p>Repeat favorite pages as often as needed so every child can practice comfortably at their own pace.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- SECTION 9: PARENT FEEDBACK -->
-    <section id="contact" class="section-pad" aria-labelledby="feedback-heading">
-      <div class="container">
-        <div class="section-header">
-          <h2 id="feedback-heading">What Parents Say</h2>
-          <p>Community feedback helps us create calmer, clearer worksheets for families.</p>
-        </div>
-
-        <div id="feedback-grid" class="feedback-grid">
-          <article class="feedback-card">
-            <span class="placeholder-tag">Sample Parent Feedback Placeholder</span>
-            <p style="margin:0;">"Space reserved for verified feedback from parents using tracing and fine-motor practice packs at home."</p>
-            <strong style="color: var(--text-secondary);">Parent Reviewer — Sample Entry</strong>
-          </article>
-          <article class="feedback-card">
-            <span class="placeholder-tag">Sample Parent Feedback Placeholder</span>
-            <p style="margin:0;">"Space reserved for genuine feedback on visual matching and emotion recognition sheets."</p>
-            <strong style="color: var(--text-secondary);">Caregiver Reviewer — Sample Entry</strong>
-          </article>
-          <article class="feedback-card">
-            <span class="placeholder-tag">Sample Parent Feedback Placeholder</span>
-            <p style="margin:0;">"Submit your real experience below and your feedback will appear here once shared."</p>
-            <strong style="color: var(--text-secondary);">Community Feedback — Placeholder</strong>
-          </article>
-        </div>
-
-        <div style="text-align: center; margin-top: 24px;">
-          <button id="open-feedback-btn" type="button" class="btn btn-outline">Share Your Feedback</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- SECTION 10: ACCESSIBLE FAQ ACCORDION -->
-    <section id="faq" class="section-pad" aria-labelledby="faq-heading">
-      <div class="container">
-        <div class="section-header">
-          <h2 id="faq-heading">Frequently Asked Questions</h2>
-          <p>Quick answers for parents, caregivers, and home educators.</p>
-        </div>
-
-        <div class="faq-wrap">
-          <div class="faq-item">
-            <button type="button" class="faq-trigger" aria-expanded="false" aria-controls="faq-panel-1" id="faq-btn-1">
-              <span>1. Are the worksheets free?</span>
-              <span aria-hidden="true">+</span>
-            </button>
-            <div id="faq-panel-1" class="faq-panel" role="region" aria-labelledby="faq-btn-1" hidden>
-              Yes, all featured starter printable worksheets on the homepage carry a clear Free badge and can be downloaded without cost. Any optional paid bundles added in the catalog display their price clearly before checkout.
-            </div>
-          </div>
-
-          <div class="faq-item">
-            <button type="button" class="faq-trigger" aria-expanded="false" aria-controls="faq-panel-2" id="faq-btn-2">
-              <span>2. How do I download a worksheet?</span>
-              <span aria-hidden="true">+</span>
-            </button>
-            <div id="faq-panel-2" class="faq-panel" role="region" aria-labelledby="faq-btn-2" hidden>
-              Click the Preview button on any worksheet card to inspect the pages first, then click the Download button to save the A4 printable PDF straight to your device.
-            </div>
-          </div>
-
-          <div class="faq-item">
-            <button type="button" class="faq-trigger" aria-expanded="false" aria-controls="faq-panel-3" id="faq-btn-3">
-              <span>3. Can I print worksheets at home?</span>
-              <span aria-hidden="true">+</span>
-            </button>
-            <div id="faq-panel-3" class="faq-panel" role="region" aria-labelledby="faq-btn-3" hidden>
-              Yes. Every worksheet is formatted for standard A4 home printers using soft pastel tones and clean white page backgrounds so they print crisply without wasting ink.
-            </div>
-          </div>
-
-          <div class="faq-item">
-            <button type="button" class="faq-trigger" aria-expanded="false" aria-controls="faq-panel-4" id="faq-btn-4">
-              <span>4. What age groups are supported?</span>
-              <span aria-hidden="true">+</span>
-            </button>
-            <div id="faq-panel-4" class="faq-panel" role="region" aria-labelledby="faq-btn-4" hidden>
-              Worksheets include suggested age guidance spanning ages 3–5, 4–6, and 4–8+ years, while always letting children move comfortably according to readiness rather than age alone.
-            </div>
-          </div>
-
-          <div class="faq-item">
-            <button type="button" class="faq-trigger" aria-expanded="false" aria-controls="faq-panel-5" id="faq-btn-5">
-              <span>5. Are the worksheets suitable for different learning needs?</span>
-              <span aria-hidden="true">+</span>
-            </button>
-            <div id="faq-panel-5" class="faq-panel" role="region" aria-labelledby="faq-btn-5" hidden>
-              Yes. Activities are organized across Autism Support, ADHD focus tasks, Learning Disability practice, Communication &amp; Language, Fine Motor Skills, and Social &amp; Emotional Learning. They provide supportive educational practice rather than medical treatment.
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <!-- SECTION 11: MULTI-COLUMN FOOTER -->
+  <!-- SHARED MULTI-COLUMN FOOTER -->
   <footer class="site-footer">
     <div class="container">
       <div class="footer-grid">
@@ -430,96 +65,77 @@
           <h3>Special Kids Worksheets</h3>
           <p style="color: var(--text-secondary); margin: 0;">"Helping every child learn at their own pace."</p>
         </div>
-
         <div class="footer-col">
           <h3>Explore</h3>
           <ul class="footer-links">
-            <li><a href="#home">Home</a></li>
-            <li><a href="#worksheets">Worksheets</a></li>
-            <li><a href="#categories">Categories</a></li>
-            <li><a href="#worksheets">Free Downloads</a></li>
+            <li><a href="#home" data-route="home">Home</a></li>
+            <li><a href="#worksheets" data-route="worksheets">Worksheet Library</a></li>
+            <li><a href="#categories" data-route="categories">Worksheet Categories</a></li>
+            <li><a href="#free" data-route="free">Free Downloads</a></li>
           </ul>
         </div>
-
         <div class="footer-col">
           <h3>Resources</h3>
           <ul class="footer-links">
-            <li><a href="#resources">Parent Resources</a></li>
-            <li><a href="#about">Learning Guides</a></li>
-            <li><a href="#faq">FAQs</a></li>
+            <li><a href="#resources" data-route="resources">Parent Resources</a></li>
+            <li><a href="#about" data-route="about">About Us</a></li>
+            <li><a href="#faq" data-route="faq">FAQ &amp; Policies</a></li>
           </ul>
         </div>
-
         <div class="footer-col">
           <h3>Information</h3>
           <ul class="footer-links">
-            <li><a href="#about">About Us</a></li>
-            <li><a href="#contact">Contact Us</a></li>
-            <li><a href="#faq">Privacy Policy</a></li>
-            <li><a href="#faq">Terms &amp; Conditions</a></li>
+            <li><a href="#contact" data-route="contact">Contact &amp; Feedback</a></li>
+            <li><a href="#faq" data-route="faq">Privacy Policy</a></li>
+            <li><a href="#faq" data-route="faq">Terms &amp; Conditions</a></li>
             <li><a href="/admin">Manage Store / Admin</a></li>
           </ul>
         </div>
       </div>
-
       <div class="footer-bottom">
         Copyright © 2026 Special Kids Worksheets. All rights reserved.
       </div>
     </div>
   </footer>
 
-  <!-- Accessible Preview Modal -->
+  <!-- Accessible PDF Preview Modal -->
   <div id="preview-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="preview-modal-title">
     <div class="modal-dialog" style="max-width: 780px;">
       <div class="modal-top">
-        <h2 id="preview-modal-title" style="margin:0; font-size:1.25rem;">Worksheet PDF Preview</h2>
-        <button id="close-preview-btn" type="button" class="icon-btn" aria-label="Close PDF preview">✕</button>
+        <h2 id="preview-modal-title" style="margin:0; font-size:1.2rem;">Worksheet PDF Preview</h2>
+        <button id="close-preview-btn" type="button" class="icon-btn" aria-label="Close preview">✕</button>
       </div>
-      <iframe id="preview-iframe" title="Printable Worksheet PDF Preview" src="about:blank" style="width:100%; height:64vh; border:1px solid var(--border-card); border-radius:12px; background:var(--bg-primary);"></iframe>
+      <iframe id="preview-iframe" title="Worksheet PDF Preview" src="about:blank" style="width:100%; height:64vh; border:1px solid var(--border-card); border-radius:12px; background:var(--bg-primary);"></iframe>
       <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:14px; flex-wrap:wrap;">
-        <a id="preview-newtab-link" href="#" target="_blank" rel="noopener" class="btn btn-outline">Open in New Tab</a>
+        <a id="preview-newtab-link" href="#" target="_blank" rel="noopener" class="btn btn-outline-blue">Open in New Tab</a>
         <a id="preview-download-btn" href="#" class="btn btn-success">Download PDF</a>
       </div>
     </div>
   </div>
 
-  <!-- Paid Checkout Modal (Preserves Store Payment Links & UPI QR if Seller Prices Any Pack) -->
-  <div id="checkout-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="checkout-modal-title">
-    <div class="modal-dialog">
+  <!-- Accessible Guide / Policy Reader Modal -->
+  <div id="reader-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="reader-modal-title">
+    <div class="modal-dialog" style="max-width: 620px;">
       <div class="modal-top">
-        <h2 id="checkout-modal-title" style="margin:0; font-size:1.25rem;">Complete Download</h2>
-        <button id="close-checkout-btn" type="button" class="icon-btn" aria-label="Close checkout dialog">✕</button>
+        <h2 id="reader-modal-title" style="margin:0; font-size:1.25rem;"></h2>
+        <button id="close-reader-btn" type="button" class="icon-btn" aria-label="Close dialog">✕</button>
+      </div>
+      <div id="reader-modal-body" style="color: var(--text-main); line-height:1.7;"></div>
+    </div>
+  </div>
+
+  <!-- Paid Checkout Modal (if Seller prices any pack in /admin) -->
+  <div id="checkout-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="checkout-modal-title">
+    <div class="modal-dialog" style="max-width: 560px;">
+      <div class="modal-top">
+        <h2 id="checkout-modal-title" style="margin:0; font-size:1.22rem;">Complete Download</h2>
+        <button id="close-checkout-btn" type="button" class="icon-btn" aria-label="Close checkout">✕</button>
       </div>
       <div id="checkout-body"></div>
     </div>
   </div>
 
-  <!-- Share Feedback Modal -->
-  <div id="feedback-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="fb-modal-title">
-    <div class="modal-dialog" style="max-width: 520px;">
-      <div class="modal-top">
-        <h2 id="fb-modal-title" style="margin:0; font-size:1.25rem;">Share Your Feedback</h2>
-        <button id="close-fb-btn" type="button" class="icon-btn" aria-label="Close feedback form">✕</button>
-      </div>
-      <form id="feedback-form">
-        <div class="field">
-          <label for="fb-name">Your Name *</label>
-          <input id="fb-name" type="text" required placeholder="e.g. Sarah Patel" />
-        </div>
-        <div class="field">
-          <label for="fb-relation">Role (Optional)</label>
-          <input id="fb-relation" type="text" placeholder="e.g. Parent / Caregiver" />
-        </div>
-        <div class="field">
-          <label for="fb-message">How did your child enjoy the worksheets? *</label>
-          <textarea id="fb-message" rows="4" required placeholder="Share what worked well for your child..."></textarea>
-        </div>
-        <div id="fb-status" style="margin-bottom:10px; font-weight:700; display:none;"></div>
-        <button type="submit" class="btn btn-primary" style="width:100%;">Submit Feedback</button>
-      </form>
-    </div>
-  </div>
-
-  <script src="/store.js?v=4.0"></script>
+  <script src="/icons.js?v=5.0"></script>
+  <script src="/store.js?v=5.0"></script>
 </body>
 </html>

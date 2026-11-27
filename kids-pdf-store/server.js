@@ -110,11 +110,11 @@ app.get('/api/store/book/:id/download', (req, res) => {
 
 app.post('/api/store/feedback', (req, res) => {
   try {
-    const { parentName = '', relation = 'Parent', message = '' } = req.body || {};
+    const { parentName = '', relation = 'Parent', email = '', rating = 5, message = '' } = req.body || {};
     if (!String(parentName).trim() || !String(message).trim()) {
       return res.status(400).json({ success: false, error: 'Please provide your name and feedback message.' });
     }
-    const entry = storeDb.addFeedback({ parentName, relation, message });
+    const entry = storeDb.addFeedback({ parentName, relation, email, rating, message });
     res.json({ success: true, entry });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -468,7 +468,7 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(BASE_DIR, 'public', 'admin.html'));
 });
 
-app.get('/book/:id', (req, res) => {
+app.get(['/worksheets', '/categories', '/free', '/resources', '/about', '/contact', '/faq', '/worksheet/:id', '/book/:id'], (req, res) => {
   res.sendFile(path.join(BASE_DIR, 'public', 'index.html'));
 });
 
