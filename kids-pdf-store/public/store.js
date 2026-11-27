@@ -147,19 +147,19 @@
     const popular = worksheets.slice(0, 3);
     pageRoot.innerHTML = `
       <section class="home-hero-card" aria-labelledby="home-h1">
-        <div>
+        <div class="home-hero-copy">
           <h1 id="home-h1" class="home-hero-title">Printable Learning Worksheets for Special Kids</h1>
           <p class="home-hero-sub">Simple, fun and effective learning materials for children with Autism, ADHD, Learning Disabilities and other special needs.</p>
           <button id="hero-free-cta" type="button" class="btn btn-pink-pill" style="padding: 13px 26px; font-size: 1.04rem;">
             📥 Free Worksheets Download →
           </button>
         </div>
-        <div class="home-hero-art">
-          <img src="/assets/hero-child-learning.jpg" alt="Happy smiling child learning with colorful paints and printable activity worksheets" />
+        <div class="home-hero-mobile-art">
+          <img src="/assets/hero-child-learning.jpg?v=6.0" alt="Happy smiling child with colorful finger-painted hands and soft pastel rainbow" />
         </div>
       </section>
 
-      <form id="home-search-form" class="search-pill-form" role="search">
+      <form id="home-search-form" class="search-pill-form home-search-overlap" role="search">
         <span style="color:#687789; display:flex;" aria-hidden="true">${ICONS.search}</span>
         <label for="home-search-input" class="sr-only">Search worksheets</label>
         <input id="home-search-input" type="search" placeholder="Search worksheets... (e.g. Tracing, Matching, Emotions)" />
