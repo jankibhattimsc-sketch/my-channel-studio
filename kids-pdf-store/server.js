@@ -513,6 +513,17 @@ app.post('/api/admin/orders/:id/reject', verifyAdmin, (req, res) => {
   res.json({ success: true, order: updated });
 });
 
+app.get('/sitemap.xml', (req, res) => {
+  const host = `${req.headers['x-forwarded-proto'] || req.protocol || 'https'}://${req.get('host')}`;
+  const staticPaths = ['', '/worksheets', '/categories', '/free', '/resources', '/about', '/contact', '/faq'];
+  const bookUrls = storeDb.getPublicBooks().map(b => `/worksheet/${encodeURIComponent(b.id)}`);
+  const urls = [...staticPaths, ...bookUrls].map(p =>
+    `  <url><loc>${host}${p}</loc><changefreq>weekly</changefreq></url>`
+  ).join('\n');
+  res.setHeader('Content-Type', 'application/xml');
+  res.send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`);
+});
+
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(BASE_DIR, 'public', 'admin.html'));
 });
