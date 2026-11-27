@@ -49,11 +49,16 @@ function getStatus() {
 
 function decodeDataUrl(dataUrl, workDir, baseName, fallbackExt) {
   const str = String(dataUrl || '');
-  const match = str.match(/^data:([^;]+);base64,([\s\S]+)$/);
-  if (!match) {
+  const commaIdx = str.indexOf(',');
+  if (!str.startsWith('data:') || commaIdx === -1) {
     throw new Error(`Invalid base64 data URL for ${baseName}`);
   }
-  const mime = match[1].toLowerCase();
+  const header = str.slice(5, commaIdx).toLowerCase();
+  const base64Body = str.slice(commaIdx + 1).trim();
+  if (!header.includes('base64') || !base64Body) {
+    throw new Error(`Invalid base64 data URL for ${baseName}`);
+  }
+  const mime = header;
   let ext = fallbackExt;
   if (mime.includes('jpeg') || mime.includes('jpg')) ext = '.jpg';
   else if (mime.includes('png')) ext = '.png';
@@ -63,9 +68,10 @@ function decodeDataUrl(dataUrl, workDir, baseName, fallbackExt) {
   else if (mime.includes('webm')) ext = '.webm';
   else if (mime.includes('ogg')) ext = '.ogg';
   else if (mime.includes('mp4') || mime.includes('m4a')) ext = '.m4a';
+  else if (mime.includes('aac')) ext = '.aac';
 
   const outPath = path.join(workDir, `${baseName}${ext}`);
-  fs.writeFileSync(outPath, Buffer.from(match[2], 'base64'));
+  fs.writeFileSync(outPath, Buffer.from(base64Body, 'base64'));
   return outPath;
 }
 
