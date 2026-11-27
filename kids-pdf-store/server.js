@@ -6,7 +6,6 @@ const crypto = require('crypto');
 const QRCode = require('qrcode');
 
 const storeDb = require('./storeDb');
-const { seedIfEmpty } = require('./seedStarterBooks');
 
 const app = express();
 const PORT = Number(process.env.KIDS_STORE_PORT) || 5050;
@@ -16,7 +15,6 @@ const COVERS_DIR = path.join(BASE_DIR, 'uploads', 'covers');
 
 fs.mkdirSync(BOOKS_DIR, { recursive: true });
 fs.mkdirSync(COVERS_DIR, { recursive: true });
-seedIfEmpty();
 
 app.use(cors());
 app.use(express.json({ limit: '150mb' }));
@@ -50,6 +48,46 @@ function saveBase64File(dataUrl, destDir, prefix, defaultExt) {
   const fullPath = path.join(destDir, filename);
   fs.writeFileSync(fullPath, Buffer.from(body, 'base64'));
   return filename;
+}
+
+function escapeXml(str) {
+  return String(str || '').replace(/[<>&'"]/g, ch => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[ch]));
+}
+
+function saveAutoCoverSvg({ title, category, ageGroup, pages }) {
+  const safeTitle = escapeXml(String(title || 'Printable Worksheet').slice(0, 38));
+  const safeCat = escapeXml(String(category || 'Learning PDF').slice(0, 22));
+  const safeAge = escapeXml(String(ageGroup || '4-6') + ' Years');
+  const safePages = `${Math.max(1, Number(pages) || 10)} Pages`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="460" height="320" viewBox="0 0 460 320">
+  <rect width="460" height="320" fill="#F8FAFC"/>
+  <rect x="24" y="14" width="412" height="292" rx="16" fill="#FFFFFF" stroke="#DCE5F0" stroke-width="2"/>
+  <rect x="24" y="14" width="412" height="72" rx="16" fill="#EAF4FF"/>
+  <rect x="24" y="66" width="412" height="20" fill="#EAF4FF"/>
+  <circle cx="72" cy="50" r="18" fill="#397BB5"/>
+  <rect x="64" y="42" width="16" height="16" rx="3" fill="#FFFFFF"/>
+  <text x="106" y="48" font-family="Nunito Sans, sans-serif" font-size="14" font-weight="800" fill="#397BB5">${safeCat}</text>
+  <text x="106" y="68" font-family="Nunito Sans, sans-serif" font-size="12" font-weight="700" fill="#687789">${safeAge}  •  ${safePages} (A4 PDF)</text>
+  <text x="48" y="132" font-family="Nunito Sans, sans-serif" font-size="20" font-weight="900" fill="#26384A">${safeTitle}</text>
+  <line x1="48" y1="166" x2="404" y2="166" stroke="#CBD5E1" stroke-width="3" stroke-dasharray="8 8" stroke-linecap="round"/>
+  <line x1="48" y1="204" x2="364" y2="204" stroke="#93C5FD" stroke-width="3" stroke-dasharray="8 8" stroke-linecap="round"/>
+  <rect x="48" y="232" width="110" height="44" rx="10" fill="#FFF2C9" stroke="#F59E0B" stroke-width="1.8"/>
+  <rect x="174" y="232" width="110" height="44" rx="10" fill="#E4F5EA" stroke="#25805B" stroke-width="1.8"/>
+  <rect x="300" y="232" width="110" height="44" rx="10" fill="#F2EAFE" stroke="#7E22CE" stroke-width="1.8"/>
+</svg>`;
+  const filename = `cover_auto_${Date.now()}_${crypto.randomBytes(2).toString('hex')}.svg`;
+  fs.writeFileSync(path.join(COVERS_DIR, filename), svg, 'utf8');
+  return `/uploads/covers/${filename}`;
+}
+
+function removeUploadedFileIfLocal(urlOrName, dir) {
+  if (!urlOrName) return;
+  const base = path.basename(String(urlOrName));
+  if (!base) return;
+  const full = path.join(dir, base);
+  if (fs.existsSync(full)) {
+    try { fs.unlinkSync(full); } catch (_) {}
+  }
 }
 
 function buildUpiUri({ upiId, upiName, amount, orderCode, bookTitle }) {
@@ -388,13 +426,18 @@ app.post('/api/admin/books', verifyAdmin, (req, res) => {
     if (b.coverBase64) {
       const coverFile = saveBase64File(b.coverBase64, COVERS_DIR, 'cover', '.jpg');
       coverUrl = `/uploads/covers/${coverFile}`;
+    } else {
+      coverUrl = saveAutoCoverSvg({ title: b.title, category: b.category, ageGroup: b.ageGroup, pages: b.pages });
     }
 
     const created = storeDb.addBook({
       title: b.title,
       subtitle: b.subtitle,
+      learningGoal: b.learningGoal || b.subtitle,
       ageGroup: b.ageGroup,
       category: b.category,
+      learningNeed: b.learningNeed || 'Autism Support',
+      skillArea: b.skillArea || 'Fine Motor',
       pages: b.pages,
       mrp: b.mrp,
       price: b.price,
@@ -435,6 +478,9 @@ app.put('/api/admin/books/:id', verifyAdmin, (req, res) => {
 app.delete('/api/admin/books/:id', verifyAdmin, (req, res) => {
   const removed = storeDb.deleteBook(req.params.id);
   if (!removed) return res.status(404).json({ success: false, error: 'Book not found.' });
+  removeUploadedFileIfLocal(removed.pdfFile, BOOKS_DIR);
+  removeUploadedFileIfLocal(removed.samplePdfFile, BOOKS_DIR);
+  removeUploadedFileIfLocal(removed.coverUrl, COVERS_DIR);
   res.json({ success: true });
 });
 

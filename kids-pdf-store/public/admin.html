@@ -146,18 +146,34 @@
               </div>
               <div class="field">
                 <label>Category</label>
-                <input id="bk-cat" type="text" value="Coloring 🎨" placeholder="Coloring 🎨 / Phonics 📖 / Math 🔢" />
+                <input id="bk-cat" type="text" value="Tracing" placeholder="Tracing / Matching / Colouring / Numbers / Life Skills" />
               </div>
-              <div class="field"><label>Total Pages</label><input id="bk-pages" type="number" value="30" /></div>
-              <div class="field"><label>Original MRP Price</label><input id="bk-mrp" type="number" value="199" /></div>
-              <div class="field"><label>Selling Offer Price *</label><input id="bk-price" type="number" value="49" /></div>
+              <div class="field">
+                <label>Learning Need</label>
+                <select id="bk-need">
+                  <option value="Autism Support">Autism Support</option>
+                  <option value="ADHD Activities">ADHD Activities</option>
+                  <option value="Learning Disability">Learning Disability</option>
+                  <option value="Emotional & Social Skills">Emotional &amp; Social Skills</option>
+                  <option value="Fine Motor Skills">Fine Motor Skills</option>
+                  <option value="Communication & Language">Communication &amp; Language</option>
+                  <option value="General Support">General Support</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Skill Area</label>
+                <input id="bk-skill" type="text" value="Fine Motor" placeholder="Fine Motor / Focus / Communication / Early Learning" />
+              </div>
+              <div class="field"><label>Total Pages</label><input id="bk-pages" type="number" value="10" /></div>
+              <div class="field"><label>Original MRP Price</label><input id="bk-mrp" type="number" value="0" /></div>
+              <div class="field"><label>Selling Offer Price * (0 = Free Worksheet)</label><input id="bk-price" type="number" value="0" /></div>
               <div class="field"><label>Custom Book Payment Link (Optional — Razorpay/Stripe/Cosmofeed)</label><input id="bk-paylink" type="url" placeholder="https://rzp.io/l/..." /></div>
             </div>
             <div class="field"><label>Book Description</label><textarea id="bk-desc" rows="3" placeholder="Describe what kids will learn and enjoy in this printable PDF..."></textarea></div>
             <div class="field"><label>Key Highlights (One bullet point per line)</label><textarea id="bk-highlights" rows="3" placeholder="Crisp A4 Print-Ready PDF&#10;30+ Fun Activity Sheets&#10;Unlimited Home Printing"></textarea></div>
             <div class="grid-2">
               <div class="field"><label>📕 Upload Main PDF Book File *</label><input id="bk-pdf-file" type="file" accept="application/pdf" /></div>
-              <div class="field"><label>🖼️ Upload Book Cover Image (JPG/PNG)</label><input id="bk-cover-file" type="file" accept="image/*" /></div>
+              <div class="field"><label>🖼️ Cover Image (Optional — Auto-generated if empty)</label><input id="bk-cover-file" type="file" accept="image/*" /></div>
               <div class="field"><label>👀 Free Sample PDF (Optional)</label><input id="bk-sample-file" type="file" accept="application/pdf" /></div>
               <div class="field" style="display:flex; align-items:center; gap:16px; padding-top:22px;">
                 <label style="display:flex; align-items:center; gap:6px; margin:0;"><input id="bk-featured" type="checkbox" /> ⭐ Featured</label>
@@ -247,6 +263,6 @@
     </div>
   </div>
 
-  <script src="/admin.js?v=3.0"></script>
+  <script src="/admin.js?v=4.0"></script>
 </body>
 </html>

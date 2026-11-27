@@ -206,7 +206,12 @@
           <a href="#worksheets" class="btn btn-outline-blue" data-route="worksheets" style="min-height:40px; padding:6px 16px;">View All Worksheets →</a>
         </div>
         <div class="ws-grid-3">
-          ${popular.map(w => renderWorksheetCardHtml(w, true)).join('')}
+          ${popular.length
+            ? popular.map(w => renderWorksheetCardHtml(w, true)).join('')
+            : `<div class="card-white" style="grid-column:1/-1; text-align:center; padding:32px 20px;">
+                 <h3 style="margin-bottom:8px;">No Worksheets Added Yet</h3>
+                 <p style="margin:0; color:var(--text-secondary);">Printable PDF worksheets uploaded by the creator will appear right here.</p>
+               </div>`}
         </div>
       </section>
     `;
@@ -485,7 +490,12 @@
       </div>
 
       <div class="ws-grid-3">
-        ${shown.map(w => renderWorksheetCardHtml(w, false)).join('')}
+        ${shown.length
+          ? shown.map(w => renderWorksheetCardHtml(w, false)).join('')
+          : `<div class="card-white" style="grid-column:1/-1; text-align:center; padding:32px 20px;">
+               <h3 style="margin-bottom:8px;">No Free Worksheets Here Yet</h3>
+               <p style="margin:0; color:var(--text-secondary);">Uploaded free worksheets in this category will appear here automatically.</p>
+             </div>`}
       </div>
     `;
 

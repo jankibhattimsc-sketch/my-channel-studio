@@ -157,10 +157,12 @@
         document.getElementById('bk-title').value = bk.title || '';
         document.getElementById('bk-subtitle').value = bk.subtitle || '';
         document.getElementById('bk-age').value = bk.ageGroup || '4-6';
-        document.getElementById('bk-cat').value = bk.category || '';
-        document.getElementById('bk-pages').value = bk.pages || 30;
-        document.getElementById('bk-mrp').value = bk.mrp || 199;
-        document.getElementById('bk-price').value = bk.price || 49;
+        document.getElementById('bk-cat').value = bk.category || 'Tracing';
+        document.getElementById('bk-need').value = bk.learningNeed || 'Autism Support';
+        document.getElementById('bk-skill').value = bk.skillArea || 'Fine Motor';
+        document.getElementById('bk-pages').value = bk.pages || 10;
+        document.getElementById('bk-mrp').value = bk.mrp ?? 0;
+        document.getElementById('bk-price').value = bk.price ?? 0;
         document.getElementById('bk-paylink').value = bk.paymentLink || '';
         document.getElementById('bk-desc').value = bk.description || '';
         document.getElementById('bk-highlights').value = (bk.highlights || []).join('\n');
@@ -201,10 +203,13 @@
       const payload = {
         title: document.getElementById('bk-title').value.trim(),
         subtitle: document.getElementById('bk-subtitle').value.trim(),
+        learningGoal: document.getElementById('bk-subtitle').value.trim(),
         ageGroup: document.getElementById('bk-age').value,
-        category: document.getElementById('bk-cat').value.trim(),
-        pages: Number(document.getElementById('bk-pages').value) || 24,
-        mrp: Number(document.getElementById('bk-mrp').value) || 199,
+        category: document.getElementById('bk-cat').value.trim() || 'Tracing',
+        learningNeed: document.getElementById('bk-need').value,
+        skillArea: document.getElementById('bk-skill').value.trim() || 'Fine Motor',
+        pages: Number(document.getElementById('bk-pages').value) || 10,
+        mrp: Number(document.getElementById('bk-mrp').value) || 0,
         price: Number(document.getElementById('bk-price').value) || 0,
         paymentLink: document.getElementById('bk-paylink').value.trim(),
         description: document.getElementById('bk-desc').value.trim(),
