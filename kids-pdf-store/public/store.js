@@ -149,7 +149,7 @@
       <section class="home-hero-card" aria-labelledby="home-h1">
         <h1 id="home-h1" class="sr-only">Printable Learning Worksheets for Special Kids — Premium Worksheet Collection</h1>
         <button id="hero-banner-cta" type="button" class="home-hero-banner-btn" aria-label="Explore Printable Learning Worksheets Collection">
-          <img src="/assets/hero-banner.jpg?v=10.0" class="home-hero-banner-img" alt="KidsWorksheet Printable Learning Worksheets for Kids — Alphabets, Numbers, Math, Tracing, Coloring, GK & Festivals" />
+          <img src="/assets/hero-banner.jpg?v=12.0" class="home-hero-banner-img" alt="KidsWorksheet Printable Learning Worksheets for Kids — Alphabets, Numbers, Math, Tracing, Coloring, GK & Festivals" />
         </button>
       </section>
 
