@@ -3,7 +3,10 @@ const path = require('path');
 const crypto = require('crypto');
 
 const BASE_DIR = __dirname;
-const DATA_DIR = path.join(BASE_DIR, 'data');
+const STORAGE_DIR = process.env.KIDS_STORE_STORAGE_DIR
+  ? path.resolve(process.env.KIDS_STORE_STORAGE_DIR)
+  : BASE_DIR;
+const DATA_DIR = path.join(STORAGE_DIR, 'data');
 const DB_PATH = path.join(DATA_DIR, 'store.json');
 
 const DEFAULT_STORE = {

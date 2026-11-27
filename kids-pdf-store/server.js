@@ -8,10 +8,13 @@ const QRCode = require('qrcode');
 const storeDb = require('./storeDb');
 
 const app = express();
-const PORT = Number(process.env.KIDS_STORE_PORT) || 5050;
+const PORT = Number(process.env.KIDS_STORE_PORT || process.env.PORT) || 5050;
 const BASE_DIR = __dirname;
-const BOOKS_DIR = path.join(BASE_DIR, 'uploads', 'books');
-const COVERS_DIR = path.join(BASE_DIR, 'uploads', 'covers');
+const STORAGE_DIR = process.env.KIDS_STORE_STORAGE_DIR
+  ? path.resolve(process.env.KIDS_STORE_STORAGE_DIR)
+  : BASE_DIR;
+const BOOKS_DIR = path.join(STORAGE_DIR, 'uploads', 'books');
+const COVERS_DIR = path.join(STORAGE_DIR, 'uploads', 'covers');
 
 fs.mkdirSync(BOOKS_DIR, { recursive: true });
 fs.mkdirSync(COVERS_DIR, { recursive: true });
