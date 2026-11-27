@@ -1,6 +1,28 @@
 const express = require('express');
 const router = express.Router();
 const avatarService = require('../services/avatarService');
+const openaiService = require('../services/openaiService');
+
+router.post('/analyze-director', async (req, res) => {
+  try {
+    const {
+      speakerImageBase64 = '',
+      productImagesBase64 = [],
+      speechHint = '',
+      answerLanguage = 'gu'
+    } = req.body || {};
+    const result = await openaiService.analyzeAvatarScenePrompt({
+      speakerImageBase64,
+      productImagesBase64,
+      speechHint,
+      answerLanguage
+    });
+    res.json({ success: true, ...result });
+  } catch (err) {
+    console.error('[AvatarDirector Route Error]:', err.message);
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
 
 router.get('/status', (req, res) => {
   try {

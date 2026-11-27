@@ -1,4 +1,4 @@
-import { api } from '../api.js?v=103.0';
+import { api } from '../api.js?v=103.2';
 import { copyToClipboard } from '../utils/clipboard.js?v=90.0';
 
 function escapeHtml(str) {
@@ -66,10 +66,10 @@ export async function renderTalkingAvatar(container, navCallback) {
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
           <div>
             <h2 style="margin: 0 0 6px 0; font-size: 1.38rem; color: #f8fafc;">
-              🗣️ AI Talking Avatar Studio (ફોટો + Speech → અસલી બોલતો વિડિયો)
+              🗣️ AI Talking Avatar Studio (ફોટો જુઓ → World-Best Prompt → અસલી વિડિયો)
             </h2>
             <p style="margin: 0; color: var(--text-muted); font-size: 0.92rem; line-height: 1.5;">
-              વ્યક્તિનો ફોટો + તમારી Speech + વસ્તુના ફોટા ઉમેરો — RTX 3060 GPU પર <b>અસલી લિપ-સિંક, આંખો પલકતી અને ચહેરાના હાવભાવ સાથે Real MP4 વિડિયો</b> બનશે!
+              વ્યક્તિનો ઓરિજિનલ ફોટો + વસ્તુના ફોટા + તમારી Speech ઉમેરો — પહેલા Gemini બંને ફોટા જોઈને <b>હાવભાવ &amp; બેકગ્રાઉન્ડનો World-Best Prompt</b> બનાવશે અને પછી RTX 3060 GPU પર <b>અસલી બોલતો MP4 વિડિયો એડિટ</b> કરશે!
             </p>
           </div>
           <div id="av-engine-badge" style="padding: 8px 14px; border-radius: 12px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(148, 163, 184, 0.35); font-size: 0.84rem; font-weight: 800; color: #fbbf24;">
@@ -83,7 +83,7 @@ export async function renderTalkingAvatar(container, navCallback) {
         <!-- Card 1: Speaker Photo -->
         <div class="card" style="padding: 20px; border: 1.5px solid rgba(236, 72, 153, 0.4);">
           <div style="font-weight: 800; color: #f472b6; font-size: 1rem; margin-bottom: 10px;">
-            ૧. બોલનાર વ્યક્તિનો અસલી ફોટો (Speaker Photo) *
+            ૧. બોલનાર વ્યક્તિનો ઓરિજિનલ ફોટો (Speaker Photo) *
           </div>
           <div id="av-speaker-drop" style="border: 2px dashed rgba(244, 114, 182, 0.55); border-radius: 14px; padding: 18px; text-align: center; cursor: pointer; background: rgba(236, 72, 153, 0.06);">
             <input type="file" id="av-speaker-input" accept="image/*" style="display: none;" />
@@ -130,7 +130,7 @@ export async function renderTalkingAvatar(container, navCallback) {
             </div>
 
             <!-- Option C: Pick Saved Audio -->
-            <div style="padding: 12px; border-radius: 12px; background: rgba(15, 23, 42, 0.55); border: 1px solid rgba(16, 185, 129, 0.3);">
+            <div style="padding: 12px; border-radius: 12px; background: rgba(15, 23, 42, 0.55); border: 1px solid rgba(168, 85, 247, 0.3);">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                 <span style="font-size: 0.84rem; font-weight: 700; color: #e2e8f0;">💾 વિકલ્પ C: અગાઉ બનાવેલો Audio પસંદ કરો</span>
                 <button id="av-btn-refresh-audios" type="button" class="btn btn-outline" style="padding: 2px 8px; font-size: 0.74rem;">🔄</button>
@@ -148,11 +148,11 @@ export async function renderTalkingAvatar(container, navCallback) {
         </div>
       </div>
 
-      <!-- Card 3: Object / Product Photos + Studio Options -->
-      <div class="card" style="padding: 20px; border: 1.5px solid rgba(16, 185, 129, 0.4);">
+      <!-- Card 3: Product / Object Photos + Vision Director -->
+      <div class="card" style="padding: 20px; border: 1.5px solid rgba(16, 185, 129, 0.45);">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
           <span style="font-weight: 800; color: #34d399; font-size: 1rem;">
-            ૩. વસ્તુ / વિષયના અસલી ફોટા ઉમેરો (વૈકલ્પિક — 0 થી 10 ફોટા)
+            ૩. વસ્તુ / પ્રોડક્ટના ફોટા (Product Photos — 0 થી 10 ફોટા)
           </span>
           <span id="av-product-count" style="font-size: 0.82rem; color: var(--text-muted);">૦ વસ્તુના ફોટા</span>
         </div>
@@ -160,20 +160,72 @@ export async function renderTalkingAvatar(container, navCallback) {
         <div id="av-product-drop" style="border: 2px dashed rgba(52, 211, 153, 0.5); border-radius: 12px; padding: 14px; text-align: center; cursor: pointer; background: rgba(16, 185, 129, 0.05);">
           <input type="file" id="av-product-input" accept="image/*" multiple style="display: none;" />
           <div style="font-weight: 700; color: #e2e8f0; font-size: 0.92rem;">
-            📦 અહીં ક્લિક કરીને વસ્તુ / પ્રોડક્ટ / સ્લાઇડના ફોટા ઉમેરો (ગમે તેટલા)
+            📦 અહીં ક્લિક કરીને વસ્તુ / પ્રોડક્ટ / સ્લાઇડના ફોટા ઉમેરો
           </div>
           <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 3px;">
-            ફોટો નાખશો તો સ્ક્રીન પર વસ્તુ દેખાશે અને વ્યક્તિ તેને અસલી રીતે સમજાવતો દેખાશે
+            Google Gemini આ વસ્તુ અને વ્યક્તિનો ફોટો બંને જોઈને નક્કી કરશે કે કેવા હાવભાવ &amp; બેકગ્રાઉન્ડ સારા લાગશે
           </div>
         </div>
         <div id="av-product-grid" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px;"></div>
 
-        <!-- Studio Settings -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(148, 163, 184, 0.2);">
+        <!-- Step 3.5 Trigger: Gemini Vision Scene Director -->
+        <div style="margin-top: 16px; padding: 14px; border-radius: 12px; background: rgba(139, 92, 246, 0.1); border: 1.5px solid rgba(167, 139, 250, 0.45);">
+          <div style="font-weight: 800; color: #ddd6fe; font-size: 0.95rem; margin-bottom: 8px;">
+            🧠 ૩.૫ પહેલા Gemini બંને ફોટા જોઈને World-Best Prompt &amp; એડિટિંગ નક્કી કરે:
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+            <input id="av-speech-hint" type="text" class="input"
+              placeholder="વૈકલ્પિક હિન્ટ (દા.ત. 'આ પ્રોડક્ટનો રિવ્યૂ વિડિયો' કે 'સરકારી યોજનાની માહિતી')..."
+              style="flex: 2; min-width: 220px; padding: 10px 12px; border-radius: 10px; font-size: 0.9rem;" />
+            <button id="av-btn-analyze-director" type="button" class="btn btn-primary" style="flex: 1.5; min-width: 260px; padding: 11px 16px; font-weight: 800; background: linear-gradient(135deg, #8b5cf6, #38bdf8); border: none;">
+              ✨ ફોટા જુઓ → હાવભાવ, બેકગ્રાઉન્ડ &amp; World-Best Prompt બનાવો
+            </button>
+          </div>
+          <div id="av-director-status" style="margin-top: 8px; font-size: 0.85rem; color: #38bdf8; display: none;"></div>
+        </div>
+      </div>
+
+      <!-- AI Director Prompt Result Card -->
+      <div id="av-director-card" class="card" style="padding: 20px; border: 1.5px solid rgba(251, 191, 36, 0.55); background: rgba(251, 191, 36, 0.05); display: none;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+          <span id="av-director-title" style="font-weight: 800; color: #fbbf24; font-size: 1.04rem;">
+            ✨ Google Gemini Vision નો World-Best Director Prompt
+          </span>
+          <button id="av-btn-copy-director" type="button" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.82rem; font-weight: 700;">
+            📋 Prompt કોપી કરો
+          </button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-bottom: 12px;">
+          <div style="padding: 10px 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(244, 114, 182, 0.35);">
+            <div style="font-size: 0.78rem; color: #f472b6; font-weight: 800;">🎭 સૂચવેલા હાવભાવ (Expressions)</div>
+            <div id="av-dir-exp-summary" style="font-size: 0.9rem; font-weight: 700; color: #f8fafc; margin-top: 3px;"></div>
+            <div id="av-dir-speaker-note" style="font-size: 0.78rem; color: #94a3b8; margin-top: 4px;"></div>
+          </div>
+          <div style="padding: 10px 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(56, 189, 248, 0.35);">
+            <div style="font-size: 0.78rem; color: #38bdf8; font-weight: 800;">🎨 સૂચવેલું બેકગ્રાઉન્ડ &amp; થીમ (Background)</div>
+            <div id="av-dir-bg-summary" style="font-size: 0.9rem; font-weight: 700; color: #f8fafc; margin-top: 3px;"></div>
+            <div id="av-dir-product-note" style="font-size: 0.78rem; color: #94a3b8; margin-top: 4px;"></div>
+          </div>
+        </div>
+
+        <textarea id="av-director-prompt" class="input" rows="10" style="width: 100%; resize: vertical; font-size: 0.92rem; line-height: 1.6; padding: 12px; border-radius: 12px; background: rgba(15, 23, 42, 0.78);"></textarea>
+        <div style="margin-top: 8px; font-size: 0.82rem; color: #34d399; font-weight: 700;">
+          ✅ AI એ સૂચવેલા હાવભાવ પાવર, બેકગ્રાઉન્ડ કલર, બોર્ડર ગ્લો, ટોન અને ઝૂમ એનિમેશન નીચેના એડિટરમાં આપમેળે સેટ થઈ ગયા છે!
+        </div>
+      </div>
+
+      <!-- Card 4: Video Editing & Studio Settings + Generate -->
+      <div class="card" style="padding: 20px; border: 1.5px solid rgba(139, 92, 246, 0.45);">
+        <div style="font-weight: 800; color: #c084fc; font-size: 1rem; margin-bottom: 12px;">
+          ૪. વિડિયો એડિટિંગ સેટિંગ્સ (AI દ્વારા આપમેળે સેટ — તમે અહીં બદલી પણ શકો છો)
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(195px, 1fr)); gap: 12px; margin-bottom: 16px;">
           <div>
-            <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">📐 વિડિયો લેઆઉટ (Layout):</label>
+            <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">📐 વિડિયો લેઆઉટ:</label>
             <select id="av-layout" class="input" style="width: 100%; padding: 8px 10px; border-radius: 8px; font-weight: 700;">
-              <option value="pip" selected>🖼️ વસ્તુ મુખ્ય + ખૂણામાં બોલતો વ્યક્તિ (PiP)</option>
+              <option value="pip" selected>🖼️ વસ્તુ મુખ્ય + ખૂણામાં વ્યક્તિ (PiP)</option>
               <option value="split">⚖️ બાજુ-બાજુ (અડધે વ્યક્તિ + અડધે વસ્તુ)</option>
               <option value="full">👤 ફક્ત બોલતો વ્યક્તિ (Full Video)</option>
             </select>
@@ -188,27 +240,50 @@ export async function renderTalkingAvatar(container, navCallback) {
             </select>
           </div>
           <div>
-            <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">🎯 ચહેરાની ક્વોલિટી:</label>
-            <select id="av-size" class="input" style="width: 100%; padding: 8px 10px; border-radius: 8px; font-weight: 700;">
-              <option value="256" selected>ઝડપી HD + GFPGAN Sharp (Recommended)</option>
-              <option value="512">Ultra HD 512px (વધુ સ્પષ્ટ, થોડો વધુ સમય)</option>
+            <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">🎨 લાઇટિંગ &amp; કલર ટોન:</label>
+            <select id="av-tone-preset" class="input" style="width: 100%; padding: 8px 10px; border-radius: 8px; font-weight: 700;">
+              <option value="crisp-studio" selected>✨ Crisp Studio (ચોખ્ખો &amp; Sharp)</option>
+              <option value="vibrant-ad">🔥 Vibrant Ad (પ્રોડક્ટ માટે ચમકદાર)</option>
+              <option value="warm-cinematic">🌅 Warm Cinematic (ગોલ્ડન સિનેમા ટોન)</option>
+              <option value="calm-news">📰 Calm News (ગંભીર &amp; કુદરતી)</option>
             </select>
           </div>
-          <div style="display: flex; flex-direction: column; justify-content: center; gap: 6px;">
+          <div>
+            <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">😊 હાવભાવ પાવર (<span id="av-exp-val">1.20</span>):</label>
+            <input id="av-expression-scale" type="range" min="0.85" max="1.45" step="0.05" value="1.20" style="width: 100%; margin-top: 8px;" />
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">🎯 ચહેરાની ક્વોલિટી:</label>
+            <select id="av-size" class="input" style="width: 100%; padding: 8px 10px; border-radius: 8px; font-weight: 700;">
+              <option value="256" selected>ઝડપી HD + GFPGAN Sharp</option>
+              <option value="512">Ultra HD 512px (વધુ સ્પષ્ટ)</option>
+            </select>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <div>
+              <label style="display: block; font-size: 0.76rem; color: #cbd5e1; margin-bottom: 4px;">બેકગ્રાઉન્ડ</label>
+              <input id="av-bg-color" type="color" value="#0f172a" style="width: 48px; height: 34px; border: none; border-radius: 6px; cursor: pointer;" />
+            </div>
+            <div>
+              <label style="display: block; font-size: 0.76rem; color: #cbd5e1; margin-bottom: 4px;">ફ્રેમ ગ્લો</label>
+              <input id="av-border-color" type="color" value="#38bdf8" style="width: 48px; height: 34px; border: none; border-radius: 6px; cursor: pointer;" />
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; justify-content: center; gap: 6px; grid-column: span 2;">
             <label style="display: flex; align-items: center; gap: 8px; font-size: 0.84rem; font-weight: 700; color: #f8fafc; cursor: pointer;">
-              <input type="checkbox" id="av-enhancer" checked /> ✨ GFPGAN ચહેરો ક્લિયર (HD)
+              <input type="checkbox" id="av-enhancer" checked /> ✨ GFPGAN ચહેરો HD ક્લિયર
             </label>
             <label style="display: flex; align-items: center; gap: 8px; font-size: 0.84rem; font-weight: 700; color: #f8fafc; cursor: pointer;">
-              <input type="checkbox" id="av-still" /> 🧘 શરીર સ્થિર રાખો (Static Pose)
+              <input type="checkbox" id="av-kenburns" checked /> 🎞️ વસ્તુના ફોટા પર Smooth Zoom-In એનિમેશન
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.84rem; font-weight: 700; color: #f8fafc; cursor: pointer;">
+              <input type="checkbox" id="av-still" /> 🧘 શરીર સ્થિર રાખો (Static Anchor Pose)
             </label>
           </div>
         </div>
-      </div>
 
-      <!-- Generate Button & Progress -->
-      <div class="card" style="padding: 20px; border: 1.5px solid rgba(139, 92, 246, 0.45);">
         <button id="av-btn-render" class="btn btn-primary" style="width: 100%; padding: 15px 20px; font-size: 1.06rem; font-weight: 800; background: linear-gradient(135deg, #ec4899, #8b5cf6, #0ea5e9); border: none; border-radius: 12px;">
-          🎬 અસલી બોલતો AI વિડિયો બનાવો (Generate Real Talking Video)
+          🎬 AI Prompt &amp; સેટિંગ્સ મુજબ અસલી બોલતો વિડિયો એડિટ &amp; તૈયાર કરો
         </button>
 
         <div id="av-progress-box" style="margin-top: 14px; display: none;">
@@ -228,7 +303,7 @@ export async function renderTalkingAvatar(container, navCallback) {
       <!-- Final Output Video Card -->
       <div id="av-result-card" class="card" style="padding: 20px; border: 1.5px solid rgba(16, 185, 129, 0.6); background: rgba(16, 185, 129, 0.06); display: none;">
         <div style="font-weight: 800; color: #34d399; font-size: 1.12rem; margin-bottom: 12px;">
-          🎉 તમારો અસલી બોલતો AI વિડિયો તૈયાર છે!
+          🎉 તમારો AI એડિટ કરેલો અસલી બોલતો વિડિયો તૈયાર છે!
         </div>
         <video id="av-result-video" controls playsinline style="width: 100%; max-height: 500px; border-radius: 12px; background: #000; border: 1px solid rgba(148, 163, 184, 0.3);"></video>
         <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px;">
@@ -268,10 +343,27 @@ export async function renderTalkingAvatar(container, navCallback) {
   const productCountEl = container.querySelector('#av-product-count');
   const productGridEl = container.querySelector('#av-product-grid');
 
+  const speechHintEl = container.querySelector('#av-speech-hint');
+  const btnAnalyzeDirector = container.querySelector('#av-btn-analyze-director');
+  const directorStatusEl = container.querySelector('#av-director-status');
+  const directorCardEl = container.querySelector('#av-director-card');
+  const directorTitleEl = container.querySelector('#av-director-title');
+  const dirExpSummaryEl = container.querySelector('#av-dir-exp-summary');
+  const dirSpeakerNoteEl = container.querySelector('#av-dir-speaker-note');
+  const dirBgSummaryEl = container.querySelector('#av-dir-bg-summary');
+  const dirProductNoteEl = container.querySelector('#av-dir-product-note');
+  const directorPromptEl = container.querySelector('#av-director-prompt');
+
   const layoutEl = container.querySelector('#av-layout');
   const aspectEl = container.querySelector('#av-aspect');
+  const tonePresetEl = container.querySelector('#av-tone-preset');
+  const expScaleEl = container.querySelector('#av-expression-scale');
+  const expValEl = container.querySelector('#av-exp-val');
   const sizeEl = container.querySelector('#av-size');
+  const bgColorEl = container.querySelector('#av-bg-color');
+  const borderColorEl = container.querySelector('#av-border-color');
   const enhancerEl = container.querySelector('#av-enhancer');
+  const kenBurnsEl = container.querySelector('#av-kenburns');
   const stillEl = container.querySelector('#av-still');
 
   const btnRender = container.querySelector('#av-btn-render');
@@ -286,6 +378,10 @@ export async function renderTalkingAvatar(container, navCallback) {
   const resultVideoEl = container.querySelector('#av-result-video');
   const btnDownload = container.querySelector('#av-btn-download');
 
+  expScaleEl.addEventListener('input', () => {
+    expValEl.textContent = Number(expScaleEl.value).toFixed(2);
+  });
+
   function showError(msg) {
     errorBoxEl.textContent = msg ? `⚠️ ${msg}` : '';
     errorBoxEl.style.display = msg ? 'block' : 'none';
@@ -299,11 +395,7 @@ export async function renderTalkingAvatar(container, navCallback) {
         engineBadgeEl.style.color = '#34d399';
         engineBadgeEl.style.borderColor = '#10b981';
       } else {
-        const missing = [];
-        if (!st.pythonOk) missing.push('Python');
-        if (!st.checkpoints?.model256) missing.push('256px Model');
-        if (!st.checkpoints?.mapping109) missing.push('Mapping');
-        engineBadgeEl.textContent = `⏳ મોડેલ ડાઉનલોડ ચાલુ છે (${missing.join(', ') || 'Setting up'})`;
+        engineBadgeEl.textContent = '⏳ મોડેલ તૈયાર થઈ રહ્યા છે...';
         engineBadgeEl.style.color = '#fbbf24';
       }
     } catch (_) {
@@ -393,7 +485,6 @@ export async function renderTalkingAvatar(container, navCallback) {
     }
   });
 
-  // Upload audio file
   audioInputEl.addEventListener('change', async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -409,7 +500,6 @@ export async function renderTalkingAvatar(container, navCallback) {
     }
   });
 
-  // Select saved audio
   savedAudioSelectEl.addEventListener('change', () => {
     const val = savedAudioSelectEl.value;
     if (!val) return;
@@ -453,11 +543,72 @@ export async function renderTalkingAvatar(container, navCallback) {
     productInputEl.value = '';
   });
 
-  // Render Job
+  // Step 3.5: Gemini Vision Director Prompt Builder (looks at Speaker + Product photos)
+  btnAnalyzeDirector.addEventListener('click', async () => {
+    showError('');
+    if (!speakerImageBase64 && productImages.length === 0) {
+      showError('પહેલા વ્યક્તિનો ઓરિજિનલ ફોટો અથવા વસ્તુનો ફોટો અપલોડ કરો.');
+      return;
+    }
+
+    btnAnalyzeDirector.disabled = true;
+    btnAnalyzeDirector.style.opacity = '0.6';
+    directorStatusEl.style.display = 'block';
+    directorStatusEl.style.color = '#38bdf8';
+    directorStatusEl.textContent = '🧠 Google Gemini Vision તમારા ઓરિજિનલ ફોટો અને વસ્તુના ફોટા ધ્યાનથી જોઈને World-Best Prompt & એડિટિંગ નક્કી કરી રહ્યું છે...';
+
+    try {
+      const res = await api.analyzeAvatarDirector({
+        speakerImageBase64,
+        productImagesBase64: productImages,
+        speechHint: speechHintEl.value.trim(),
+        answerLanguage: 'gu'
+      });
+
+      const srcTxt = res.source === 'gemini'
+        ? `✨ Google Gemini Vision (${res.model}) નો World-Best Director Prompt`
+        : (res.source === 'openai' ? `🤖 ChatGPT Vision નો Director Prompt` : `⚙️ સ્માર્ટ ડિરેક્ટર Prompt`);
+      directorTitleEl.textContent = srcTxt;
+      dirExpSummaryEl.textContent = res.expressionSummary || '';
+      dirSpeakerNoteEl.textContent = res.speakerAnalysis || '';
+      dirBgSummaryEl.textContent = res.backgroundSummary || '';
+      dirProductNoteEl.textContent = res.productAnalysis || '';
+      directorPromptEl.value = res.worldBestPrompt || '';
+
+      const rec = res.recommendedSettings || {};
+      if (rec.layout) layoutEl.value = rec.layout;
+      if (rec.tonePreset) tonePresetEl.value = rec.tonePreset;
+      if (rec.expressionScale) {
+        expScaleEl.value = String(rec.expressionScale);
+        expValEl.textContent = Number(rec.expressionScale).toFixed(2);
+      }
+      stillEl.checked = Boolean(rec.still);
+      if (rec.bgColorHex) bgColorEl.value = rec.bgColorHex;
+      if (rec.borderColorHex) borderColorEl.value = rec.borderColorHex;
+      kenBurnsEl.checked = rec.kenBurns !== false;
+
+      directorCardEl.style.display = 'block';
+      directorStatusEl.style.color = '#34d399';
+      directorStatusEl.textContent = `✅ World-Best Prompt તૈયાર છે અને એડિટર સેટિંગ્સ આપમેળે લાગુ થઈ ગયા છે!`;
+      directorCardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } catch (err) {
+      directorStatusEl.style.color = '#f87171';
+      directorStatusEl.textContent = `⚠️ ભૂલ: ${err.message}`;
+    } finally {
+      btnAnalyzeDirector.disabled = false;
+      btnAnalyzeDirector.style.opacity = '1';
+    }
+  });
+
+  container.querySelector('#av-btn-copy-director').addEventListener('click', () => {
+    copyToClipboard(directorPromptEl.value, 'World-Best Director Prompt કોપી થયો! ✓');
+  });
+
+  // Step 4: Render & Edit Video
   btnRender.addEventListener('click', async () => {
     showError('');
     if (!speakerImageBase64) {
-      showError('પહેલા બોલનાર વ્યક્તિનો અસલી ફોટો અપલોડ કરો.');
+      showError('પહેલા બોલનાર વ્યક્તિનો ઓરિજિનલ ફોટો અપલોડ કરો.');
       return;
     }
     if (!speechAudioBase64 && !speechAudioUrl) {
@@ -486,7 +637,12 @@ export async function renderTalkingAvatar(container, navCallback) {
         size: Number(sizeEl.value),
         enhancer: enhancerEl.checked,
         still: stillEl.checked,
-        expressionScale: 1.15
+        expressionScale: Number(expScaleEl.value) || 1.2,
+        tonePreset: tonePresetEl.value,
+        bgColorHex: bgColorEl.value,
+        borderColorHex: borderColorEl.value,
+        kenBurns: kenBurnsEl.checked,
+        title: speechHintEl.value.trim() || 'AI Talking Avatar Video'
       });
 
       const jobId = startRes.jobId;

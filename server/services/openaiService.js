@@ -2390,6 +2390,173 @@ Output strictly valid JSON with keys:
       source: 'fallback'
     };
   }
+
+  // --- Talking Avatar Vision Director: Inspect Original Person Photo + Product Photos -> Build World-Best Prompt & Auto Editing Settings ---
+  async analyzeAvatarScenePrompt({ speakerImageBase64 = '', productImagesBase64 = [], speechHint = '', answerLanguage = 'gu' } = {}) {
+    const validSpeaker = typeof speakerImageBase64 === 'string' && speakerImageBase64.startsWith('data:image/') ? speakerImageBase64 : '';
+    const validProducts = (Array.isArray(productImagesBase64) ? productImagesBase64 : [])
+      .filter(img => typeof img === 'string' && img.startsWith('data:image/'))
+      .slice(0, 4);
+
+    if (!validSpeaker && validProducts.length === 0) {
+      throw new Error('કૃપા કરીને પહેલા વ્યક્તિનો ઓરિજિનલ ફોટો અથવા વસ્તુનો ફોટો અપલોડ કરો.');
+    }
+
+    const imagesBase64 = [];
+    if (validSpeaker) imagesBase64.push(validSpeaker);
+    imagesBase64.push(...validProducts);
+
+    const systemInstruction = `તમે વિશ્વસ્તરીય Film & Commercial Video Director, Facial Expression Coach, Lighting Designer અને Prompt Engineer છો.
+
+વપરાશકર્તા તમને આપશે:
+- ફોટો 1 (જો હોય તો): બોલનાર વ્યક્તિનો ઓરિજિનલ ફોટો (Speaker Photo)
+- ત્યારપછીના ફોટા (જો હોય તો): વસ્તુ / પ્રોડક્ટ / વિષયના ફોટા (Product Photos: ${validProducts.length})
+${speechHint ? `- વપરાશકર્તાનો વિષય/હિન્ટ: "${speechHint}"` : ''}
+
+તમારે આ બધા ફોટાને એકદમ બારીકાઈથી જોઈને જણાવવાનું છે કે:
+1. ઓરિજિનલ વ્યક્તિના ફોટામાં શું દેખાય છે (ઉંમર, પહેરવેશ, પ્રકાશ, ચહેરાનો ભાવ)?
+2. વસ્તુ/પ્રોડક્ટના ફોટામાં કઈ વસ્તુ/વિષય છે, તેના રંગો અને મૂડ શું છે?
+3. આ બંનેની જોડી માટે **કેવા પ્રકારના હાવભાવ (Expressions)**, **કેવું બેકગ્રાઉન્ડ અને લાઇટિંગ (Background & Color Grading)**, અને **કેવી એડિટિંગ સ્ટાઇલ** સૌથી વધુ અસલી, પ્રોફેશનલ અને આકર્ષક લાગશે?
+4. એક **WORLD-BEST, અત્યંત વિગતવાર વિડિયો ડાયરેક્ટર Prompt ("worldBestPrompt", 250-450 શબ્દો)** શુદ્ધ ગુજરાતીમાં લખો — જેમાં:
+   - 🎭 કેવા પ્રકારના હાવભાવ, સ્મિત, આંખોનો સંપર્ક અને માથાની હલનચલન સારી લાગશે
+   - 🎨 કેવું બેકગ્રાઉન્ડ, કલર થીમ, લાઇટિંગ અને બોર્ડર ગ્લો આ વસ્તુ સાથે પરફેક્ટ લાગશે
+   - 📐 કેવું વિડિયો એડિટિંગ લેઆઉટ (વસ્તુ મુખ્ય + ખૂણામાં વ્યક્તિ કે બાજુ-બાજુ Split Screen કે Full), પ્રોડક્ટ ઝૂમ મોશન અને ફ્રેમિંગ સારું લાગશે
+   - 🎙️ આ વસ્તુ સમજાવતી વખતે અવાજ/Speech ની શૈલી કેવી રાખવી
+
+સાથે નીચેના ચોક્કસ **recommendedSettings** JSON માં આપો જે સીધા જ અમારા વિડિયો એડિટર (SadTalker + FFmpeg) માં લાગુ થઈ જશે:
+- "layout": "${validProducts.length > 0 ? 'pip" અથવા "split' : 'full'}" ("pip" = વસ્તુ મોટી સ્ક્રીન પર + વ્યક્તિ ખૂણામાં; "split" = અડધું અડધું; "full" = ફક્ત વ્યક્તિ)
+- "expressionScale": 0.90 થી 1.40 વચ્ચેનો નંબર (દા.ત. ગંભીર/ન્યૂઝ માટે 0.98, મિત્રતાભર્યા/શિક્ષણ માટે 1.18, જોરદાર એનર્જી પ્રોડક્ટ પ્રમોશન માટે 1.32)
+- "still": false (કુદરતી માથું હલે) અથવા true (એકદમ સ્થિર ફોર્મલ પોઝ)
+- "tonePreset": નીચેમાંથી એક પસંદ કરો — "crisp-studio" | "warm-cinematic" | "vibrant-ad" | "calm-news"
+- "bgColorHex": વસ્તુ અને વ્યક્તિને સૌથી વધુ શોભે તેવો ડાર્ક સ્ટુડિયો Hex color (દા.ત. "#0f172a", "#1e1b4b", "#06281e", "#24130b", "#1f1229")
+- "borderColorHex": વ્યક્તિની ફ્રેમ/ગ્લો માટે મેચિંગ Hex color (દા.ત. "#38bdf8", "#f59e0b", "#10b981", "#f472b6")
+- "kenBurns": true (વસ્તુના ફોટા ધીમે-ધીમે Zoom થાય એટલે અસલી વિડિયો જેવું લાગે)
+
+ફક્ત માન્ય JSON આપો:
+{
+  "speakerAnalysis": "વ્યક્તિના ફોટાનું ૨ લાઈનનું ગુજરાતી અવલોકન",
+  "productAnalysis": "વસ્તુના ફોટાનું ૨ લાઈનનું ગુજરાતી અવલોકન",
+  "expressionSummary": "૩-૫ શબ્દોમાં સૂચવેલા હાવભાવ (દા.ત. ઉત્સાહી સ્મિત & આત્મવિશ્વાસ)",
+  "backgroundSummary": "૩-૫ શબ્દોમાં સૂચવેલું બેકગ્રાઉન્ડ (દા.ત. પ્રીમિયમ વોર્મ સ્ટુડિયો થીમ)",
+  "worldBestPrompt": "પૂરો ૨૫૦-૪૫૦ શબ્દોનો ૪-વિભાગવાળો World-Best શુદ્ધ ગુજરાતી Video Director & Editing Prompt",
+  "recommendedSettings": {
+    "layout": "${validProducts.length > 0 ? 'pip' : 'full'}",
+    "expressionScale": 1.2,
+    "still": false,
+    "tonePreset": "vibrant-ad",
+    "bgColorHex": "#0f172a",
+    "borderColorHex": "#38bdf8",
+    "kenBurns": true
+  }
+}`;
+
+    const userText = `Inspect Image 1 (Speaker${validSpeaker ? ' attached' : ' none'}) and ${validProducts.length} Product/Object photo(s) carefully. Suggest the best facial expressions, best matching studio background & color grading, write the World-Best Director Prompt in Gujarati, and return exact recommendedSettings JSON.`;
+
+    const sanitizeHex = (hex, fallback) => (/^#[0-9a-fA-F]{6}$/.test(String(hex || '').trim()) ? String(hex).trim() : fallback);
+
+    const normalizeDirector = (parsed, usedModel, source) => {
+      const rec = parsed?.recommendedSettings || {};
+      const layout = ['pip', 'split', 'full'].includes(rec.layout)
+        ? rec.layout
+        : (validProducts.length > 0 ? 'pip' : 'full');
+      const tonePreset = ['crisp-studio', 'warm-cinematic', 'vibrant-ad', 'calm-news'].includes(rec.tonePreset)
+        ? rec.tonePreset
+        : 'crisp-studio';
+      const exp = Math.min(1.45, Math.max(0.85, Number(rec.expressionScale) || 1.18));
+
+      return {
+        speakerAnalysis: String(parsed?.speakerAnalysis || 'વ્યક્તિનો સ્પષ્ટ ચહેરો અને સીધો કેમેરા સંપર્ક દેખાય છે.').trim(),
+        productAnalysis: String(parsed?.productAnalysis || (validProducts.length ? `${validProducts.length} વસ્તુના ફોટા અપલોડ થયેલા છે.` : 'કોઈ અલગ વસ્તુનો ફોટો નથી.')).trim(),
+        expressionSummary: String(parsed?.expressionSummary || 'કુદરતી સ્મિત & વિશ્વાસપાત્ર હાવભાવ').trim(),
+        backgroundSummary: String(parsed?.backgroundSummary || 'ડાર્ક પ્રીમિયમ સ્ટુડિયો બેકગ્રાઉન્ડ').trim(),
+        worldBestPrompt: String(parsed?.worldBestPrompt || '').trim(),
+        recommendedSettings: {
+          layout: validProducts.length === 0 && layout !== 'full' ? 'full' : layout,
+          expressionScale: Number(exp.toFixed(2)),
+          still: Boolean(rec.still),
+          tonePreset,
+          bgColorHex: sanitizeHex(rec.bgColorHex, '#0f172a'),
+          borderColorHex: sanitizeHex(rec.borderColorHex, '#38bdf8'),
+          kenBurns: rec.kenBurns !== false
+        },
+        model: usedModel,
+        source
+      };
+    };
+
+    if (this.getGeminiApiKey()) {
+      try {
+        const gem = await this.callGemini({
+          systemInstruction,
+          userText,
+          imagesBase64,
+          temperature: 0.45,
+          maxTokens: 2800,
+          timeoutMs: 42000
+        });
+        if (gem && gem.text) {
+          const cleaned = gem.text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+          const match = cleaned.match(/\{[\s\S]*\}/);
+          if (match) {
+            try {
+              const parsed = JSON.parse(match[0]);
+              if (parsed.worldBestPrompt) {
+                return normalizeDirector(parsed, gem.model, 'gemini');
+              }
+            } catch (_) {}
+          }
+        }
+      } catch (err) {
+        console.warn('[AvatarDirector] Gemini fallback triggered:', err.message);
+      }
+    }
+
+    const openai = this.getOpenAIClient();
+    if (openai) {
+      try {
+        const userContent = [
+          { type: 'text', text: userText },
+          ...imagesBase64.map(img => ({ type: 'image_url', image_url: { url: img } }))
+        ];
+        const response = await openai.chat.completions.create({
+          model: this.getModel(),
+          messages: [
+            { role: 'system', content: systemInstruction },
+            { role: 'user', content: userContent }
+          ],
+          temperature: 0.45,
+          max_tokens: 2400
+        });
+        const raw = (response.choices[0].message.content || '').replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+        const match = raw.match(/\{[\s\S]*\}/);
+        if (match) {
+          const parsed = JSON.parse(match[0]);
+          if (parsed.worldBestPrompt) {
+            return normalizeDirector(parsed, this.getModel(), 'openai');
+          }
+        }
+      } catch (err) {
+        console.warn('[AvatarDirector] OpenAI fallback triggered:', err.message);
+      }
+    }
+
+    return normalizeDirector({
+      speakerAnalysis: 'ઓરિજિનલ વ્યક્તિનો ફોટો સ્ટુડિયો પ્રેઝન્ટેશન માટે તૈયાર છે.',
+      productAnalysis: validProducts.length ? `${validProducts.length} વસ્તુના ફોટા સાથે કોમર્શિયલ/સમજૂતી વિડિયો તૈયાર થઈ રહ્યો છે.` : 'ફુલ-ફ્રેમ વ્યક્તિ પ્રેઝન્ટેશન.',
+      expressionSummary: 'આત્મવિશ્વાસપૂર્ણ સ્મિત & જીવંત હાવભાવ',
+      backgroundSummary: 'ડાર્ક નેવી સ્ટુડિયો + ગ્લોઇંગ બોર્ડર',
+      worldBestPrompt: `🎭 [૧. કેવા પ્રકારના હાવભાવ સારા લાગશે]:\nઆ ફોટા મુજબ બોલતી વખતે ચહેરા પર હળવું સ્મિત, આંખોમાં વિશ્વાસ અને કુદરતી માથાની હલનચલન (Expression Scale 1.2) સૌથી વધુ અસલી લાગશે.\n\n🎨 [૨. કેવું બેકગ્રાઉન્ડ અને લાઇટિંગ પરફેક્ટ લાગશે]:\nડાર્ક નેવી સ્ટુડિયો બેકગ્રાઉન્ડ (#0f172a), સ્કાય-બ્લૂ ગ્લો બોર્ડર (#38bdf8) અને Crisp Studio કલર ગ્રેડિંગ રાખવાથી વ્યક્તિ અને વસ્તુ બંને એક જ અસલી શૂટ જેવા ઊભરીને દેખાશે.\n\n📐 [૩. વિડિયો એડિટિંગ ફ્રેમિંગ]:\n${validProducts.length ? 'વસ્તુનો ફોટો મુખ્ય સ્ક્રીન પર ધીમા Zoom-In એનિમેશન (Ken Burns) સાથે રહેશે અને વ્યક્તિ ખૂણામાં સ્પષ્ટ રીતે સમજાવશે.' : 'વ્યક્તિને વચ્ચે ફ્રેમ કરીને પાછળ સ્ટુડિયો બ્લર બેકગ્રાઉન્ડ રાખવું ઉત્તમ લાગશે.'}`,
+      recommendedSettings: {
+        layout: validProducts.length ? 'pip' : 'full',
+        expressionScale: 1.2,
+        still: false,
+        tonePreset: 'crisp-studio',
+        bgColorHex: '#0f172a',
+        borderColorHex: '#38bdf8',
+        kenBurns: true
+      }
+    }, 'smart-director-fallback', 'fallback');
+  }
 }
 
 module.exports = new OpenAIService();

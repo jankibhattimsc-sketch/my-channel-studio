@@ -154,6 +154,7 @@ export const api = {
   // AI Talking Avatar Studio
   getAvatarStatus: () => api.get('/api/avatar/status'),
   getAvatarAudios: () => api.get('/api/avatar/audios'),
+  analyzeAvatarDirector: (payload) => api.post('/api/avatar/analyze-director', payload),
   renderTalkingAvatar: (payload) => api.post('/api/avatar/render', payload),
   getAvatarJob: (jobId) => api.get(`/api/avatar/job/${encodeURIComponent(jobId)}`)
 };

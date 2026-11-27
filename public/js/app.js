@@ -1,4 +1,4 @@
-import { api } from './api.js?v=103.0';
+import { api } from './api.js?v=103.2';
 import { copyToClipboard } from './utils/clipboard.js?v=90.0';
 import { projectState } from './utils/projectState.js?v=101.7';
 import { renderProjects } from './views/projects.js?v=90.0';
@@ -27,7 +27,7 @@ import { renderSavedHub } from './views/savedhub.js?v=1.0';
 import { renderSavedAudios } from './views/savedaudios.js?v=101.4';
 import { renderSmartAsk } from './views/smartask.js?v=102.1';
 import { renderFacebookTool } from './views/facebook.js?v=101.5';
-import { renderTalkingAvatar } from './views/talkingavatar.js?v=103.0';
+import { renderTalkingAvatar } from './views/talkingavatar.js?v=103.2';
 import { initMobileLinkAndOfflineSystem } from './utils/mobileLinkModal.js?v=99.0';
 
 class App {

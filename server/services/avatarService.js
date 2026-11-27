@@ -129,16 +129,50 @@ function even(n) {
   return Math.max(2, Math.floor(n / 2) * 2);
 }
 
-async function composeStudioVideo({ rawAvatarVideo, productPaths, layout, aspect, finalOutPath, onLog }) {
+function sanitizeColorHex(hex, fallback = '0f172a') {
+  const clean = String(hex || '').trim().replace(/^#/, '');
+  return /^[0-9a-fA-F]{6}$/.test(clean) ? `0x${clean}` : `0x${fallback}`;
+}
+
+function getToneFilter(tonePreset) {
+  switch (tonePreset) {
+    case 'warm-cinematic':
+      return 'eq=contrast=1.08:saturation=1.14:brightness=0.01:gamma_r=1.04:gamma_b=0.95,unsharp=5:5:0.42:5:5:0.0';
+    case 'vibrant-ad':
+      return 'eq=contrast=1.10:saturation=1.22:brightness=0.02,unsharp=5:5:0.48:5:5:0.0';
+    case 'calm-news':
+      return 'eq=contrast=1.03:saturation=0.96:brightness=0.01,unsharp=5:5:0.35:5:5:0.0';
+    case 'crisp-studio':
+    default:
+      return 'eq=contrast=1.06:saturation=1.10:brightness=0.015,unsharp=5:5:0.45:5:5:0.0';
+  }
+}
+
+async function composeStudioVideo({
+  rawAvatarVideo,
+  productPaths,
+  layout,
+  aspect,
+  finalOutPath,
+  tonePreset = 'crisp-studio',
+  bgColorHex = '#0f172a',
+  borderColorHex = '#38bdf8',
+  kenBurns = true,
+  onLog
+}) {
   const hasProducts = Array.isArray(productPaths) && productPaths.length > 0;
   const dims = aspect === '9:16'
     ? { w: 720, h: 1280 }
     : (aspect === '1:1' ? { w: 1080, h: 1080 } : { w: 1280, h: 720 });
+  const bgCol = sanitizeColorHex(bgColorHex, '0f172a');
+  const borderCol = sanitizeColorHex(borderColorHex, '38bdf8');
+  const toneFilter = getToneFilter(tonePreset);
 
   if (!hasProducts && aspect === 'raw') {
     await runProcess(ffmpegPath, [
       '-y', '-i', rawAvatarVideo,
-      '-c:v', 'libx264', '-preset', 'fast', '-crf', '18', '-pix_fmt', 'yuv420p',
+      '-vf', `${toneFilter},format=yuv420p`,
+      '-c:v', 'libx264', '-preset', 'fast', '-crf', '18',
       '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart',
       finalOutPath
     ], { onLog });
@@ -146,8 +180,8 @@ async function composeStudioVideo({ rawAvatarVideo, productPaths, layout, aspect
   }
 
   if (!hasProducts || layout === 'full') {
-    const filter = `[0:v]scale=${dims.w}:${dims.h}:force_original_aspect_ratio=increase,crop=${dims.w}:${dims.h},boxblur=24:6[bg];` +
-      `[0:v]scale=${dims.w}:${dims.h}:force_original_aspect_ratio=decrease[fg];` +
+    const filter = `[0:v]scale=${dims.w}:${dims.h}:force_original_aspect_ratio=increase,crop=${dims.w}:${dims.h},boxblur=26:6,eq=brightness=-0.06[bg];` +
+      `[0:v]scale=${dims.w}:${dims.h}:force_original_aspect_ratio=decrease,${toneFilter}[fg];` +
       `[bg][fg]overlay=(W-w)/2:(H-h)/2,format=yuv420p[vout]`;
     await runProcess(ffmpegPath, [
       '-y', '-i', rawAvatarVideo,
@@ -162,6 +196,24 @@ async function composeStudioVideo({ rawAvatarVideo, productPaths, layout, aspect
 
   const dur = await getMediaDurationSec(rawAvatarVideo);
   const perSlide = Math.max(1.5, dur / productPaths.length);
+  const slideFrames = Math.max(38, Math.ceil(perSlide * 25));
+
+  const buildProductSlideFilter = (idx, tw, th) => {
+    if (kenBurns) {
+      const upW = tw * 2;
+      const upH = th * 2;
+      return `[${idx}:v]scale=${upW}:${upH}:force_original_aspect_ratio=decrease,pad=${upW}:${upH}:(ow-iw)/2:(oh-ih)/2:color=${bgCol},zoompan=z='min(zoom+0.0006,1.07)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${slideFrames}:s=${tw}x${th}:fps=25,setsar=1[p${idx}]`;
+    }
+    return `[${idx}:v]scale=${tw}:${th}:force_original_aspect_ratio=decrease,pad=${tw}:${th}:(ow-iw)/2:(oh-ih)/2:color=${bgCol},setsar=1,fps=25[p${idx}]`;
+  };
+
+  const pushProductInput = (inputs, p) => {
+    if (kenBurns) {
+      inputs.push('-i', p);
+    } else {
+      inputs.push('-loop', '1', '-t', perSlide.toFixed(3), '-i', p);
+    }
+  };
 
   if (layout === 'split') {
     const isVertical = aspect === '9:16';
@@ -173,10 +225,8 @@ async function composeStudioVideo({ rawAvatarVideo, productPaths, layout, aspect
     const inputs = ['-y'];
     const prodFilters = [];
     productPaths.forEach((p, idx) => {
-      inputs.push('-loop', '1', '-t', perSlide.toFixed(3), '-i', p);
-      prodFilters.push(
-        `[${idx}:v]scale=${prodW}:${prodH}:force_original_aspect_ratio=decrease,pad=${prodW}:${prodH}:(ow-iw)/2:(oh-ih)/2:color=#0f172a,setsar=1,fps=25[p${idx}]`
-      );
+      pushProductInput(inputs, p);
+      prodFilters.push(buildProductSlideFilter(idx, prodW, prodH));
     });
     const spkIdx = productPaths.length;
     inputs.push('-i', rawAvatarVideo);
@@ -186,7 +236,7 @@ async function composeStudioVideo({ rawAvatarVideo, productPaths, layout, aspect
     const filter =
       prodFilters.join(';') + ';' +
       `${concatInputs}concat=n=${productPaths.length}:v=1:a=0,fps=25[prod];` +
-      `[${spkIdx}:v]scale=${spkW}:${spkH}:force_original_aspect_ratio=increase,crop=${spkW}:${spkH},setsar=1,fps=25[spk];` +
+      `[${spkIdx}:v]scale=${spkW}:${spkH}:force_original_aspect_ratio=increase,crop=${spkW}:${spkH},${toneFilter},setsar=1,fps=25[spk];` +
       `[spk][prod]${stackOp},format=yuv420p[vout]`;
 
     await runProcess(ffmpegPath, [
@@ -204,10 +254,8 @@ async function composeStudioVideo({ rawAvatarVideo, productPaths, layout, aspect
   const inputs = ['-y'];
   const prodFilters = [];
   productPaths.forEach((p, idx) => {
-    inputs.push('-loop', '1', '-t', perSlide.toFixed(3), '-i', p);
-    prodFilters.push(
-      `[${idx}:v]scale=${dims.w}:${dims.h}:force_original_aspect_ratio=decrease,pad=${dims.w}:${dims.h}:(ow-iw)/2:(oh-ih)/2:color=#0f172a,setsar=1,fps=25[p${idx}]`
-    );
+    pushProductInput(inputs, p);
+    prodFilters.push(buildProductSlideFilter(idx, dims.w, dims.h));
   });
   const spkIdx = productPaths.length;
   inputs.push('-i', rawAvatarVideo);
@@ -217,7 +265,7 @@ async function composeStudioVideo({ rawAvatarVideo, productPaths, layout, aspect
   const filter =
     prodFilters.join(';') + ';' +
     `${concatInputs}concat=n=${productPaths.length}:v=1:a=0,fps=25[prod];` +
-    `[${spkIdx}:v]scale=${pipW}:-2,pad=iw+10:ih+10:5:5:color=#38bdf8[spk];` +
+    `[${spkIdx}:v]scale=${pipW}:-2,${toneFilter},pad=iw+10:ih+10:5:5:color=${borderCol}[spk];` +
     `[prod][spk]overlay=main_w-overlay_w-24:main_h-overlay_h-24,format=yuv420p[vout]`;
 
   await runProcess(ffmpegPath, [
@@ -344,6 +392,10 @@ function createRenderJob(payload = {}) {
         layout,
         aspect,
         finalOutPath,
+        tonePreset: payload.tonePreset || 'crisp-studio',
+        bgColorHex: payload.bgColorHex || '#0f172a',
+        borderColorHex: payload.borderColorHex || '#38bdf8',
+        kenBurns: payload.kenBurns !== false,
         onLog: pushLog
       });
 
