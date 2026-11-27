@@ -147,30 +147,13 @@
     const popular = worksheets.slice(0, 3);
     pageRoot.innerHTML = `
       <section class="home-hero-card" aria-labelledby="home-h1">
-        <div class="home-hero-copy">
-          <div class="home-hero-badge">
-            ${ICONS.sparkleHeart || ''}
-            <span>Sensory-Friendly &amp; Printable A4 PDFs</span>
-          </div>
-          <h1 id="home-h1" class="home-hero-title">Printable Learning Worksheets <span class="hero-accent">for Special Kids</span></h1>
-          <p class="home-hero-sub">Simple, fun and effective learning materials for children with Autism, ADHD, Learning Disabilities and other special learning needs.</p>
-          <div class="home-hero-actions">
-            <button id="hero-free-cta" type="button" class="btn btn-pink-pill btn-hero-primary">
-              ${ICONS.download || ''}
-              <span>Free Worksheets Download</span>
-              ${ICONS.arrowRight || ''}
-            </button>
-            <button id="hero-explore-cta" type="button" class="btn btn-hero-secondary">
-              Explore Worksheets
-            </button>
-          </div>
-        </div>
-        <div class="home-hero-visual">
-          <img src="/assets/hero-cute-kid.png?v=8.0" alt="Happy smiling child learning with ABC blocks, colorful crayons, rainbow stacker, teddy bear, smiling cloud and star" />
-        </div>
+        <h1 id="home-h1" class="sr-only">Printable Learning Worksheets for Special Kids — Premium Worksheet Collection</h1>
+        <button id="hero-banner-cta" type="button" class="home-hero-banner-btn" aria-label="Explore Printable Learning Worksheets Collection">
+          <img src="/assets/hero-banner.jpg?v=10.0" class="home-hero-banner-img" alt="KidsWorksheet Printable Learning Worksheets for Kids — Alphabets, Numbers, Math, Tracing, Coloring, GK & Festivals" />
+        </button>
       </section>
 
-      <form id="home-search-form" class="search-pill-form home-search-overlap" role="search">
+      <form id="home-search-form" class="search-pill-form" role="search">
         <span style="color:#687789; display:flex;" aria-hidden="true">${ICONS.search}</span>
         <label for="home-search-input" class="sr-only">Search worksheets</label>
         <input id="home-search-input" type="search" placeholder="Search worksheets... (e.g. Tracing, Matching, Emotions)" />
@@ -216,8 +199,7 @@
       </section>
     `;
 
-    document.getElementById('hero-free-cta').addEventListener('click', () => navigateTo('free'));
-    document.getElementById('hero-explore-cta').addEventListener('click', () => navigateTo('worksheets'));
+    document.getElementById('hero-banner-cta').addEventListener('click', () => navigateTo('worksheets'));
     document.getElementById('home-search-form').addEventListener('submit', (e) => {
       e.preventDefault();
       libState.search = document.getElementById('home-search-input').value.trim();
