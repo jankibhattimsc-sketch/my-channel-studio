@@ -1,0 +1,44 @@
+{
+  "settings": {
+    "storeName": "Special Kids Worksheets",
+    "tagline": "Helping every child learn at their own pace.",
+    "currency": "₹",
+    "whatsappNumber": "",
+    "supportEmail": "support@specialkidsworksheets.org",
+    "upiId": "",
+    "upiName": "Special Kids Worksheets",
+    "defaultPaymentLink": "",
+    "razorpayKeyId": "",
+    "razorpayKeySecret": "",
+    "deliveryMode": "auto_utr",
+    "adminPin": "1234",
+    "maxDownloadsPerOrder": 5
+  },
+  "books": [
+    {
+      "id": "bk-1795794465665-a72e",
+      "title": "MY FIRST NUMBER TRACING BOOK",
+      "subtitle": "Fun Number Tracing Activities for Little Hands!",
+      "learningGoal": "Fun Number Tracing Activities for Little Hands!",
+      "ageGroup": "2-5",
+      "category": "Tracing",
+      "learningNeed": "General Support",
+      "skillArea": "Fine Motor",
+      "pages": 120,
+      "mrp": 11,
+      "price": 0,
+      "paymentLink": "",
+      "description": "Help your child build strong pencil control and early writing confidence with this calm, easy-to-follow Printable Tracing Workbook. Thoughtfully designed with wide dashed lines, large clear spacing, and child-friendly visual guides, each sheet supports hand-eye coordination, focus, and fine motor skill development at your child's own comfortable pace. Ideal for home practice, homeschooling, and reusable wipe-clean learning sleeves.",
+      "highlights": [],
+      "coverUrl": "/uploads/covers/cover_1795794465660_7bb7.png",
+      "pdfFile": "book_1795794465652_43ca.pdf",
+      "samplePdfFile": "sample_1795794465653_b299.pdf",
+      "published": true,
+      "featured": false,
+      "salesCount": 0,
+      "createdAt": "2026-11-27T15:47:45.665Z"
+    }
+  ],
+  "orders": [],
+  "feedback": []
+}
