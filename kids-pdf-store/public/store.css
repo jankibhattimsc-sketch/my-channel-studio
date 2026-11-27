@@ -133,17 +133,17 @@ h1, h2, h3, h4, .ui-font {
 .btn-soft-blue { background: var(--soft-blue); color: var(--primary-blue); }
 .btn-soft-blue:hover { background: #DCEEFF; }
 
-/* PAGE 1 HERO SHELL */
-.page-wrap { padding: 26px 0 48px; }
+/* PAGE 1 HERO SHELL (ONE-SCREEN ABOVE-THE-FOLD FIT) */
+.page-wrap { padding: 14px 0 42px; }
 
 .home-hero-card {
   position: relative;
-  border-radius: 26px;
-  background: #FFFFFF;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #F5FAFF 0%, #FFFFFF 50%, #F5FAFF 100%);
   border: 1px solid #CFE3F8;
   padding: 0;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(38, 56, 74, 0.09);
+  box-shadow: 0 8px 26px rgba(38, 56, 74, 0.08);
   display: block;
 }
 .home-hero-banner-btn {
@@ -156,8 +156,11 @@ h1, h2, h3, h4, .ui-font {
 }
 .home-hero-banner-img {
   width: 100%;
+  max-height: clamp(220px, 44vh, 380px);
   height: auto;
   display: block;
+  margin: 0 auto;
+  object-fit: contain;
 }
 
 /* SHARED PROMINENT SEARCH PILL BAR */
@@ -165,13 +168,13 @@ h1, h2, h3, h4, .ui-font {
   background: var(--bg-card);
   border: 1.5px solid #D5E2EE;
   border-radius: 16px;
-  padding: 6px 6px 6px 16px;
+  padding: 4px 5px 4px 16px;
   display: flex;
   align-items: center;
   gap: 10px;
   box-shadow: var(--shadow-card);
   max-width: 780px;
-  margin: 22px auto 0;
+  margin: 14px auto 0;
 }
 .home-search-overlap {
   position: relative;
@@ -207,24 +210,24 @@ h1, h2, h3, h4, .ui-font {
 
 /* PAGE 1: 4 COLORED CATEGORY CARDS */
 .home-4-cards {
-  margin-top: 24px;
+  margin-top: 16px;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 18px;
+  gap: 16px;
 }
 @media (max-width: 960px) { .home-4-cards { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 540px) { .home-4-cards { grid-template-columns: 1fr; } }
 
 .home-cat-card {
-  border-radius: 20px;
-  padding: 22px 16px;
+  border-radius: 18px;
+  padding: 15px 14px;
   text-align: center;
   border: 1.5px solid rgba(38, 56, 74, 0.08);
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 .home-cat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); }
@@ -233,7 +236,7 @@ h1, h2, h3, h4, .ui-font {
 .home-cat-card.peach { background: #FDEBD6; }
 .home-cat-card.purple { background: var(--soft-purple); }
 .home-cat-icon {
-  width: 54px; height: 54px; border-radius: 14px; background: #FFFFFF;
+  width: 46px; height: 46px; border-radius: 12px; background: #FFFFFF;
   display: grid; place-items: center; box-shadow: 0 3px 8px rgba(0,0,0,0.06);
 }
 .home-cat-card h3 { font-size: 1.12rem; font-weight: 900; margin: 4px 0 0; }
