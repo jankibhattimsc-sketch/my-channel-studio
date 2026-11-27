@@ -9,7 +9,7 @@ const DB_PATH = path.join(DATA_DIR, 'store.json');
 const DEFAULT_STORE = {
   settings: {
     storeName: 'LittleStars Kids PDF Store',
-    tagline: 'બાળકો માટે શ્રેષ્ઠ લર્નિંગ, કલરિંગ & એક્ટિવિટી PDF બુક્સ ✨',
+    tagline: 'Printable Learning, Coloring & Brain Activity PDF Books for Kids ✨',
     currency: '₹',
     whatsappNumber: '',
     supportEmail: '',

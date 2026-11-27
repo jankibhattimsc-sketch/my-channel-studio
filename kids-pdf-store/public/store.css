@@ -1,27 +1,26 @@
-@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+Gujarati:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
   --bg: #FFFDF9;
   --surface: #FFFFFF;
-  --ink: #1E293B;
+  --ink: #0F172A;
   --muted: #64748B;
   --sky: #0284C7;
   --emerald: #059669;
-  --emerald-dark: #047857;
   --marigold: #F59E0B;
   --pink: #EC4899;
   --violet: #7C3AED;
   --border: #E2E8F0;
-  --shadow-sm: 0 4px 14px rgba(15, 23, 42, 0.05);
-  --shadow-md: 0 14px 34px rgba(15, 23, 42, 0.08);
-  --shadow-lg: 0 22px 50px rgba(2, 132, 199, 0.14);
+  --shadow-sm: 0 4px 16px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 16px 36px rgba(15, 23, 42, 0.09);
+  --shadow-lg: 0 24px 54px rgba(2, 132, 199, 0.16);
 }
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body {
   margin: 0;
-  font-family: 'Plus Jakarta Sans', 'Noto Sans Gujarati', system-ui, -apple-system, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   background:
     radial-gradient(circle at 92% 4%, rgba(56, 189, 248, 0.14) 0%, transparent 32%),
     radial-gradient(circle at 6% 24%, rgba(244, 114, 182, 0.10) 0%, transparent 28%),
@@ -31,7 +30,7 @@ body {
 }
 
 h1, h2, h3, .display-font {
-  font-family: 'Fredoka', 'Noto Sans Gujarati', system-ui, sans-serif;
+  font-family: 'Fredoka', system-ui, sans-serif;
   letter-spacing: -0.01em;
 }
 
@@ -40,7 +39,7 @@ h1, h2, h3, .display-font {
   background: linear-gradient(90deg, #F59E0B, #FBBF24, #F59E0B);
   color: #0F172A;
   text-align: center;
-  padding: 8px 14px;
+  padding: 9px 14px;
   font-size: 0.84rem;
   font-weight: 800;
 }
@@ -50,10 +49,10 @@ h1, h2, h3, .display-font {
   position: sticky;
   top: 0;
   z-index: 40;
-  background: rgba(255, 253, 249, 0.86);
+  background: rgba(255, 253, 249, 0.88);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border-bottom: 1px solid rgba(226, 232, 240, 0.85);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
 }
 
 .topbar-inner {
@@ -86,7 +85,7 @@ h1, h2, h3, .display-font {
   box-shadow: 0 8px 18px rgba(236, 72, 153, 0.28);
 }
 
-.brand-title { font-family: 'Fredoka', 'Noto Sans Gujarati', sans-serif; font-weight: 700; font-size: 1.2rem; line-height: 1.15; }
+.brand-title { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 1.24rem; line-height: 1.15; }
 .brand-sub { font-size: 0.76rem; color: var(--muted); font-weight: 600; }
 
 .top-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -155,7 +154,7 @@ h1, h2, h3, .display-font {
 .hero {
   background: linear-gradient(135deg, #0F172A 0%, #1E3A8A 55%, #0284C7 100%);
   border-radius: 28px;
-  padding: 36px 34px;
+  padding: 38px 34px;
   color: #fff;
   display: grid;
   grid-template-columns: 1.25fr 0.95fr;
@@ -194,7 +193,7 @@ h1, h2, h3, .display-font {
   margin-bottom: 12px;
 }
 
-.hero h1 { margin: 0 0 12px; font-size: clamp(1.65rem, 3.1vw, 2.45rem); line-height: 1.22; }
+.hero h1 { margin: 0 0 12px; font-size: clamp(1.7rem, 3.2vw, 2.55rem); line-height: 1.18; }
 .hero p { margin: 0 0 20px; color: rgba(255, 255, 255, 0.88); font-size: 1rem; line-height: 1.6; }
 
 .hero-ctas { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
@@ -249,13 +248,13 @@ h1, h2, h3, .display-font {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 10px;
-  margin: 30px 0 14px;
+  margin: 32px 0 14px;
 }
-.section-head h2 { margin: 0; font-size: 1.45rem; }
+.section-head h2 { margin: 0; font-size: 1.5rem; }
 
 .age-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
 }
 .age-card {
@@ -329,7 +328,7 @@ h1, h2, h3, .display-font {
 .books-grid {
   margin-top: 22px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(275px, 1fr));
   gap: 22px;
 }
 
@@ -380,6 +379,21 @@ h1, h2, h3, .display-font {
   border-radius: 999px;
   box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
 }
+.fav-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.92);
+  font-size: 1rem;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
 .badge-age {
   position: absolute;
   bottom: 12px;
@@ -396,7 +410,7 @@ h1, h2, h3, .display-font {
 .book-meta-top { display: flex; align-items: center; justify-content: space-between; font-size: 0.76rem; font-weight: 800; }
 .book-cat { color: var(--sky); }
 .book-stars { color: #D97706; }
-.book-title { margin: 0; font-size: 1.08rem; font-weight: 700; line-height: 1.35; color: var(--ink); }
+.book-title { margin: 0; font-size: 1.08rem; font-weight: 700; line-height: 1.32; color: var(--ink); }
 .book-sub { margin: 0; font-size: 0.84rem; color: var(--muted); line-height: 1.45; }
 .book-bullets { margin: 4px 0 2px; padding: 0; list-style: none; font-size: 0.8rem; color: #334155; display: flex; flex-direction: column; gap: 3px; flex: 1; }
 
@@ -416,9 +430,26 @@ h1, h2, h3, .display-font {
 .card-actions { display: flex; gap: 8px; margin-top: 10px; }
 .card-actions .btn { flex: 1; padding: 11px 10px; font-size: 0.85rem; }
 
+/* Comparison Card */
+.compare-grid {
+  margin-top: 36px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+}
+.compare-box {
+  background: #fff;
+  border-radius: 22px;
+  padding: 22px;
+  border: 1.5px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+.compare-box.good { border-color: #10B981; background: linear-gradient(135deg, #ECFDF5, #FFFFFF); }
+.compare-box.bad { border-color: #FECACA; background: linear-gradient(135deg, #FEF2F2, #FFFFFF); }
+
 /* 3-Step Trust Strip */
 .steps-strip {
-  margin-top: 44px;
+  margin-top: 36px;
   background: #fff;
   border: 1.5px solid var(--border);
   border-radius: 24px;
@@ -567,6 +598,22 @@ h1, h2, h3, .display-font {
   margin: 12px 0;
 }
 .qr-box img { width: 215px; height: 215px; border-radius: 14px; background: #fff; padding: 8px; border: 1px solid var(--border); }
+
+.toast {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 120;
+  background: #0F172A;
+  color: #fff;
+  padding: 11px 20px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+  display: none;
+}
 
 .footer {
   text-align: center;

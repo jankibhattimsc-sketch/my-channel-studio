@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="gu">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Seller Admin Dashboard — Kids PDF Store</title>
-  <link rel="stylesheet" href="/store.css?v=2.0" />
+  <title>Seller Admin Dashboard — Kids PDF Book Store</title>
+  <link rel="stylesheet" href="/store.css?v=3.0" />
   <style>
     body { background: #F1F5F9; margin: 0; }
     .adm-shell { display: flex; min-height: 100vh; }
@@ -82,13 +82,13 @@
     <div class="panel" style="max-width:420px; width:100%; text-align:center;">
       <div style="font-size:2.8rem;">🔐</div>
       <h2 style="margin:8px 0 6px;">Seller Admin Login</h2>
-      <p style="font-size:0.86rem; color:#64748B; margin:0 0 16px;">ડિફૉલ્ટ PIN: <b>1234</b> (અંદર જઈને Settings માંથી બદલી શકશો)</p>
+      <p style="font-size:0.86rem; color:#64748B; margin:0 0 16px;">Default PIN: <b>1234</b> (can be changed anytime inside Store Settings)</p>
       <div class="field">
-        <input id="admin-pin-input" type="password" placeholder="Admin PIN નાખો..." style="text-align:center; font-size:1.15rem; font-weight:800;" />
+        <input id="admin-pin-input" type="password" placeholder="Enter Admin PIN..." style="text-align:center; font-size:1.15rem; font-weight:800;" />
       </div>
       <div id="login-err" style="color:#DC2626; font-size:0.85rem; font-weight:700; margin-bottom:10px; display:none;"></div>
-      <button id="btn-login" class="btn btn-primary" style="width:100%; padding:13px;">🔓 ડેશબોર્ડ ખોલો</button>
-      <div style="margin-top:12px;"><a href="/" style="font-size:0.84rem; color:#0284C7; font-weight:700; text-decoration:none;">← સ્ટોર પર પાછા જાઓ</a></div>
+      <button id="btn-login" class="btn btn-primary" style="width:100%; padding:13px;">🔓 Open Seller Dashboard</button>
+      <div style="margin-top:12px;"><a href="/" style="font-size:0.84rem; color:#0284C7; font-weight:700; text-decoration:none;">← Back to Live Store</a></div>
     </div>
   </div>
 
@@ -103,21 +103,21 @@
         </div>
       </div>
 
-      <button class="adm-nav-btn active" data-tab="books"><span>📚 બુક્સ &amp; અપલોડ</span></button>
-      <button class="adm-nav-btn" data-tab="orders"><span>🧾 ઓર્ડર્સ &amp; ડિલિવરી</span><span id="nav-pending-badge" class="adm-badge" style="display:none;">0</span></button>
-      <button class="adm-nav-btn" data-tab="settings"><span>💳 પેમેન્ટ લિંક &amp; સેટિંગ્સ</span></button>
-      <a href="/" target="_blank" class="adm-nav-btn" style="margin-top:auto; background:rgba(16,185,129,0.16); color:#6EE7B7;"><span>🛒 લાઇવ સ્ટોર જુઓ ↗</span></a>
+      <button class="adm-nav-btn active" data-tab="books"><span>📚 Books &amp; Upload PDF</span></button>
+      <button class="adm-nav-btn" data-tab="orders"><span>🧾 Orders &amp; Delivery</span><span id="nav-pending-badge" class="adm-badge" style="display:none;">0</span></button>
+      <button class="adm-nav-btn" data-tab="settings"><span>💳 Payment Links &amp; Settings</span></button>
+      <a href="/" target="_blank" class="adm-nav-btn" style="margin-top:auto; background:rgba(16,185,129,0.16); color:#6EE7B7;"><span>🛒 View Live Store ↗</span></a>
     </aside>
 
     <div class="adm-main">
       <header class="adm-topbar">
         <div>
           <div id="adm-page-title" style="font-weight:900; font-size:1.15rem; color:#0F172A;">📚 Kids PDF Books Manager</div>
-          <div style="font-size:0.78rem; color:#64748B;">તમારી અલગ Kids PDF Store વેબસાઇટનું સંપૂર્ણ કંટ્રોલ સેન્ટર</div>
+          <div style="font-size:0.78rem; color:#64748B;">Standalone Kids PDF Store Control Center</div>
         </div>
         <div style="display:flex; gap:8px; align-items:center;">
-          <button id="btn-refresh-admin" class="btn btn-outline" style="padding:8px 12px; font-size:0.82rem;">🔄 રીફ્રેશ</button>
-          <button id="btn-logout" class="btn btn-outline" style="padding:8px 12px; font-size:0.82rem;">🚪 Logout</button>
+          <button id="btn-refresh-admin" class="btn btn-outline" style="padding:8px 12px; font-size:0.82rem;">🔄 Refresh</button>
+          <button id="btn-logout" class="btn btn-outline" style="padding:8px 12px; font-size:0.82rem;">🚪 Sign Out</button>
         </div>
       </header>
 
@@ -127,49 +127,49 @@
         <!-- Tab: Books -->
         <section id="tab-books" class="tab-pane">
           <div class="panel">
-            <h3 id="book-form-heading" style="margin:0 0 14px;">➕ નવી Kids PDF બુક અપલોડ કરો</h3>
+            <h3 id="book-form-heading" style="margin:0 0 14px;">➕ Upload New Kids PDF Book</h3>
             <input type="hidden" id="bk-edit-id" value="" />
             <div class="grid-2">
-              <div class="field"><label>બુકનું નામ *</label><input id="bk-title" type="text" placeholder="દા.ત. Kids 100+ Animal Coloring PDF" /></div>
-              <div class="field"><label>ટૂંકી સબ-ટાઇટલ લાઈન</label><input id="bk-subtitle" type="text" placeholder="બાળકો માટે રંગીન પ્રિન્ટેબલ બુક" /></div>
+              <div class="field"><label>Book Title *</label><input id="bk-title" type="text" placeholder="e.g. Kids 100+ Animal Coloring Workbook" /></div>
+              <div class="field"><label>Short Subtitle</label><input id="bk-subtitle" type="text" placeholder="Printable bold drawings &amp; tracing sheets" /></div>
               <div class="field">
-                <label>ઉંમર જૂથ (Age Group)</label>
+                <label>Age Group</label>
                 <select id="bk-age">
-                  <option value="2-5">2–5 વર્ષ</option>
-                  <option value="4-6" selected>4–6 વર્ષ</option>
-                  <option value="6-8">6–8 વર્ષ</option>
-                  <option value="8-12">8–12 વર્ષ</option>
+                  <option value="2-5">2–5 Years (Toddler)</option>
+                  <option value="4-6" selected>4–6 Years (Preschool)</option>
+                  <option value="6-8">6–8 Years (Primary)</option>
+                  <option value="8-12">8–12 Years (Junior)</option>
                 </select>
               </div>
               <div class="field">
-                <label>કેટેગરી</label>
-                <input id="bk-cat" type="text" value="રંગપૂરણી 🎨" placeholder="રંગપૂરણી 🎨 / વાર્તાઓ 📖 / ગણિત 🔢" />
+                <label>Category</label>
+                <input id="bk-cat" type="text" value="Coloring 🎨" placeholder="Coloring 🎨 / Phonics 📖 / Math 🔢" />
               </div>
-              <div class="field"><label>કુલ પેજ (Pages)</label><input id="bk-pages" type="number" value="30" /></div>
-              <div class="field"><label>અસલ કિંમત MRP (₹)</label><input id="bk-mrp" type="number" value="199" /></div>
-              <div class="field"><label>વેચાણ કિંમત Price (₹) *</label><input id="bk-price" type="number" value="49" /></div>
-              <div class="field"><label>આ બુકની ખાસ Payment Link (વૈકલ્પિક — Razorpay/Cosmofeed)</label><input id="bk-paylink" type="url" placeholder="https://rzp.io/l/..." /></div>
+              <div class="field"><label>Total Pages</label><input id="bk-pages" type="number" value="30" /></div>
+              <div class="field"><label>Original MRP Price</label><input id="bk-mrp" type="number" value="199" /></div>
+              <div class="field"><label>Selling Offer Price *</label><input id="bk-price" type="number" value="49" /></div>
+              <div class="field"><label>Custom Book Payment Link (Optional — Razorpay/Stripe/Cosmofeed)</label><input id="bk-paylink" type="url" placeholder="https://rzp.io/l/..." /></div>
             </div>
-            <div class="field"><label>બુકની વિગત (Description)</label><textarea id="bk-desc" rows="3" placeholder="આ બુકમાં બાળકો શું શીખશે તે વિગતવાર લખો..."></textarea></div>
-            <div class="field"><label>ખાસિયતો (દરેક લાઈનમાં એક મુદ્દો)</label><textarea id="bk-highlights" rows="3" placeholder="A4 Print Ready PDF&#10;30+ મજેદાર એક્ટિવિટી પેજ&#10;લાઇફટાઇમ ડાઉનલોડ"></textarea></div>
+            <div class="field"><label>Book Description</label><textarea id="bk-desc" rows="3" placeholder="Describe what kids will learn and enjoy in this printable PDF..."></textarea></div>
+            <div class="field"><label>Key Highlights (One bullet point per line)</label><textarea id="bk-highlights" rows="3" placeholder="Crisp A4 Print-Ready PDF&#10;30+ Fun Activity Sheets&#10;Unlimited Home Printing"></textarea></div>
             <div class="grid-2">
-              <div class="field"><label>📕 મુખ્ય PDF બુક ફાઇલ અપલોડ કરો *</label><input id="bk-pdf-file" type="file" accept="application/pdf" /></div>
-              <div class="field"><label>🖼️ બુક કવર ફોટો (JPG/PNG)</label><input id="bk-cover-file" type="file" accept="image/*" /></div>
-              <div class="field"><label>👀 ફ્રી Sample PDF (વૈકલ્પિક)</label><input id="bk-sample-file" type="file" accept="application/pdf" /></div>
+              <div class="field"><label>📕 Upload Main PDF Book File *</label><input id="bk-pdf-file" type="file" accept="application/pdf" /></div>
+              <div class="field"><label>🖼️ Upload Book Cover Image (JPG/PNG)</label><input id="bk-cover-file" type="file" accept="image/*" /></div>
+              <div class="field"><label>👀 Free Sample PDF (Optional)</label><input id="bk-sample-file" type="file" accept="application/pdf" /></div>
               <div class="field" style="display:flex; align-items:center; gap:16px; padding-top:22px;">
-                <label style="display:flex; align-items:center; gap:6px; margin:0;"><input id="bk-featured" type="checkbox" /> ⭐ લોકપ્રિય (Featured)</label>
-                <label style="display:flex; align-items:center; gap:6px; margin:0;"><input id="bk-published" type="checkbox" checked /> ✅ સ્ટોરમાં બતાવો</label>
+                <label style="display:flex; align-items:center; gap:6px; margin:0;"><input id="bk-featured" type="checkbox" /> ⭐ Featured</label>
+                <label style="display:flex; align-items:center; gap:6px; margin:0;"><input id="bk-published" type="checkbox" checked /> ✅ Published in Store</label>
               </div>
             </div>
             <div id="bk-form-msg" style="font-size:0.86rem; font-weight:700; margin-bottom:10px; display:none;"></div>
             <div style="display:flex; gap:10px; flex-wrap:wrap;">
-              <button id="btn-save-book" class="btn btn-buy">💾 બુક સેવ &amp; પબ્લિશ કરો</button>
-              <button id="btn-cancel-edit" class="btn btn-outline" style="display:none;">રદ કરો</button>
+              <button id="btn-save-book" class="btn btn-buy">💾 Save &amp; Publish Book</button>
+              <button id="btn-cancel-edit" class="btn btn-outline" style="display:none;">Cancel Edit</button>
             </div>
           </div>
 
           <div class="panel">
-            <h3 style="margin:0 0 12px;">📖 સ્ટોરની બધી બુક્સ</h3>
+            <h3 style="margin:0 0 12px;">📖 All Catalog Books</h3>
             <div id="admin-books-list" style="display:flex; flex-direction:column; gap:10px;"></div>
           </div>
         </section>
@@ -177,7 +177,7 @@
         <!-- Tab: Orders -->
         <section id="tab-orders" class="tab-pane" style="display:none;">
           <div class="panel">
-            <h3 style="margin:0 0 14px;">🧾 ગ્રાહકોના ઓર્ડર્સ &amp; WhatsApp PDF ડિલિવરી</h3>
+            <h3 style="margin:0 0 14px;">🧾 Customer Orders &amp; WhatsApp PDF Delivery</h3>
             <div id="admin-orders-list"></div>
           </div>
         </section>
@@ -185,55 +185,56 @@
         <!-- Tab: Settings & Payment Link -->
         <section id="tab-settings" class="tab-pane" style="display:none;">
           <div class="panel">
-            <h3 style="margin:0 0 14px;">💳 પેમેન્ટ લિંક, UPI QR &amp; સ્ટોર સેટિંગ્સ</h3>
+            <h3 style="margin:0 0 14px;">💳 Payment Links, UPI QR &amp; Store Configuration</h3>
             <div class="grid-2">
-              <div class="field"><label>સ્ટોરનું નામ (Store Name)</label><input id="set-store-name" type="text" /></div>
-              <div class="field"><label>ટેગલાઇન (Tagline)</label><input id="set-tagline" type="text" /></div>
-              <div class="field"><label>તમારો WhatsApp નંબર (91 સાથે, દા.ત. 919876543210)</label><input id="set-wa" type="text" placeholder="919876543210" /></div>
-              <div class="field"><label>સપોર્ટ ઈમેઇલ (Support Email)</label><input id="set-email" type="email" /></div>
+              <div class="field"><label>Store Name</label><input id="set-store-name" type="text" /></div>
+              <div class="field"><label>Store Tagline</label><input id="set-tagline" type="text" /></div>
+              <div class="field"><label>Currency Symbol</label><select id="set-currency"><option value="₹">₹ (INR)</option><option value="$">$ (USD)</option></select></div>
+              <div class="field"><label>Support WhatsApp Number (with country code, e.g. 919876543210)</label><input id="set-wa" type="text" placeholder="919876543210" /></div>
+              <div class="field" style="grid-column: 1 / -1;"><label>Support Email</label><input id="set-email" type="email" placeholder="support@littlestarsbooks.com" /></div>
             </div>
 
             <hr style="border:none; border-top:1.5px solid #E2E8F0; margin:16px 0;" />
-            <h4 style="margin:0 0 10px; color:#0284C7;">💰 ઓનલાઇન પેમેન્ટ કઈ રીતે મેળવવું છે? (ત્રણેય વિકલ્પો સાથે ચાલે છે!)</h4>
+            <h4 style="margin:0 0 10px; color:#0284C7;">💰 Configure Payment Receiving Methods (All 3 Work Together)</h4>
 
             <div class="grid-2">
               <div class="field">
-                <label>૧. તમારું UPI ID (0% ફી — સીધું બેંકમાં, ઓટો QR બનશે)</label>
+                <label>1. Direct UPI ID (0% Fee — Auto Generates Scannable QR)</label>
                 <input id="set-upi-id" type="text" placeholder="yourname@okaxis / yournumber@ybl" />
               </div>
               <div class="field">
-                <label>UPI પર દેખાતું નામ (Merchant Name)</label>
+                <label>Payee Display Name</label>
                 <input id="set-upi-name" type="text" placeholder="LittleStars Kids Books" />
               </div>
               <div class="field" style="grid-column: 1 / -1;">
-                <label>૨. Default Payment Link (Razorpay / Cashfree / Cosmofeed / PhonePe Link)</label>
+                <label>2. Default Global Payment Link (Razorpay / Cashfree / Cosmofeed / Stripe Link)</label>
                 <input id="set-default-link" type="url" placeholder="https://rzp.io/l/your-payment-link" />
               </div>
               <div class="field">
-                <label>૩. Razorpay Key ID (ઓટો-અનલોક કાર્ડ/UPI માટે — વૈકલ્પિક)</label>
+                <label>3. Razorpay Key ID (Optional Auto-Checkout)</label>
                 <input id="set-rzp-id" type="text" placeholder="rzp_live_..." />
               </div>
               <div class="field">
-                <label>Razorpay Key Secret (વૈકલ્પિક)</label>
+                <label>Razorpay Key Secret (Optional)</label>
                 <input id="set-rzp-secret" type="password" placeholder="••••••••" />
               </div>
               <div class="field">
-                <label>PDF ડિલિવરી પદ્ધતિ</label>
+                <label>PDF Unlock Mode</label>
                 <select id="set-delivery-mode">
-                  <option value="auto_utr">⚡ ઝડપી Auto-Unlock (ગ્રાહક UTR નાખે એટલે તરત PDF ખૂલે)</option>
-                  <option value="admin_verify">🛡️ મેન્યુઅલ Approve (તમે અહીં Approve કરો પછી જ PDF ખૂલે)</option>
+                  <option value="auto_utr">⚡ Instant Auto-Unlock (Unlocks PDF as soon as buyer submits UTR)</option>
+                  <option value="admin_verify">🛡️ Manual Admin Approval (Unlock only after you click Approve)</option>
                 </select>
               </div>
               <div class="field">
-                <label>નવો Admin PIN (બદલવો હોય તો)</label>
+                <label>Admin Login PIN</label>
                 <input id="set-pin" type="text" placeholder="1234" />
               </div>
             </div>
 
             <div id="set-msg" style="font-size:0.88rem; font-weight:700; margin:10px 0; display:none;"></div>
             <div style="display:flex; gap:10px; flex-wrap:wrap;">
-              <button id="btn-save-settings" class="btn btn-buy">💾 બધા સેટિંગ્સ &amp; પેમેન્ટ લિંક સેવ કરો</button>
-              <button id="btn-test-qr" type="button" class="btn btn-outline">🧪 મારો UPI QR કોડ ચકાસો</button>
+              <button id="btn-save-settings" class="btn btn-buy">💾 Save All Store &amp; Payment Settings</button>
+              <button id="btn-test-qr" type="button" class="btn btn-outline">🧪 Preview Live UPI QR Code</button>
             </div>
 
             <div id="test-qr-box" style="margin-top:14px; display:none;" class="qr-box"></div>
@@ -243,6 +244,6 @@
     </div>
   </div>
 
-  <script src="/admin.js?v=2.0"></script>
+  <script src="/admin.js?v=3.0"></script>
 </body>
 </html>

@@ -35,7 +35,7 @@ function saveBase64File(dataUrl, destDir, prefix, defaultExt) {
   const str = String(dataUrl || '');
   const commaIdx = str.indexOf(',');
   if (!str.startsWith('data:') || commaIdx === -1) {
-    throw new Error('અમાન્ય ફાઇલ ફોર્મેટ (Invalid file data)');
+    throw new Error('Invalid file upload format.');
   }
   const header = str.slice(5, commaIdx).toLowerCase();
   const body = str.slice(commaIdx + 1).trim();
@@ -56,7 +56,7 @@ function buildUpiUri({ upiId, upiName, amount, orderCode, bookTitle }) {
   if (!upiId) return '';
   const params = new URLSearchParams({
     pa: upiId,
-    pn: upiName || 'Kids PDF Store',
+    pn: upiName || 'LittleStars Kids Books',
     am: Number(amount).toFixed(2),
     cu: 'INR',
     tn: `${orderCode} - ${(bookTitle || 'Kids PDF Book').slice(0, 35)}`
@@ -68,7 +68,7 @@ function verifyAdmin(req, res, next) {
   const settings = storeDb.getSettings();
   const pin = req.headers['x-admin-pin'] || req.query.pin || req.body?.adminPin || '';
   if (String(pin) !== String(settings.adminPin || '1234')) {
-    return res.status(401).json({ success: false, error: 'ખોટો Admin PIN — કૃપા કરીને ફરી લોગિન કરો.' });
+    return res.status(401).json({ success: false, error: 'Incorrect Admin PIN. Please sign in again.' });
   }
   next();
 }
@@ -105,7 +105,7 @@ app.get('/api/store/book/:id/sample', (req, res) => {
 app.post('/api/store/upi-qr-preview', async (req, res) => {
   try {
     const { upiId, upiName, amount = 49, note = 'Test Payment' } = req.body || {};
-    if (!upiId) return res.status(400).json({ success: false, error: 'UPI ID લખવો જરૂરી છે.' });
+    if (!upiId) return res.status(400).json({ success: false, error: 'Please enter a valid UPI ID.' });
     const uri = buildUpiUri({ upiId, upiName, amount, orderCode: 'TEST', bookTitle: note });
     const qrDataUrl = await QRCode.toDataURL(uri, { width: 260, margin: 1 });
     res.json({ success: true, upiUri: uri, qrDataUrl });
@@ -119,10 +119,10 @@ app.post('/api/store/orders', async (req, res) => {
     const { bookId, customerName, customerPhone, customerEmail = '', paymentMethod = 'upi' } = req.body || {};
     const book = storeDb.getBookById(bookId);
     if (!book || book.published === false) {
-      return res.status(404).json({ success: false, error: 'પસંદ કરેલી PDF બુક મળી નથી.' });
+      return res.status(404).json({ success: false, error: 'Selected PDF book was not found.' });
     }
     if (!String(customerName || '').trim() || !String(customerPhone || '').trim()) {
-      return res.status(400).json({ success: false, error: 'તમારું નામ અને WhatsApp/મોબાઇલ નંબર જરૂરી છે.' });
+      return res.status(400).json({ success: false, error: 'Full name and WhatsApp / mobile number are required.' });
     }
 
     const order = storeDb.createOrder({
@@ -169,11 +169,11 @@ app.post('/api/store/orders', async (req, res) => {
 app.post('/api/store/orders/:orderId/submit-payment', (req, res) => {
   try {
     const order = storeDb.getOrderById(req.params.orderId);
-    if (!order) return res.status(404).json({ success: false, error: 'ઓર્ડર મળ્યો નથી.' });
+    if (!order) return res.status(404).json({ success: false, error: 'Order not found.' });
 
     const utr = String(req.body?.utrNumber || '').trim();
     if (order.amount > 0 && utr.length < 4) {
-      return res.status(400).json({ success: false, error: 'કૃપા કરીને ઓછામાં ઓછો 4 અંકનો UTR / Transaction Ref નંબર નાખો.' });
+      return res.status(400).json({ success: false, error: 'Please enter a valid UTR / Transaction Reference ID (min 4 characters).' });
     }
 
     const settings = storeDb.getSettings();
@@ -200,10 +200,10 @@ app.post('/api/store/orders/:orderId/submit-payment', (req, res) => {
 app.post('/api/store/razorpay/create-order', async (req, res) => {
   try {
     const order = storeDb.getOrderById(req.body?.orderId);
-    if (!order) return res.status(404).json({ success: false, error: 'ઓર્ડર મળ્યો નથી.' });
+    if (!order) return res.status(404).json({ success: false, error: 'Order not found.' });
     const settings = storeDb.getSettings();
     if (!settings.razorpayKeyId || !settings.razorpayKeySecret) {
-      return res.status(400).json({ success: false, error: 'Razorpay API Keys સેટ કરેલી નથી.' });
+      return res.status(400).json({ success: false, error: 'Razorpay API keys are not configured.' });
     }
     const auth = Buffer.from(`${settings.razorpayKeyId}:${settings.razorpayKeySecret}`).toString('base64');
     const r = await fetch('https://api.razorpay.com/v1/orders', {
@@ -234,7 +234,7 @@ app.post('/api/store/razorpay/verify', (req, res) => {
   try {
     const { orderId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body || {};
     const order = storeDb.getOrderById(orderId);
-    if (!order) return res.status(404).json({ success: false, error: 'ઓર્ડર મળ્યો નથી.' });
+    if (!order) return res.status(404).json({ success: false, error: 'Order not found.' });
     const settings = storeDb.getSettings();
     const expected = crypto
       .createHmac('sha256', settings.razorpayKeySecret || '')
@@ -242,7 +242,7 @@ app.post('/api/store/razorpay/verify', (req, res) => {
       .digest('hex');
 
     if (expected !== razorpay_signature) {
-      return res.status(400).json({ success: false, error: 'Razorpay signature verification failed!' });
+      return res.status(400).json({ success: false, error: 'Razorpay signature verification failed.' });
     }
 
     const token = order.downloadToken || crypto.randomBytes(18).toString('hex');
@@ -282,20 +282,20 @@ app.get('/api/store/orders/lookup', (req, res) => {
 app.get('/api/store/download/:token', (req, res) => {
   const order = storeDb.getOrderByDownloadToken(req.params.token);
   if (!order || order.status !== 'paid') {
-    return res.status(403).send('પેમેન્ટ હજી કન્ફર્મ થયું નથી અથવા અમાન્ય ડાઉનલોડ લિંક છે.');
+    return res.status(403).send('Payment not confirmed yet or invalid download link.');
   }
   const settings = storeDb.getSettings();
   const maxDl = Number(settings.maxDownloadsPerOrder) || 5;
   if ((Number(order.downloadCount) || 0) >= maxDl) {
-    return res.status(403).send(`આ ઓર્ડરની મહત્તમ ${maxDl} ડાઉનલોડ લિમિટ પૂરી થઈ ગઈ છે.`);
+    return res.status(403).send(`Maximum ${maxDl} downloads reached for this order. Contact store support.`);
   }
   const book = storeDb.getBookById(order.bookId);
   if (!book || !book.pdfFile) {
-    return res.status(404).send('આ બુકની PDF ફાઇલ મળી નથી.');
+    return res.status(404).send('Book PDF file not found.');
   }
   const fullPath = path.join(BOOKS_DIR, path.basename(book.pdfFile));
   if (!fs.existsSync(fullPath)) {
-    return res.status(404).send('PDF ફાઇલ સર્વર પર મળી નથી.');
+    return res.status(404).send('PDF file missing on server.');
   }
 
   storeDb.updateOrder(order.id, cur => ({ downloadCount: (Number(cur.downloadCount) || 0) + 1 }));
@@ -310,7 +310,7 @@ app.post('/api/admin/login', (req, res) => {
   const settings = storeDb.getSettings();
   const pin = String(req.body?.pin || '').trim();
   if (pin !== String(settings.adminPin || '1234')) {
-    return res.status(401).json({ success: false, error: 'ખોટો PIN!' });
+    return res.status(401).json({ success: false, error: 'Invalid Admin PIN.' });
   }
   res.json({ success: true });
 });
@@ -339,13 +339,13 @@ app.post('/api/admin/books', verifyAdmin, (req, res) => {
   try {
     const b = req.body || {};
     if (!String(b.title || '').trim()) {
-      return res.status(400).json({ success: false, error: 'બુકનું નામ લખવું જરૂરી છે.' });
+      return res.status(400).json({ success: false, error: 'Book title is required.' });
     }
     let pdfFile = '';
     if (b.pdfBase64) {
       pdfFile = saveBase64File(b.pdfBase64, BOOKS_DIR, 'book', '.pdf');
     } else {
-      return res.status(400).json({ success: false, error: 'અસલી PDF બુક ફાઇલ અપલોડ કરવી જરૂરી છે.' });
+      return res.status(400).json({ success: false, error: 'Please upload a PDF file for this book.' });
     }
 
     let samplePdfFile = '';
@@ -394,7 +394,7 @@ app.put('/api/admin/books/:id', verifyAdmin, (req, res) => {
       updates.coverUrl = `/uploads/covers/${coverFile}`;
     }
     const updated = storeDb.updateBook(req.params.id, updates);
-    if (!updated) return res.status(404).json({ success: false, error: 'બુક મળી નથી.' });
+    if (!updated) return res.status(404).json({ success: false, error: 'Book not found.' });
     res.json({ success: true, book: updated });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
@@ -403,13 +403,13 @@ app.put('/api/admin/books/:id', verifyAdmin, (req, res) => {
 
 app.delete('/api/admin/books/:id', verifyAdmin, (req, res) => {
   const removed = storeDb.deleteBook(req.params.id);
-  if (!removed) return res.status(404).json({ success: false, error: 'બુક મળી નથી.' });
+  if (!removed) return res.status(404).json({ success: false, error: 'Book not found.' });
   res.json({ success: true });
 });
 
 app.post('/api/admin/orders/:id/approve', verifyAdmin, (req, res) => {
   const order = storeDb.getOrderById(req.params.id);
-  if (!order) return res.status(404).json({ success: false, error: 'ઓર્ડર મળ્યો નથી.' });
+  if (!order) return res.status(404).json({ success: false, error: 'Order not found.' });
   const token = order.downloadToken || crypto.randomBytes(18).toString('hex');
   const updated = storeDb.updateOrder(order.id, () => ({
     status: 'paid',
@@ -425,7 +425,7 @@ app.post('/api/admin/orders/:id/approve', verifyAdmin, (req, res) => {
 
 app.post('/api/admin/orders/:id/reject', verifyAdmin, (req, res) => {
   const order = storeDb.getOrderById(req.params.id);
-  if (!order) return res.status(404).json({ success: false, error: 'ઓર્ડર મળ્યો નથી.' });
+  if (!order) return res.status(404).json({ success: false, error: 'Order not found.' });
   const updated = storeDb.updateOrder(order.id, () => ({
     status: 'rejected',
     downloadToken: ''
@@ -433,7 +433,6 @@ app.post('/api/admin/orders/:id/reject', verifyAdmin, (req, res) => {
   res.json({ success: true, order: updated });
 });
 
-// Friendly page routes
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(BASE_DIR, 'public', 'admin.html'));
 });
