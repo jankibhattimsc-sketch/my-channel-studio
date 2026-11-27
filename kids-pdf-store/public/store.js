@@ -149,43 +149,13 @@
       <section class="home-hero-card" aria-labelledby="home-h1">
         <h1 id="home-h1" class="sr-only">Printable Learning Worksheets for Special Kids — Premium Worksheet Collection</h1>
         <button id="hero-banner-cta" type="button" class="home-hero-banner-btn" aria-label="Explore Printable Learning Worksheets Collection">
-          <img src="/assets/hero-banner.jpg?v=12.0" class="home-hero-banner-img" alt="KidsWorksheet Printable Learning Worksheets for Kids — Alphabets, Numbers, Math, Tracing, Coloring, GK & Festivals" />
+          <img src="/assets/hero-banner-hd.png?v=13.0" class="home-hero-banner-img" alt="KidsWorksheet Printable Learning Worksheets for Kids — Alphabets, Numbers, Math, Tracing, Coloring, GK & Festivals" />
         </button>
       </section>
 
-      <form id="home-search-form" class="search-pill-form" role="search">
-        <span style="color:#687789; display:flex;" aria-hidden="true">${ICONS.search}</span>
-        <label for="home-search-input" class="sr-only">Search worksheets</label>
-        <input id="home-search-input" type="search" placeholder="Search worksheets... (e.g. Tracing, Matching, Emotions)" />
-        <button type="submit" class="search-go-btn" aria-label="Search worksheets">${ICONS.search}</button>
-      </form>
-
-      <section class="home-4-cards" aria-label="Explore by Category">
-        <button type="button" class="home-cat-card yellow" data-home-cat="age">
-          <span class="home-cat-icon">${ICONS.calendar}</span>
-          <h3>By Age</h3>
-          <p>(3 – 10+ Years)</p>
-        </button>
-        <button type="button" class="home-cat-card blue" data-home-cat="condition">
-          <span class="home-cat-icon">${ICONS.puzzle}</span>
-          <h3>By Condition</h3>
-          <p>(Autism / ADHD)</p>
-        </button>
-        <button type="button" class="home-cat-card peach" data-home-cat="skills">
-          <span class="home-cat-icon">${ICONS.target}</span>
-          <h3>By Skills</h3>
-          <p>(Motor, Focus, etc.)</p>
-        </button>
-        <button type="button" class="home-cat-card purple" data-home-cat="topics">
-          <span class="home-cat-icon">${ICONS.bookPurple}</span>
-          <h3>By Topics</h3>
-          <p>(Tracing, Numbers, etc.)</p>
-        </button>
-      </section>
-
-      <section style="margin-top: 38px;" aria-labelledby="home-pop-h2">
+      <section style="margin-top: 22px;" aria-labelledby="home-pop-h2">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
-          <h2 id="home-pop-h2" style="margin:0; font-size:1.45rem; font-weight:900;">Popular Printable Worksheets</h2>
+          <h2 id="home-pop-h2" style="margin:0; font-size:1.5rem; font-weight:900;">Printable Worksheets</h2>
           <a href="#worksheets" class="btn btn-outline-blue" data-route="worksheets" style="min-height:40px; padding:6px 16px;">View All Worksheets →</a>
         </div>
         <div class="ws-grid-3">
@@ -200,18 +170,6 @@
     `;
 
     document.getElementById('hero-banner-cta').addEventListener('click', () => navigateTo('worksheets'));
-    document.getElementById('home-search-form').addEventListener('submit', (e) => {
-      e.preventDefault();
-      libState.search = document.getElementById('home-search-input').value.trim();
-      navigateTo('worksheets');
-    });
-    pageRoot.querySelectorAll('[data-home-cat]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const k = btn.getAttribute('data-home-cat');
-        if (k === 'condition' || k === 'skills') navigateTo('categories');
-        else navigateTo('worksheets');
-      });
-    });
     wireWorksheetCardActions(pageRoot);
   }
 
