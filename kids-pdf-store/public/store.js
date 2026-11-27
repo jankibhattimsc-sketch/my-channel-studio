@@ -121,10 +121,10 @@
           ${showNeed ? `<span class="pill-need">${esc(badgeLabel)}</span>` : ''}
         </div>
         <div class="ws-card-actions">
-          <button type="button" class="btn btn-soft-blue" data-open-detail="${esc(ws.id)}">👁️ Preview</button>
+          <button type="button" class="btn btn-soft-blue" data-open-detail="${esc(ws.id)}">${ICONS.eye || ''} Preview</button>
           ${isFree
-            ? `<a href="/api/store/book/${esc(ws.id)}/download" class="btn btn-success" download>📥 Download</a>`
-            : `<button type="button" class="btn btn-success" data-buy-id="${esc(ws.id)}">📥 ${cur()}${ws.price}</button>`}
+            ? `<a href="/api/store/book/${esc(ws.id)}/download" class="btn btn-success" download>${ICONS.download || ''} Download</a>`
+            : `<button type="button" class="btn btn-success" data-buy-id="${esc(ws.id)}">${ICONS.download || ''} ${cur()}${ws.price}</button>`}
         </div>
       </article>
     `;
@@ -148,14 +148,25 @@
     pageRoot.innerHTML = `
       <section class="home-hero-card" aria-labelledby="home-h1">
         <div class="home-hero-copy">
-          <h1 id="home-h1" class="home-hero-title">Printable Learning Worksheets for Special Kids</h1>
-          <p class="home-hero-sub">Simple, fun and effective learning materials for children with Autism, ADHD, Learning Disabilities and other special needs.</p>
-          <button id="hero-free-cta" type="button" class="btn btn-pink-pill" style="padding: 13px 26px; font-size: 1.04rem;">
-            📥 Free Worksheets Download →
-          </button>
+          <div class="home-hero-badge">
+            ${ICONS.sparkleHeart || ''}
+            <span>Sensory-Friendly &amp; Printable A4 PDFs</span>
+          </div>
+          <h1 id="home-h1" class="home-hero-title">Printable Learning Worksheets <span class="hero-accent">for Special Kids</span></h1>
+          <p class="home-hero-sub">Simple, fun and effective learning materials for children with Autism, ADHD, Learning Disabilities and other special learning needs.</p>
+          <div class="home-hero-actions">
+            <button id="hero-free-cta" type="button" class="btn btn-pink-pill btn-hero-primary">
+              ${ICONS.download || ''}
+              <span>Free Worksheets Download</span>
+              ${ICONS.arrowRight || ''}
+            </button>
+            <button id="hero-explore-cta" type="button" class="btn btn-hero-secondary">
+              Explore Worksheets
+            </button>
+          </div>
         </div>
-        <div class="home-hero-mobile-art">
-          <img src="/assets/hero-child-learning.jpg?v=6.0" alt="Happy smiling child with colorful finger-painted hands and soft pastel rainbow" />
+        <div class="home-hero-visual">
+          <img src="/assets/hero-child-learning.jpg?v=7.0" alt="Happy smiling child with colorful finger-painted hands and soft pastel rainbow" />
         </div>
       </section>
 
@@ -201,6 +212,7 @@
     `;
 
     document.getElementById('hero-free-cta').addEventListener('click', () => navigateTo('free'));
+    document.getElementById('hero-explore-cta').addEventListener('click', () => navigateTo('worksheets'));
     document.getElementById('home-search-form').addEventListener('submit', (e) => {
       e.preventDefault();
       libState.search = document.getElementById('home-search-input').value.trim();

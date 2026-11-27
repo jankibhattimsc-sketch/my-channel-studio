@@ -147,5 +147,13 @@ window.SKW_ICONS = {
     <circle cx="15" cy="18" r="5" fill="#F59E0B"/><circle cx="33" cy="18" r="5" fill="#397BB5"/><circle cx="24" cy="15" r="6" fill="#25805B"/>
     <path d="M8 34c0-4 3-7 7-7s7 3 7 7M26 34c0-4 3-7 7-7s7 3 7 7" fill="none" stroke="#64748B" stroke-width="2.5"/>
     <path d="M16 36c0-5 3.5-8 8-8s8 3 8 8" fill="#E4F5EA" stroke="#25805B" stroke-width="2.4"/>
-  </svg>`
+  </svg>`,
+
+  download: `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+
+  eye: `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`,
+
+  arrowRight: `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`,
+
+  sparkleHeart: `<svg width="15" height="15" viewBox="0 0 24 24" fill="#E15B78" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`
 };
