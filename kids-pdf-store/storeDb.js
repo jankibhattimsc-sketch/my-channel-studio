@@ -8,22 +8,23 @@ const DB_PATH = path.join(DATA_DIR, 'store.json');
 
 const DEFAULT_STORE = {
   settings: {
-    storeName: 'LittleStars Kids PDF Store',
-    tagline: 'Printable Learning, Coloring & Brain Activity PDF Books for Kids ✨',
+    storeName: 'Special Kids Worksheets',
+    tagline: 'Helping every child learn at their own pace.',
     currency: '₹',
     whatsappNumber: '',
-    supportEmail: '',
+    supportEmail: 'support@specialkidsworksheets.org',
     upiId: '',
-    upiName: 'LittleStars Kids Books',
+    upiName: 'Special Kids Worksheets',
     defaultPaymentLink: '',
     razorpayKeyId: '',
     razorpayKeySecret: '',
-    deliveryMode: 'auto_utr', // 'auto_utr' | 'admin_verify'
+    deliveryMode: 'auto_utr',
     adminPin: '1234',
     maxDownloadsPerOrder: 5
   },
   books: [],
-  orders: []
+  orders: [],
+  feedback: []
 };
 
 function ensureDb() {
@@ -41,7 +42,8 @@ function readDb() {
     return {
       settings: { ...DEFAULT_STORE.settings, ...(parsed.settings || {}) },
       books: Array.isArray(parsed.books) ? parsed.books : [],
-      orders: Array.isArray(parsed.orders) ? parsed.orders : []
+      orders: Array.isArray(parsed.orders) ? parsed.orders : [],
+      feedback: Array.isArray(parsed.feedback) ? parsed.feedback : []
     };
   } catch (_) {
     return JSON.parse(JSON.stringify(DEFAULT_STORE));
@@ -100,11 +102,14 @@ function sanitizeBookPublic(book) {
     id: book.id,
     title: book.title,
     subtitle: book.subtitle || '',
-    ageGroup: book.ageGroup || '3-7',
-    category: book.category || 'Activity',
-    pages: Number(book.pages) || 20,
-    mrp: Number(book.mrp) || 199,
-    price: Number(book.price) || 49,
+    learningGoal: book.learningGoal || book.subtitle || '',
+    ageGroup: book.ageGroup || '3-6',
+    category: book.category || 'Tracing',
+    learningNeed: book.learningNeed || 'General Learning',
+    skillArea: book.skillArea || 'Motor',
+    pages: Number(book.pages) || 10,
+    mrp: Number(book.mrp) || 0,
+    price: Number(book.price) || 0,
     paymentLink: book.paymentLink || '',
     description: book.description || '',
     highlights: Array.isArray(book.highlights) ? book.highlights : [],
@@ -136,11 +141,14 @@ function addBook(bookData) {
     id: 'bk-' + Date.now() + '-' + crypto.randomBytes(2).toString('hex'),
     title: String(bookData.title || '').trim(),
     subtitle: String(bookData.subtitle || '').trim(),
-    ageGroup: String(bookData.ageGroup || '3-7').trim(),
-    category: String(bookData.category || 'Activity').trim(),
-    pages: Math.max(1, Number(bookData.pages) || 24),
-    mrp: Math.max(1, Number(bookData.mrp) || 199),
-    price: Math.max(0, Number(bookData.price) || 49),
+    learningGoal: String(bookData.learningGoal || bookData.subtitle || '').trim(),
+    ageGroup: String(bookData.ageGroup || '3-6').trim(),
+    category: String(bookData.category || 'Tracing').trim(),
+    learningNeed: String(bookData.learningNeed || 'Autism Support').trim(),
+    skillArea: String(bookData.skillArea || 'Motor').trim(),
+    pages: Math.max(1, Number(bookData.pages) || 10),
+    mrp: Math.max(0, Number(bookData.mrp) || 0),
+    price: Math.max(0, Number(bookData.price) || 0),
     paymentLink: String(bookData.paymentLink || '').trim(),
     description: String(bookData.description || '').trim(),
     highlights: Array.isArray(bookData.highlights) ? bookData.highlights.filter(Boolean) : [],
@@ -166,10 +174,13 @@ function updateBook(id, updates = {}) {
     ...cur,
     title: updates.title !== undefined ? String(updates.title).trim() : cur.title,
     subtitle: updates.subtitle !== undefined ? String(updates.subtitle).trim() : cur.subtitle,
+    learningGoal: updates.learningGoal !== undefined ? String(updates.learningGoal).trim() : (cur.learningGoal || cur.subtitle),
     ageGroup: updates.ageGroup !== undefined ? String(updates.ageGroup).trim() : cur.ageGroup,
     category: updates.category !== undefined ? String(updates.category).trim() : cur.category,
+    learningNeed: updates.learningNeed !== undefined ? String(updates.learningNeed).trim() : cur.learningNeed,
+    skillArea: updates.skillArea !== undefined ? String(updates.skillArea).trim() : cur.skillArea,
     pages: updates.pages !== undefined ? Math.max(1, Number(updates.pages) || cur.pages) : cur.pages,
-    mrp: updates.mrp !== undefined ? Math.max(1, Number(updates.mrp) || cur.mrp) : cur.mrp,
+    mrp: updates.mrp !== undefined ? Math.max(0, Number(updates.mrp)) : cur.mrp,
     price: updates.price !== undefined ? Math.max(0, Number(updates.price)) : cur.price,
     paymentLink: updates.paymentLink !== undefined ? String(updates.paymentLink).trim() : cur.paymentLink,
     description: updates.description !== undefined ? String(updates.description).trim() : cur.description,
@@ -183,6 +194,15 @@ function updateBook(id, updates = {}) {
   };
   writeDb(db);
   return db.books[idx];
+}
+
+function incrementBookDownload(id) {
+  const db = readDb();
+  const idx = db.books.findIndex(b => b.id === id);
+  if (idx !== -1) {
+    db.books[idx].salesCount = (Number(db.books[idx].salesCount) || 0) + 1;
+    writeDb(db);
+  }
 }
 
 function deleteBook(id) {
@@ -259,6 +279,25 @@ function lookupOrders(query) {
     .slice(0, 15);
 }
 
+function addFeedback({ parentName, relation, message }) {
+  const db = readDb();
+  const entry = {
+    id: 'fb-' + Date.now() + '-' + crypto.randomBytes(2).toString('hex'),
+    parentName: String(parentName || '').trim(),
+    relation: String(relation || 'Parent').trim(),
+    message: String(message || '').trim(),
+    isSample: false,
+    createdAt: new Date().toISOString()
+  };
+  db.feedback.unshift(entry);
+  writeDb(db);
+  return entry;
+}
+
+function getFeedbackList() {
+  return readDb().feedback.slice(0, 20);
+}
+
 function getAdminStats() {
   const db = readDb();
   const paidOrders = db.orders.filter(o => o.status === 'paid');
@@ -286,11 +325,14 @@ module.exports = {
   getBookById,
   addBook,
   updateBook,
+  incrementBookDownload,
   deleteBook,
   createOrder,
   getOrderById,
   updateOrder,
   getOrderByDownloadToken,
   lookupOrders,
+  addFeedback,
+  getFeedbackList,
   getAdminStats
 };

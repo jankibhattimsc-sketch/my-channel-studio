@@ -10,7 +10,7 @@ function escapePdfText(txt) {
   return String(txt || '').replace(/[^\x20-\x7E]/g, ' ').replace(/([\\()])/g, '\\$1');
 }
 
-function createSampleKidsPdf(filePath, { heading, subheading, pagesText }) {
+function createPrintableWorksheetPdf(filePath, { heading, subheading, pagesText }) {
   const objects = [];
   const pageCount = pagesText.length;
   const fontObjNum = 3 + pageCount * 2;
@@ -29,20 +29,23 @@ function createSampleKidsPdf(filePath, { heading, subheading, pagesText }) {
 
     const streamLines = [
       'q',
-      '0.98 0.96 0.90 rg 0 0 595 842 re f',
-      '0.01 0.52 0.78 rg 30 740 535 72 re f',
-      '1 1 1 rg BT /F1 19 Tf 48 776 Td (' + escapePdfText(heading) + ') Tj ET',
-      '0.92 0.96 1 rg BT /F1 11 Tf 48 754 Td (' + escapePdfText(subheading + '  |  Page ' + (i + 1) + ' of ' + pageCount) + ') Tj ET',
-      '0.10 0.14 0.24 rg'
+      '0.98 0.97 0.96 rg 0 0 595 842 re f',
+      '0.91 0.95 1.00 rg 32 732 531 78 re f',
+      '0.22 0.48 0.71 rg 32 732 531 4 re f',
+      '0.15 0.22 0.29 rg BT /F1 19 Tf 48 776 Td (' + escapePdfText(heading) + ') Tj ET',
+      '0.40 0.47 0.54 rg BT /F1 11 Tf 48 752 Td (' + escapePdfText(subheading + '  |  Page ' + (i + 1) + ' of ' + pageCount) + ') Tj ET',
+      '0.15 0.22 0.29 rg'
     ];
 
-    let y = 690;
+    let y = 678;
     for (const line of pageLines) {
       streamLines.push(`BT /F1 14 Tf 48 ${y} Td (${escapePdfText(line)}) Tj ET`);
-      y -= 34;
+      streamLines.push(`0.82 0.87 0.92 rg 48 ${y - 12} 499 1 re f`);
+      streamLines.push('0.15 0.22 0.29 rg');
+      y -= 54;
     }
-    streamLines.push('0.96 0.62 0.04 rg 48 110 499 4 re f');
-    streamLines.push(`0.35 0.40 0.50 rg BT /F1 10 Tf 48 82 Td (Printable High-Res A4 Kids Edition - LittleStars Kids PDF Store) Tj ET`);
+
+    streamLines.push('0.40 0.47 0.54 rg BT /F1 10 Tf 48 56 Td (Special Kids Worksheets - Printable A4 Resource | Personal & Home Educational Use) Tj ET');
     streamLines.push('Q');
 
     const streamStr = streamLines.join('\n');
@@ -67,28 +70,15 @@ function createSampleKidsPdf(filePath, { heading, subheading, pagesText }) {
   fs.writeFileSync(filePath, pdf, 'utf8');
 }
 
-function createCoverSvg(filePath, { bg1, bg2, emoji, badge, titleLine1, titleLine2, ageLabel }) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="520" height="680" viewBox="0 0 520 680">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="${bg1}"/>
-      <stop offset="100%" stop-color="${bg2}"/>
-    </linearGradient>
-  </defs>
-  <rect width="520" height="680" rx="34" fill="url(#g)"/>
-  <circle cx="445" cy="95" r="78" fill="rgba(255,255,255,0.18)"/>
-  <circle cx="80" cy="595" r="110" fill="rgba(255,255,255,0.14)"/>
-  <rect x="34" y="34" width="215" height="44" rx="22" fill="rgba(255,255,255,0.94)"/>
-  <text x="141" y="63" font-family="Segoe UI, Arial, sans-serif" font-size="19" font-weight="800" fill="#0f172a" text-anchor="middle">${badge}</text>
-  <circle cx="260" cy="240" r="108" fill="rgba(255,255,255,0.92)"/>
-  <text x="260" y="275" font-size="112" text-anchor="middle">${emoji}</text>
-  <text x="260" y="425" font-family="Segoe UI, Arial, sans-serif" font-size="33" font-weight="900" fill="#ffffff" text-anchor="middle">${titleLine1}</text>
-  <text x="260" y="472" font-family="Segoe UI, Arial, sans-serif" font-size="26" font-weight="700" fill="#fef08a" text-anchor="middle">${titleLine2}</text>
-  <rect x="120" y="535" width="280" height="54" rx="27" fill="#0f172a" fill-opacity="0.72"/>
-  <text x="260" y="570" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="800" fill="#ffffff" text-anchor="middle">${ageLabel}</text>
-  <text x="260" y="642" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="rgba(255,255,255,0.9)" text-anchor="middle">PRINTABLE HIGH-RES KIDS PDF E-BOOK</text>
+function writeWorksheetThumbnailSvg(filePath, svgBody) {
+  const full = `<svg xmlns="http://www.w3.org/2000/svg" width="480" height="320" viewBox="0 0 480 320">
+  <rect width="480" height="320" fill="#FAF8F5"/>
+  <rect x="34" y="18" width="412" height="284" rx="14" fill="#FFFFFF" stroke="#D8E2EC" stroke-width="2"/>
+  <rect x="34" y="18" width="412" height="44" rx="14" fill="#EAF4FF"/>
+  <rect x="34" y="48" width="412" height="14" fill="#EAF4FF"/>
+  ${svgBody}
 </svg>`;
-  fs.writeFileSync(filePath, svg, 'utf8');
+  fs.writeFileSync(filePath, full, 'utf8');
 }
 
 function seedIfEmpty() {
@@ -100,120 +90,263 @@ function seedIfEmpty() {
 
   const starters = [
     {
-      file: 'abc_coloring_workbook.pdf',
-      cover: 'cover_abc.svg',
-      coverOpts: {
-        bg1: '#ec4899', bg2: '#f97316', emoji: '🎨',
-        badge: 'BESTSELLER ★', titleLine1: 'A to Z Coloring',
-        titleLine2: '& Tracing Fun Book', ageLabel: 'Ages 2 to 5 Years'
-      },
+      file: 'line_tracing_practice.pdf',
+      cover: 'thumb_line_tracing.svg',
+      svg: `
+        <text x="54" y="45" font-family="sans-serif" font-size="16" font-weight="700" fill="#26384A">Line Tracing Practice</text>
+        <text x="424" y="45" font-family="sans-serif" font-size="12" font-weight="700" fill="#397BB5" text-anchor="end">A4 Printable</text>
+        <circle cx="82" cy="108" r="18" fill="#FFF2C9" stroke="#F59E0B" stroke-width="2"/>
+        <text x="82" y="114" font-size="18" text-anchor="middle">🐝</text>
+        <path d="M114 108 Q165 82 216 108 T318 108 T382 108" fill="none" stroke="#397BB5" stroke-width="3.5" stroke-dasharray="7 7" stroke-linecap="round"/>
+        <circle cx="404" cy="108" r="16" fill="#E4F5EA"/>
+        <text x="404" y="114" font-size="16" text-anchor="middle">🌸</text>
+
+        <circle cx="82" cy="176" r="18" fill="#FFE9E4"/>
+        <text x="82" y="182" font-size="18" text-anchor="middle">🦋</text>
+        <polyline points="114,176 156,154 198,196 240,154 282,196 324,154 382,176" fill="none" stroke="#EC4899" stroke-width="3.5" stroke-dasharray="7 7" stroke-linecap="round"/>
+        <circle cx="404" cy="176" r="16" fill="#FFF2C9"/>
+        <text x="404" y="182" font-size="16" text-anchor="middle">🌼</text>
+
+        <circle cx="82" cy="244" r="18" fill="#EAF4FF"/>
+        <text x="82" y="250" font-size="18" text-anchor="middle">🚗</text>
+        <line x1="114" y1="244" x2="382" y2="244" stroke="#25805B" stroke-width="3.5" stroke-dasharray="8 8" stroke-linecap="round"/>
+        <circle cx="404" cy="244" r="16" fill="#F2EAFE"/>
+        <text x="404" y="250" font-size="16" text-anchor="middle">🏠</text>
+      `,
       pdfOpts: {
-        heading: 'Super Kids A to Z Alphabet & Coloring Book',
-        subheading: 'Ages 2-5 Printable Activity Workbook',
+        heading: 'Line Tracing Practice Workbook',
+        subheading: 'Ages 3-5 Years | Fine Motor Support',
         pagesText: [
-          ['Welcome Little Artist!', 'Letter A - A is for Apple & Aeroplane', 'Trace:  A   A   A   A   a   a   a   a', 'Activity: Color the big smiling Apple bright red!'],
-          ['Letter B - B is for Ball & Butterfly', 'Trace:  B   B   B   B   b   b   b   b', 'Activity: Count 3 colorful balloons and draw circles.'],
-          ['Letter C - C is for Cat & Car', 'Trace:  C   C   C   C   c   c   c   c', 'Activity: Match the cute Cat to its milk bowl!']
+          ['Activity 1: Trace the straight dashed path from the Bee to the Flower.', 'Practice slow, steady pencil strokes from left to right.'],
+          ['Activity 2: Trace the gentle waves from the Butterfly to the Sun.', 'Take breaks anytime and go at your own pace.'],
+          ['Activity 3: Guide the Car along the straight road to Home.']
         ]
       },
       book: {
-        title: 'Super Kids A–Z Alphabet Coloring & Tracing Workbook',
-        subtitle: 'Bold letters, dot-to-dot puzzles & big friendly illustrations for little hands',
-        ageGroup: '2-5',
-        category: 'Coloring 🎨',
-        pages: 32,
-        mrp: 199,
-        price: 49,
-        description: 'Designed by early-childhood educators to build pencil grip, letter recognition, and creativity away from phone screens. Ready to print at home on standard A4 paper.',
-        highlights: ['Crisp A4 Print-Ready PDF Format', 'Large Friendly Illustrations Easy to Color', 'Unlimited Lifetime Personal Prints'],
+        title: 'Line Tracing Practice',
+        subtitle: 'Gentle dotted paths to strengthen pencil grip and hand control',
+        learningGoal: 'Pencil control & hand-eye coordination',
+        ageGroup: '3-5',
+        category: 'Tracing',
+        learningNeed: 'Fine Motor Skills',
+        skillArea: 'Motor',
+        pages: 10,
+        mrp: 0,
+        price: 0,
+        description: 'Calm, uncluttered tracing paths featuring bees, butterflies, and roads designed for early fine-motor practice.',
+        highlights: ['Clear high-contrast dashed guide lines', 'Spacious A4 layout with minimal distractions'],
         featured: true
       }
     },
     {
-      file: 'phonics_reading_explorer.pdf',
-      cover: 'cover_phonics.svg',
-      coverOpts: {
-        bg1: '#0ea5e9', bg2: '#6366f1', emoji: '📖',
-        badge: 'PARENT FAVORITE', titleLine1: 'Phonics & Early',
-        titleLine2: 'Reading Explorer', ageLabel: 'Ages 4 to 6 Years'
-      },
+      file: 'shape_matching_pack.pdf',
+      cover: 'thumb_shape_matching.svg',
+      svg: `
+        <text x="54" y="45" font-family="sans-serif" font-size="16" font-weight="700" fill="#26384A">Shape Matching</text>
+        <text x="424" y="45" font-family="sans-serif" font-size="12" font-weight="700" fill="#25805B" text-anchor="end">A4 Printable</text>
+        <circle cx="110" cy="108" r="24" fill="#FFF2C9" stroke="#D97706" stroke-width="3"/>
+        <polygon points="110,152 84,198 136,198" fill="#EAF4FF" stroke="#397BB5" stroke-width="3"/>
+        <rect x="86" y="224" width="48" height="44" rx="6" fill="#E4F5EA" stroke="#25805B" stroke-width="3"/>
+
+        <line x1="154" y1="108" x2="322" y2="176" stroke="#94A3B8" stroke-width="2.5" stroke-dasharray="6 6"/>
+        <line x1="154" y1="176" x2="322" y2="246" stroke="#94A3B8" stroke-width="2.5" stroke-dasharray="6 6"/>
+        <line x1="154" y1="246" x2="322" y2="108" stroke="#94A3B8" stroke-width="2.5" stroke-dasharray="6 6"/>
+
+        <rect x="342" y="86" width="48" height="44" rx="6" fill="none" stroke="#25805B" stroke-width="3" stroke-dasharray="5 4"/>
+        <circle cx="366" cy="176" r="24" fill="none" stroke="#D97706" stroke-width="3" stroke-dasharray="5 4"/>
+        <polygon points="366,224 340,270 392,270" fill="none" stroke="#397BB5" stroke-width="3" stroke-dasharray="5 4"/>
+      `,
       pdfOpts: {
-        heading: 'Phonics, Sight Words & Early Reading Activity Pack',
-        subheading: 'Ages 4-6 Early Literacy Edition',
+        heading: 'Shape Matching & Visual Discrimination',
+        subheading: 'Ages 4-6 Years | Focus & Visual Skills',
         pagesText: [
-          ['Lesson 1: Short Vowel A (-at, -an, -ap)', 'Read aloud:  CAT   HAT   MAT   BAT   SAT', 'Circle the picture that rhymes with CAT!'],
-          ['Lesson 2: Sight Word Builders', 'Trace & Read:  THE   AND   YOU   LOOK   PLAY']
+          ['Match each colorful shape on the left to its dotted twin on the right.', 'Circle -> Circle  |  Triangle -> Triangle  |  Square -> Square'],
+          ['Bonus Activity: Color each matched pair the same soft color!']
         ]
       },
       book: {
-        title: 'Phonics, Sight Words & Early Reading Activity Pack',
-        subtitle: 'Step-by-step sound blending, rhyming games & sentence builders',
+        title: 'Shape Matching',
+        subtitle: 'Match circles, squares, stars, and triangles step by step',
+        learningGoal: 'Visual recognition & steady focus',
         ageGroup: '4-6',
-        category: 'Phonics & Reading 📖',
-        pages: 38,
-        mrp: 249,
-        price: 79,
-        description: 'Help young learners decode words effortlessly with engaging sound families, cut-and-match word cards, and joyful reading comprehension sheets.',
-        highlights: ['CVC Word Families & 50+ Essential Sight Words', 'Interactive Matching & Cut-Out Flashcards', 'Works Great on Tablets or Printed Sheets'],
+        category: 'Matching',
+        learningNeed: 'ADHD Activities',
+        skillArea: 'Focus',
+        pages: 8,
+        mrp: 0,
+        price: 0,
+        description: 'Structured visual matching activities that support visual attention without distracting page clutter.',
+        highlights: ['Clean shapes with clear dotted targets', 'Builds visual discrimination at child pace'],
         featured: true
       }
     },
     {
-      file: 'kids_math_brain_games.pdf',
-      cover: 'cover_math.svg',
-      coverOpts: {
-        bg1: '#10b981', bg2: '#0d9488', emoji: '🔢',
-        badge: 'BRAIN BOOSTER', titleLine1: 'Fun Math 1-100',
-        titleLine2: 'Logic & Brain Mazes', ageLabel: 'Ages 6 to 8 Years'
-      },
+      file: 'alphabet_tracing_az.pdf',
+      cover: 'thumb_alphabet_tracing.svg',
+      svg: `
+        <text x="54" y="45" font-family="sans-serif" font-size="16" font-weight="700" fill="#26384A">Alphabet Tracing (A–Z)</text>
+        <text x="424" y="45" font-family="sans-serif" font-size="12" font-weight="700" fill="#397BB5" text-anchor="end">A4 Printable</text>
+        <rect x="58" y="84" width="110" height="110" rx="14" fill="#FFE9E4"/>
+        <text x="113" y="156" font-size="60" text-anchor="middle">🍎</text>
+        <text x="236" y="158" font-family="sans-serif" font-size="86" font-weight="800" fill="none" stroke="#397BB5" stroke-width="3" stroke-dasharray="6 5">A</text>
+        <text x="330" y="158" font-family="sans-serif" font-size="76" font-weight="800" fill="none" stroke="#687789" stroke-width="2.5" stroke-dasharray="5 5">a</text>
+        <line x1="58" y1="230" x2="422" y2="230" stroke="#CBD5E1" stroke-width="2"/>
+        <line x1="58" y1="252" x2="422" y2="252" stroke="#94A3B8" stroke-width="2" stroke-dasharray="6 6"/>
+        <line x1="58" y1="274" x2="422" y2="274" stroke="#CBD5E1" stroke-width="2"/>
+        <text x="90" y="266" font-family="sans-serif" font-size="30" font-weight="700" fill="#94A3B8">A   a   A   a</text>
+      `,
       pdfOpts: {
-        heading: 'Fun Math Counting, Logic & Brain Boosters Workbook',
-        subheading: 'Ages 6-8 Problem Solving Pack',
+        heading: 'Alphabet Tracing Workbook (A to Z)',
+        subheading: 'Ages 4-6 Years | Letter Formation',
         pagesText: [
-          ['Chapter 1: Mental Math Warmup', 'Solve:  12 + 7 = ___   |   25 - 9 = ___   |   8 x 2 = ___', 'Color the even numbers blue and odd numbers gold!'],
-          ['Chapter 2: Logic Path & Pattern Puzzle', 'Help Bunny reach the golden carrot following multiples of 3!']
+          ['Letter A - Apple: Trace uppercase A and lowercase a inside the wide lines.', 'A   A   A   |   a   a   a'],
+          ['Letter B - Ball: Trace uppercase B and lowercase b carefully.', 'B   B   B   |   b   b   b']
         ]
       },
       book: {
-        title: 'Fun Math 1–100, Logic Mazes & Brain Boosters Pack',
-        subtitle: 'Turn math into a screen-free adventure with number mazes & brain teasers',
-        ageGroup: '6-8',
-        category: 'Math & Logic 🔢',
-        pages: 44,
-        mrp: 299,
-        price: 99,
-        description: 'Zero boring drills! Packed with visual addition challenges, skip-counting mazes, spot-the-pattern puzzles, and complete Answer Key pages for parents.',
-        highlights: ['Replaces Screen Time With Playful Logic Puzzles', 'Visual Addition, Subtraction & Pattern Mastery', 'Includes Complete Parent Answer Key'],
+        title: 'Alphabet Tracing',
+        subtitle: 'Large dotted letters with clear stroke space for comfortable writing',
+        learningGoal: 'Letter recognition & writing practice',
+        ageGroup: '4-6',
+        category: 'Tracing',
+        learningNeed: 'Learning Disability',
+        skillArea: 'Motor',
+        pages: 26,
+        mrp: 0,
+        price: 0,
+        description: 'Every letter from A to Z gets its own calm, spacious page with clear picture cues and gentle tracing rows.',
+        highlights: ['Full A–Z uppercase & lowercase practice', 'Extra-wide baseline spacing for easy writing'],
         featured: true
       }
     },
     {
-      file: 'junior_stem_space_quiz.pdf',
-      cover: 'cover_stem.svg',
-      coverOpts: {
-        bg1: '#7c3aed', bg2: '#db2777', emoji: '🚀',
-        badge: 'NEW RELEASE', titleLine1: 'Space & Science',
-        titleLine2: 'Junior Explorer Pack', ageLabel: 'Ages 8 to 12 Years'
-      },
+      file: 'number_recognition_1_10.pdf',
+      cover: 'thumb_number_recognition.svg',
+      svg: `
+        <text x="54" y="45" font-family="sans-serif" font-size="16" font-weight="700" fill="#26384A">Number Recognition (1–10)</text>
+        <text x="424" y="45" font-family="sans-serif" font-size="12" font-weight="700" fill="#25805B" text-anchor="end">A4 Printable</text>
+        <rect x="56" y="84" width="110" height="90" rx="14" fill="#FFF2C9"/>
+        <text x="111" y="148" font-family="sans-serif" font-size="56" font-weight="800" fill="none" stroke="#397BB5" stroke-width="3" stroke-dasharray="6 4" text-anchor="middle">3</text>
+        <text x="235" y="138" font-size="34">⭐ ⭐ ⭐</text>
+        <rect x="56" y="196" width="368" height="84" rx="12" fill="#E4F5EA"/>
+        <text x="240" y="246" font-family="sans-serif" font-size="24" font-weight="700" fill="#26384A" text-anchor="middle">1   •   2   •   3   •   4   •   5</text>
+      `,
       pdfOpts: {
-        heading: 'Space, Planets & Junior Science Discovery Workbook',
-        subheading: 'Ages 8-12 Curious Minds Edition',
+        heading: 'Number Recognition & Counting (1 to 10)',
+        subheading: 'Ages 3-6 Years | Early Numeracy',
         pagesText: [
-          ['Mission 1: Our Solar System Tour', 'Name all 8 planets in order from the Sun!', 'Fun Fact: One day on Venus is longer than a year on Venus.'],
-          ['Mission 2: Kitchen Science Experiments', '3 Safe & Exciting Weekend Home Projects with Steps!']
+          ['Number 1 & 2: Trace the number and count the friendly stars.', 'Number 3: Point and count 1, 2, 3!'],
+          ['Circle the groups that show 4 objects.']
         ]
       },
       book: {
-        title: 'Space, Planets & Junior Science Discovery Workbook',
-        subtitle: 'Solar system quests, cool science facts & DIY weekend challenges',
-        ageGroup: '8-12',
-        category: 'Science & GK 🚀',
-        pages: 48,
-        mrp: 349,
-        price: 119,
-        description: 'Spark curiosity in growing minds with cosmic trivia, crossword missions, printable planet posters, and safe weekend home science projects.',
-        highlights: ['30+ Space & Science Brain Missions', 'DIY Safe Home Science Experiment Guides', 'Printable Bonus Planet Achievement Certificates'],
-        featured: false
+        title: 'Number Recognition',
+        subtitle: 'Countable visual groups paired with bold tracing numbers 1 to 10',
+        learningGoal: 'Early counting & number recognition',
+        ageGroup: '3-6',
+        category: 'Coloring',
+        learningNeed: 'Autism Support',
+        skillArea: 'Focus',
+        pages: 12,
+        mrp: 0,
+        price: 0,
+        description: 'Clear 1-to-1 counting visuals help children connect written numbers with concrete quantities.',
+        highlights: ['One number per section for calm focus', 'Trace, count, and color activities combined'],
+        featured: true
+      }
+    },
+    {
+      file: 'emotion_matching_sel.pdf',
+      cover: 'thumb_emotion_matching.svg',
+      svg: `
+        <text x="54" y="45" font-family="sans-serif" font-size="16" font-weight="700" fill="#26384A">Emotion Matching</text>
+        <text x="424" y="45" font-family="sans-serif" font-size="12" font-weight="700" fill="#397BB5" text-anchor="end">A4 Printable</text>
+        <rect x="62" y="84" width="166" height="90" rx="14" fill="#FFF2C9"/>
+        <text x="145" y="132" font-size="38" text-anchor="middle">😊</text>
+        <text x="145" y="160" font-family="sans-serif" font-size="14" font-weight="700" fill="#26384A" text-anchor="middle">Happy</text>
+
+        <rect x="252" y="84" width="166" height="90" rx="14" fill="#EAF4FF"/>
+        <text x="335" y="132" font-size="38" text-anchor="middle">😌</text>
+        <text x="335" y="160" font-family="sans-serif" font-size="14" font-weight="700" fill="#26384A" text-anchor="middle">Calm</text>
+
+        <rect x="62" y="192" width="166" height="90" rx="14" fill="#FFE9E4"/>
+        <text x="145" y="240" font-size="38" text-anchor="middle">😢</text>
+        <text x="145" y="268" font-family="sans-serif" font-size="14" font-weight="700" fill="#26384A" text-anchor="middle">Sad</text>
+
+        <rect x="252" y="192" width="166" height="90" rx="14" fill="#F2EAFE"/>
+        <text x="335" y="240" font-size="38" text-anchor="middle">😮</text>
+        <text x="335" y="268" font-family="sans-serif" font-size="14" font-weight="700" fill="#26384A" text-anchor="middle">Surprised</text>
+      `,
+      pdfOpts: {
+        heading: 'Emotion Matching & Social Cues',
+        subheading: 'Ages 4-8 Years | Social & Emotional Learning',
+        pagesText: [
+          ['Look at each friendly face: Happy, Calm, Sad, Surprised.', 'Draw a line to match the face with how the child feels today.'],
+          ['Parent Prompt: Ask your child what helps them feel calm when upset.']
+        ]
+      },
+      book: {
+        title: 'Emotion Matching',
+        subtitle: 'Clear expressive faces to explore everyday feelings safely',
+        learningGoal: 'Identifying feelings & communication',
+        ageGroup: '4-8',
+        category: 'Matching',
+        learningNeed: 'Social & Emotional Learning',
+        skillArea: 'Communication',
+        pages: 10,
+        mrp: 0,
+        price: 0,
+        description: 'Friendly emotion cards and matching sheets designed to support communication and talking about everyday feelings.',
+        highlights: ['Supports emotion naming & verbal cues', 'Great for home conversations & visual schedules'],
+        featured: true
+      }
+    },
+    {
+      file: 'visual_pattern_activities.pdf',
+      cover: 'thumb_visual_patterns.svg',
+      svg: `
+        <text x="54" y="45" font-family="sans-serif" font-size="16" font-weight="700" fill="#26384A">Visual Pattern Activities</text>
+        <text x="424" y="45" font-family="sans-serif" font-size="12" font-weight="700" fill="#25805B" text-anchor="end">A4 Printable</text>
+        <rect x="54" y="84" width="372" height="58" rx="12" fill="#F2EAFE"/>
+        <circle cx="96" cy="113" r="15" fill="#397BB5"/>
+        <polygon points="154,97 137,128 171,128" fill="#F59E0B"/>
+        <circle cx="212" cy="113" r="15" fill="#397BB5"/>
+        <polygon points="270,97 253,128 287,128" fill="#F59E0B"/>
+        <rect x="330" y="94" width="38" height="38" rx="8" fill="#FFFFFF" stroke="#26384A" stroke-width="2" stroke-dasharray="4 3"/>
+        <text x="349" y="120" font-family="sans-serif" font-size="18" font-weight="800" fill="#687789" text-anchor="middle">?</text>
+
+        <rect x="54" y="162" width="372" height="58" rx="12" fill="#E4F5EA"/>
+        <rect x="82" y="177" width="28" height="28" rx="5" fill="#25805B"/>
+        <rect x="140" y="177" width="28" height="28" rx="5" fill="#25805B"/>
+        <circle cx="212" cy="191" r="15" fill="#EC4899"/>
+        <rect x="256" y="177" width="28" height="28" rx="5" fill="#25805B"/>
+        <rect x="330" y="172" width="38" height="38" rx="8" fill="#FFFFFF" stroke="#26384A" stroke-width="2" stroke-dasharray="4 3"/>
+        <text x="349" y="198" font-family="sans-serif" font-size="18" font-weight="800" fill="#687789" text-anchor="middle">?</text>
+
+        <text x="240" y="266" font-family="sans-serif" font-size="14" font-weight="700" fill="#687789" text-anchor="middle">Complete the sequence pattern step by step</text>
+      `,
+      pdfOpts: {
+        heading: 'Visual Pattern Activities',
+        subheading: 'Ages 5-8 Years | Cognitive Sequencing',
+        pagesText: [
+          ['Pattern Row 1: Circle - Triangle - Circle - Triangle - What comes next?', 'Draw or circle the missing shape in the box.'],
+          ['Pattern Row 2: Big - Small - Big - Small sequence puzzles.']
+        ]
+      },
+      book: {
+        title: 'Visual Pattern Activities',
+        subtitle: 'Step-by-step ABAB and ABC visual sequence completion sheets',
+        learningGoal: 'Logical sequencing & problem solving',
+        ageGroup: '5-8',
+        category: 'Matching',
+        learningNeed: 'Communication & Language',
+        skillArea: 'Focus',
+        pages: 14,
+        mrp: 0,
+        price: 0,
+        description: 'Predictable visual pattern grids encourage children to spot sequences and build confidence step by step.',
+        highlights: ['Predictable low-stress visual puzzles', 'Progressive difficulty from ABAB to ABC'],
+        featured: true
       }
     }
   ];
@@ -221,8 +354,8 @@ function seedIfEmpty() {
   for (const item of starters) {
     const pdfFull = path.join(BOOKS_DIR, item.file);
     const coverFull = path.join(COVERS_DIR, item.cover);
-    createSampleKidsPdf(pdfFull, item.pdfOpts);
-    createCoverSvg(coverFull, item.coverOpts);
+    createPrintableWorksheetPdf(pdfFull, item.pdfOpts);
+    writeWorksheetThumbnailSvg(coverFull, item.svg);
     storeDb.addBook({
       ...item.book,
       pdfFile: item.file,

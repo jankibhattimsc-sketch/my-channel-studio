@@ -83,8 +83,39 @@ app.get('/api/store/public', (req, res) => {
     res.json({
       success: true,
       settings: storeDb.getPublicSettings(),
-      books: storeDb.getPublicBooks()
+      books: storeDb.getPublicBooks(),
+      feedback: storeDb.getFeedbackList()
     });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/store/book/:id/download', (req, res) => {
+  const book = storeDb.getBookById(req.params.id);
+  if (!book || book.published === false) return res.status(404).send('Worksheet not found');
+  if (Number(book.price) > 0) {
+    return res.status(403).send('This workbook requires purchase before downloading.');
+  }
+  const fullPath = path.join(BOOKS_DIR, path.basename(book.pdfFile || ''));
+  if (!book.pdfFile || !fs.existsSync(fullPath)) {
+    return res.status(404).send('Worksheet PDF file not found.');
+  }
+  storeDb.incrementBookDownload(book.id);
+  const cleanName = (book.title || 'worksheet').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 48) + '.pdf';
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${cleanName}"`);
+  res.sendFile(fullPath);
+});
+
+app.post('/api/store/feedback', (req, res) => {
+  try {
+    const { parentName = '', relation = 'Parent', message = '' } = req.body || {};
+    if (!String(parentName).trim() || !String(message).trim()) {
+      return res.status(400).json({ success: false, error: 'Please provide your name and feedback message.' });
+    }
+    const entry = storeDb.addFeedback({ parentName, relation, message });
+    res.json({ success: true, entry });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
