@@ -19,12 +19,22 @@ const COVERS_DIR = path.join(STORAGE_DIR, 'uploads', 'covers');
 fs.mkdirSync(BOOKS_DIR, { recursive: true });
 fs.mkdirSync(COVERS_DIR, { recursive: true });
 
-app.use(cors());
+app.use(cors({
+  origin: true,
+  allowedHeaders: ['Content-Type', 'x-admin-pin']
+}));
 app.use(express.json({ limit: '150mb' }));
 app.use(express.urlencoded({ extended: true, limit: '150mb' }));
 
 app.use('/uploads/covers', express.static(COVERS_DIR));
 app.use(express.static(path.join(BASE_DIR, 'public'), {
+  etag: false,
+  maxAge: 0,
+  setHeaders: (res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+  }
+}));
+app.use(express.static(path.join(BASE_DIR, 'admin-portal'), {
   etag: false,
   maxAge: 0,
   setHeaders: (res) => {
@@ -525,7 +535,7 @@ app.get('/sitemap.xml', (req, res) => {
 });
 
 app.get('/admin', (req, res) => {
-  res.sendFile(path.join(BASE_DIR, 'public', 'admin.html'));
+  res.sendFile(path.join(BASE_DIR, 'admin-portal', 'index.html'));
 });
 
 app.get(['/worksheets', '/categories', '/free', '/resources', '/about', '/contact', '/faq', '/worksheet/:id', '/book/:id'], (req, res) => {

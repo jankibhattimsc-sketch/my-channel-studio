@@ -1,4 +1,16 @@
 (function () {
+  const LIVE_STORE_ORIGIN = 'https://special-kids-worksheets.onrender.com';
+  const isDedicatedAdminHost = /special-kids-admin/i.test(window.location.hostname);
+  const API_BASE = isDedicatedAdminHost ? LIVE_STORE_ORIGIN : '';
+  const PUBLIC_BASE = isDedicatedAdminHost ? LIVE_STORE_ORIGIN : window.location.origin;
+
+  if (isDedicatedAdminHost) {
+    const backEl = document.getElementById('adm-back-store');
+    const viewEl = document.getElementById('adm-view-store');
+    if (backEl) backEl.href = LIVE_STORE_ORIGIN;
+    if (viewEl) viewEl.href = LIVE_STORE_ORIGIN;
+  }
+
   let adminPin = sessionStorage.getItem('kids_store_admin_pin') || '';
   let dashboardData = null;
 
@@ -20,6 +32,11 @@
     return dashboardData?.settings?.currency || '₹';
   }
 
+  function assetUrl(u) {
+    if (!u) return '';
+    return u.startsWith('/') ? API_BASE + u : u;
+  }
+
   function fileToDataUrl(file) {
     return new Promise((resolve, reject) => {
       const r = new FileReader();
@@ -29,7 +46,7 @@
     });
   }
 
-  async function apiAdmin(url, method = 'GET', body = null) {
+  async function apiAdmin(pathUrl, method = 'GET', body = null) {
     const opts = {
       method,
       headers: {
@@ -38,14 +55,14 @@
       }
     };
     if (body) opts.body = JSON.stringify(body);
-    const res = await fetch(url, opts);
+    const res = await fetch(API_BASE + pathUrl, opts);
     const data = await res.json();
     if (!res.ok || !data.success) throw new Error(data.error || 'Request failed');
     return data;
   }
 
   async function tryLogin(pin) {
-    const res = await fetch('/api/admin/login', {
+    const res = await fetch(API_BASE + '/api/admin/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pin })
@@ -59,7 +76,7 @@
     await loadDashboard();
   }
 
-  document.getElementById('btn-login').addEventListener('click', async () => {
+  async function handleLoginClick() {
     const pin = document.getElementById('admin-pin-input').value.trim();
     const errEl = document.getElementById('login-err');
     errEl.style.display = 'none';
@@ -69,6 +86,11 @@
       errEl.textContent = err.message;
       errEl.style.display = 'block';
     }
+  }
+
+  document.getElementById('btn-login').addEventListener('click', handleLoginClick);
+  document.getElementById('admin-pin-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleLoginClick();
   });
 
   btnLogout.addEventListener('click', () => {
@@ -125,7 +147,7 @@
     }
     el.innerHTML = books.map(b => `
       <div class="book-row">
-        <img src="${esc(b.coverUrl)}" alt="" style="width:54px; height:70px; object-fit:cover; border-radius:8px; border:1px solid #CBD5E1;" />
+        <img src="${esc(assetUrl(b.coverUrl))}" alt="" style="width:54px; height:70px; object-fit:cover; border-radius:8px; border:1px solid #CBD5E1;" />
         <div style="flex:1; min-width:200px;">
           <div style="font-weight:900; font-size:0.98rem;">${esc(b.title)} ${b.published === false ? '<span style="color:#DC2626;">(Hidden)</span>' : ''}</div>
           <div style="font-size:0.82rem; color:#475569;">${esc(b.category)} • Ages ${esc(b.ageGroup)} • <strong>${cur()}${b.price}</strong> (MRP ${cur()}${b.mrp}) • Sales: ${b.salesCount || 0}</div>
@@ -141,7 +163,7 @@
 
     el.querySelectorAll('[data-copy-book]').forEach(btn => {
       btn.addEventListener('click', () => {
-        const url = `${window.location.origin}/book/${btn.getAttribute('data-copy-book')}`;
+        const url = `${PUBLIC_BASE}/book/${btn.getAttribute('data-copy-book')}`;
         navigator.clipboard?.writeText(url);
         btn.textContent = '✓ Link Copied!';
         setTimeout(() => { btn.textContent = '🔗 Share Link'; }, 1800);
@@ -248,7 +270,7 @@
       return;
     }
     el.innerHTML = orders.map(o => {
-      const dlUrl = o.downloadToken ? `${window.location.origin}/api/store/download/${o.downloadToken}` : '';
+      const dlUrl = o.downloadToken ? `${PUBLIC_BASE}/api/store/download/${o.downloadToken}` : '';
       const cleanPhone = String(o.customerPhone || '').replace(/\D/g, '');
       const waTarget = cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone;
       const waMsg = encodeURIComponent(`Hi ${o.customerName}! Your Kids PDF Book "${o.bookTitle}" (Order ${o.orderCode}) is ready.\n\nDownload it here:\n${dlUrl}`);
@@ -348,7 +370,7 @@
       alert('Please enter your UPI ID above first.');
       return;
     }
-    const res = await fetch('/api/store/upi-qr-preview', {
+    const res = await fetch(API_BASE + '/api/store/upi-qr-preview', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ upiId, upiName, amount: 49, note: 'Test Kids PDF Book' })
@@ -367,6 +389,7 @@
   if (adminPin) {
     tryLogin(adminPin).catch(() => {
       sessionStorage.removeItem('kids_store_admin_pin');
+      adminPin = '';
     });
   }
 })();
