@@ -166,7 +166,7 @@
           </div>
         </div>
         <div class="home-hero-visual">
-          <img src="/assets/hero-child-learning.jpg?v=7.0" alt="Happy smiling child with colorful finger-painted hands and soft pastel rainbow" />
+          <img src="/assets/hero-cute-kid.png?v=8.0" alt="Happy smiling child learning with ABC blocks, colorful crayons, rainbow stacker, teddy bear, smiling cloud and star" />
         </div>
       </section>
 
