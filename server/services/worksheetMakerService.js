@@ -72,56 +72,161 @@ function inferWorksheetStyle(topic = '', explicitType = 'auto') {
   return 'auto';
 }
 
+function wrapTitleLines(text, maxChars = 22) {
+  const words = String(text || '').trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return ['Kids Tracing Workbook'];
+  const lines = [];
+  let current = '';
+  for (const w of words) {
+    if (!current) {
+      current = w;
+    } else if ((current + ' ' + w).length <= maxChars) {
+      current += ' ' + w;
+    } else {
+      lines.push(current);
+      current = w;
+      if (lines.length >= 2) break;
+    }
+  }
+  if (current && lines.length < 2) lines.push(current);
+  return lines;
+}
+
 function buildCoverSvg({ title, ageGroup, learningNeed, pageCount, style }) {
   const palette = {
-    alphabet: { bg: '#EAF4FF', accent: '#397BB5', badge: '#FEF08A' },
-    numbers: { bg: '#FFF7ED', accent: '#EA580C', badge: '#BBF7D0' },
-    coloring: { bg: '#FDF2F8', accent: '#DB2777', badge: '#FEF08A' },
-    math_addition: { bg: '#EEF2FF', accent: '#4F46E5', badge: '#FDE68A' },
-    shapes_matching: { bg: '#ECFDF5', accent: '#059669', badge: '#FDE68A' },
-    emotions: { bg: '#F5F3FF', accent: '#7C3AED', badge: '#FEF08A' },
-    line_tracing: { bg: '#EAF4FF', accent: '#0284C7', badge: '#FED7AA' },
-    auto: { bg: '#EAF4FF', accent: '#397BB5', badge: '#FDE047' }
-  }[style] || { bg: '#EAF4FF', accent: '#397BB5', badge: '#FDE047' };
+    tracing_1_to_10: { bgTop: '#BAE6FD', bgMid: '#FEF9C3', bgBot: '#FCE7F3', accent: '#E11D48', border2: '#0284C7', badge: '#FDE047' },
+    alphabet: { bgTop: '#DBEAFE', bgMid: '#F0F9FF', bgBot: '#E0E7FF', accent: '#2563EB', border2: '#4F46E5', badge: '#FEF08A' },
+    numbers: { bgTop: '#FFEDD5', bgMid: '#FEF9C3', bgBot: '#FCE7F3', accent: '#EA580C', border2: '#DB2777', badge: '#BBF7D0' },
+    coloring: { bgTop: '#FCE7F3', bgMid: '#FFF1F2', bgBot: '#FEF3C7', accent: '#DB2777', border2: '#F59E0B', badge: '#FEF08A' },
+    math_addition: { bgTop: '#E0E7FF', bgMid: '#F5F3FF', bgBot: '#DBEAFE', accent: '#4F46E5', border2: '#0284C7', badge: '#FDE68A' },
+    shapes_matching: { bgTop: '#D1FAE5', bgMid: '#ECFDF5', bgBot: '#E0F2FE', accent: '#059669', border2: '#0284C7', badge: '#FDE68A' },
+    emotions: { bgTop: '#EDE9FE', bgMid: '#FDF4FF', bgBot: '#FFE4E6', accent: '#7C3AED', border2: '#EC4899', badge: '#FEF08A' },
+    line_tracing: { bgTop: '#E0F2FE', bgMid: '#ECFDF5', bgBot: '#FEF9C3', accent: '#0284C7', border2: '#10B981', badge: '#FED7AA' },
+    auto: { bgTop: '#BAE6FD', bgMid: '#FEF9C3', bgBot: '#FCE7F3', accent: '#E11D48', border2: '#0284C7', badge: '#FDE047' }
+  }[style] || { bgTop: '#BAE6FD', bgMid: '#FEF9C3', bgBot: '#FCE7F3', accent: '#2563EB', border2: '#059669', badge: '#FDE047' };
 
-  const safeTitle = escHtml(title || 'Special Kids Activity Workbook');
+  const isNumberTheme = style === 'tracing_1_to_10' || style === 'numbers';
+  const displayTitle = isNumberTheme && /single-line/i.test(String(title || ''))
+    ? 'My Fun 1 to 10 Tracing Book'
+    : (title || 'Special Kids Activity Workbook');
+  const titleLines = wrapTitleLines(displayTitle, 20);
+  const titleColors = ['#1E3A8A', palette.accent];
+
+  const confettiColors = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#EC4899', '#8B5CF6'];
+  const confetti = Array.from({ length: 24 }, (_, i) => {
+    const angle = (i / 24) * Math.PI * 2;
+    const x = Math.round(300 + Math.cos(angle) * 268);
+    const y = Math.round(390 + Math.sin(angle) * 352);
+    const col = confettiColors[i % confettiColors.length];
+    return i % 2 === 0
+      ? `<circle cx="${x}" cy="${y}" r="6" fill="${col}" opacity="0.88"/>`
+      : `<rect x="${x - 5}" y="${y - 5}" width="10" height="10" rx="3" transform="rotate(${i * 25} ${x} ${y})" fill="${col}" opacity="0.82"/>`;
+  }).join('');
+
+  const blockColors = ['#EF4444', '#F97316', '#EAB308', '#22C55E', '#06B6D4', '#3B82F6', '#8B5CF6', '#EC4899', '#14B8A6', '#E11D48'];
+  const centerArt = isNumberTheme
+    ? `
+      <!-- Playful Sunny Hill & Rainbow Sky -->
+      <ellipse cx="300" cy="482" rx="205" ry="118" fill="#FFFBEB" stroke="#FDE68A" stroke-width="3"/>
+      <path d="M128 452 A172 145 0 0 1 472 452" fill="none" stroke="#FB7185" stroke-width="14" stroke-linecap="round"/>
+      <path d="M144 452 A156 130 0 0 1 456 452" fill="none" stroke="#FBBF24" stroke-width="14" stroke-linecap="round"/>
+      <path d="M160 452 A140 115 0 0 1 440 452" fill="none" stroke="#34D399" stroke-width="14" stroke-linecap="round"/>
+      <path d="M176 452 A124 100 0 0 1 424 452" fill="none" stroke="#38BDF8" stroke-width="14" stroke-linecap="round"/>
+      <path d="M192 452 A108 85 0 0 1 408 452" fill="none" stroke="#A78BFA" stroke-width="14" stroke-linecap="round"/>
+
+      <!-- Cute Smiling Sunshine (Left) -->
+      <circle cx="116" cy="318" r="32" fill="#FDE047" stroke="#D97706" stroke-width="3"/>
+      <circle cx="107" cy="314" r="3" fill="#1E293B"/><circle cx="125" cy="314" r="3" fill="#1E293B"/>
+      <path d="M107 324 Q116 332 125 324" fill="none" stroke="#1E293B" stroke-width="2.5" stroke-linecap="round"/>
+
+      <!-- Cute Smiling Cloud (Right) -->
+      <circle cx="468" cy="324" r="22" fill="#FFFFFF" stroke="#38BDF8" stroke-width="3"/>
+      <circle cx="492" cy="324" r="20" fill="#FFFFFF" stroke="#38BDF8" stroke-width="3"/>
+      <circle cx="480" cy="309" r="21" fill="#FFFFFF" stroke="#38BDF8" stroke-width="3"/>
+      <rect x="462" y="318" width="38" height="24" rx="10" fill="#FFFFFF"/>
+      <circle cx="474" cy="325" r="2.6" fill="#1E293B"/><circle cx="488" cy="325" r="2.6" fill="#1E293B"/>
+      <path d="M476 332 Q481 337 486 332" fill="none" stroke="#1E293B" stroke-width="2.2" stroke-linecap="round"/>
+
+      <!-- 1 to 10 Colorful Glossy Toy Blocks (Row 1: 1-5, Row 2: 6-10) -->
+      ${[1, 2, 3, 4, 5].map((n, i) => {
+        const bx = 94 + i * 86;
+        const by = 412;
+        const col = blockColors[i];
+        return `
+          <rect x="${bx}" y="${by}" width="72" height="72" rx="18" fill="${col}" stroke="#FFFFFF" stroke-width="4"/>
+          <rect x="${bx + 6}" y="${by + 6}" width="60" height="14" rx="7" fill="#FFFFFF" opacity="0.28"/>
+          <text x="${bx + 36}" y="${by + 51}" font-family="Nunito Sans, Arial Rounded MT Bold, sans-serif" font-size="40" font-weight="900" fill="#FFFFFF" text-anchor="middle">${n}</text>
+        `;
+      }).join('')}
+      ${[6, 7, 8, 9, 10].map((n, i) => {
+        const bx = 94 + i * 86;
+        const by = 496;
+        const col = blockColors[i + 5];
+        return `
+          <rect x="${bx}" y="${by}" width="72" height="72" rx="18" fill="${col}" stroke="#FFFFFF" stroke-width="4"/>
+          <rect x="${bx + 6}" y="${by + 6}" width="60" height="14" rx="7" fill="#FFFFFF" opacity="0.28"/>
+          <text x="${bx + 36}" y="${by + 51}" font-family="Nunito Sans, Arial Rounded MT Bold, sans-serif" font-size="${n === 10 ? 34 : 40}" font-weight="900" fill="#FFFFFF" text-anchor="middle">${n}</text>
+        `;
+      }).join('')}
+
+      <!-- Cute Happy Pencil Helper Badge -->
+      <rect x="190" y="580" width="220" height="32" rx="16" fill="#DCFCE7" stroke="#16A34A" stroke-width="2.2"/>
+      <text x="300" y="601" font-family="Nunito Sans, sans-serif" font-size="14.5" font-weight="900" fill="#166534" text-anchor="middle">✏️ Easy Single-Dot Tracing!</text>
+    `
+    : `
+      <circle cx="300" cy="435" r="150" fill="#EFF6FF" stroke="${palette.accent}" stroke-width="3.5" stroke-dasharray="9 8"/>
+      <path d="M174 456 A126 126 0 0 1 426 456" fill="none" stroke="#FB7185" stroke-width="15" stroke-linecap="round"/>
+      <path d="M193 456 A107 107 0 0 1 407 456" fill="none" stroke="#FBBF24" stroke-width="15" stroke-linecap="round"/>
+      <path d="M212 456 A88 88 0 0 1 388 456" fill="none" stroke="#34D399" stroke-width="15" stroke-linecap="round"/>
+      <path d="M231 456 A69 69 0 0 1 369 456" fill="none" stroke="#60A5FA" stroke-width="15" stroke-linecap="round"/>
+
+      <rect x="174" y="458" width="72" height="72" rx="16" fill="#EF4444" stroke="#FFFFFF" stroke-width="4"/>
+      <text x="210" y="508" font-family="Nunito Sans, sans-serif" font-size="40" font-weight="900" fill="#FFFFFF" text-anchor="middle">A</text>
+      <rect x="264" y="444" width="72" height="72" rx="16" fill="#FACC15" stroke="#FFFFFF" stroke-width="4"/>
+      <text x="300" y="494" font-family="Nunito Sans, sans-serif" font-size="40" font-weight="900" fill="#1E293B" text-anchor="middle">1</text>
+      <rect x="354" y="458" width="72" height="72" rx="16" fill="#3B82F6" stroke="#FFFFFF" stroke-width="4"/>
+      <text x="390" y="508" font-family="Nunito Sans, sans-serif" font-size="40" font-weight="900" fill="#FFFFFF" text-anchor="middle">B</text>
+      <polygon points="145,326 153,344 173,346 158,359 162,378 145,368 128,378 132,359 117,346 137,344" fill="#FACC15" stroke="#CA8A04" stroke-width="2.5"/>
+      <polygon points="456,322 463,337 479,339 467,350 470,366 456,358 442,366 445,350 433,339 449,337" fill="#FACC15" stroke="#CA8A04" stroke-width="2.5"/>
+    `;
+
   return `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="780" viewBox="0 0 600 780">
-  <rect width="600" height="780" fill="${palette.bg}"/>
-  <rect x="24" y="24" width="552" height="732" rx="34" fill="#FFFFFF" stroke="${palette.accent}" stroke-width="6"/>
-  <rect x="44" y="44" width="512" height="692" rx="26" fill="none" stroke="${palette.accent}" stroke-width="2.5" stroke-dasharray="10 8" opacity="0.5"/>
-  <rect x="130" y="64" width="340" height="44" rx="22" fill="${palette.badge}" stroke="#CA8A04" stroke-width="2.5"/>
-  <text x="300" y="93" font-family="Nunito Sans, Comic Sans MS, sans-serif" font-size="19" font-weight="900" fill="#26384A" text-anchor="middle">PRINTABLE WORKBOOK • AGES ${escHtml(ageGroup)}</text>
+  <defs>
+    <linearGradient id="coverSkyGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="${palette.bgTop}"/>
+      <stop offset="52%" stop-color="${palette.bgMid}"/>
+      <stop offset="100%" stop-color="${palette.bgBot}"/>
+    </linearGradient>
+    <linearGradient id="ribbonGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#F97316"/>
+      <stop offset="50%" stop-color="#EC4899"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
 
-  <text x="300" y="168" font-family="Nunito Sans, sans-serif" font-size="34" font-weight="900" fill="#1E293B" text-anchor="middle">${safeTitle.slice(0, 26)}</text>
-  ${safeTitle.length > 26 ? `<text x="300" y="212" font-family="Nunito Sans, sans-serif" font-size="32" font-weight="900" fill="${palette.accent}" text-anchor="middle">${safeTitle.slice(26, 54)}</text>` : ''}
+  <rect width="600" height="780" fill="url(#coverSkyGrad)"/>
+  ${confetti}
+  <rect x="26" y="26" width="548" height="728" rx="34" fill="#FFFFFF" stroke="${palette.border2}" stroke-width="7"/>
+  <rect x="42" y="42" width="516" height="696" rx="26" fill="none" stroke="${palette.accent}" stroke-width="3.5" stroke-dasharray="10 7"/>
 
-  <rect x="150" y="232" width="300" height="34" rx="17" fill="#E0F2FE"/>
-  <text x="300" y="254" font-family="Nunito Sans, sans-serif" font-size="16" font-weight="800" fill="#0369A1" text-anchor="middle">${escHtml(learningNeed)} • ${pageCount} Printable Sheets</text>
+  <!-- Top Colorful Ribbon -->
+  <rect x="108" y="60" width="384" height="44" rx="22" fill="url(#ribbonGrad)" stroke="#FFFFFF" stroke-width="3"/>
+  <text x="300" y="88" font-family="Nunito Sans, Comic Sans MS, sans-serif" font-size="18" font-weight="900" fill="#FFFFFF" text-anchor="middle">⭐ KIDS FUN WORKBOOK • AGES ${escHtml(ageGroup)} ⭐</text>
 
-  <!-- Central Cheerful Illustration -->
-  <circle cx="300" cy="430" r="145" fill="${palette.bg}" stroke="${palette.accent}" stroke-width="3" stroke-dasharray="8 8"/>
-  <!-- Cute Rainbow Arch -->
-  <path d="M180 455 A120 120 0 0 1 420 455" fill="none" stroke="#FB7185" stroke-width="14" stroke-linecap="round"/>
-  <path d="M198 455 A102 102 0 0 1 402 455" fill="none" stroke="#FBBF24" stroke-width="14" stroke-linecap="round"/>
-  <path d="M216 455 A84 84 0 0 1 384 455" fill="none" stroke="#34D399" stroke-width="14" stroke-linecap="round"/>
-  <path d="M234 455 A66 66 0 0 1 366 455" fill="none" stroke="#60A5FA" stroke-width="14" stroke-linecap="round"/>
+  <!-- Bold Multi-Color Title -->
+  ${titleLines.map((line, i) => `
+    <text x="300" y="${158 + i * 48}" font-family="Nunito Sans, Arial Rounded MT Bold, sans-serif" font-size="38" font-weight="900" fill="${titleColors[i % 2]}" text-anchor="middle">${escHtml(line)}</text>
+  `).join('')}
 
-  <!-- Cute ABC + 123 Blocks -->
-  <rect x="176" y="458" width="70" height="70" rx="14" fill="#EF4444" stroke="#991B1B" stroke-width="3.5"/>
-  <text x="211" y="506" font-family="Nunito Sans, sans-serif" font-size="38" font-weight="900" fill="#FFFFFF" text-anchor="middle">A</text>
-  <rect x="265" y="446" width="70" height="70" rx="14" fill="#FACC15" stroke="#B45309" stroke-width="3.5"/>
-  <text x="300" y="494" font-family="Nunito Sans, sans-serif" font-size="38" font-weight="900" fill="#1E293B" text-anchor="middle">1</text>
-  <rect x="354" y="458" width="70" height="70" rx="14" fill="#3B82F6" stroke="#1E40AF" stroke-width="3.5"/>
-  <text x="389" y="506" font-family="Nunito Sans, sans-serif" font-size="38" font-weight="900" fill="#FFFFFF" text-anchor="middle">B</text>
+  <rect x="115" y="${titleLines.length > 1 ? 226 : 186}" width="370" height="36" rx="18" fill="#E0F2FE" stroke="#7DD3FC" stroke-width="2"/>
+  <text x="300" y="${titleLines.length > 1 ? 249 : 209}" font-family="Nunito Sans, sans-serif" font-size="15.5" font-weight="900" fill="#0369A1" text-anchor="middle">${escHtml(learningNeed)} • ${pageCount} Printable A4 Sheets</text>
 
-  <!-- Floating Stars & Pencil -->
-  <polygon points="150,330 158,348 178,350 163,363 167,382 150,372 133,382 137,363 122,350 142,348" fill="#FACC15" stroke="#CA8A04" stroke-width="2.5"/>
-  <polygon points="452,326 459,341 475,343 463,354 466,370 452,362 438,370 441,354 429,343 445,341" fill="#FACC15" stroke="#CA8A04" stroke-width="2.5"/>
+  ${centerArt}
 
-  <!-- Name Box -->
-  <rect x="85" y="618" width="430" height="78" rx="20" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="3"/>
-  <text x="115" y="654" font-family="Nunito Sans, sans-serif" font-size="19" font-weight="800" fill="#475569">This Workbook Belongs To:</text>
-  <line x1="115" y1="680" x2="485" y2="680" stroke="#94A3B8" stroke-width="2.5" stroke-dasharray="6 5"/>
+  <!-- Name Plaque -->
+  <rect x="82" y="628" width="436" height="82" rx="22" fill="#FFFBEB" stroke="#F59E0B" stroke-width="3"/>
+  <text x="114" y="662" font-family="Nunito Sans, sans-serif" font-size="18" font-weight="900" fill="#B45309">🎒 This Fun Book Belongs To:</text>
+  <line x1="114" y1="692" x2="486" y2="692" stroke="#D97706" stroke-width="2.5" stroke-dasharray="7 5"/>
 </svg>`;
 }
 
@@ -575,7 +680,7 @@ async function generateWorksheetPack({
   const style = inferWorksheetStyle(cleanTopic, worksheetType);
   const putCoverInPdf = typeof includeCoverInPdf === 'boolean'
     ? includeCoverInPdf
-    : style !== 'tracing_1_to_10';
+    : totalPages > 1;
 
   let aiSeo = null;
   if (openaiService.isConfigured() || openaiService.getGeminiApiKey()) {
@@ -610,8 +715,9 @@ async function generateWorksheetPack({
   });
 
   const pagesHtml = [];
-  if (putCoverInPdf && totalPages > 1) {
-    // Page 1: Illustrated Cover Sheet inside PDF
+  const hasCoverPage = Boolean(putCoverInPdf && totalPages > 1);
+  if (hasCoverPage) {
+    // Cover Page inside PDF
     pagesHtml.push(`
       <div class="ws-page" style="padding: 0; border: none; background: #FFFFFF;">
         <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; padding:8mm; box-sizing:border-box;">
@@ -621,29 +727,30 @@ async function generateWorksheetPack({
     `);
   }
 
-  const startPage = pagesHtml.length ? 2 : 1;
+  const sheetTotal = style === 'tracing_1_to_10' ? totalPages : (hasCoverPage ? totalPages - 1 : totalPages);
   const mixSequence = ['line_tracing', 'alphabet', 'numbers', 'shapes_matching', 'math_addition', 'coloring', 'emotions'];
-  for (let p = startPage; p <= totalPages; p++) {
-    const idx = p - startPage;
+  for (let idx = 0; idx < sheetTotal; idx++) {
+    const p = hasCoverPage ? idx + 2 : idx + 1;
+    const pdfTotal = hasCoverPage ? sheetTotal + 1 : sheetTotal;
     const activeKind = style === 'auto' ? mixSequence[idx % mixSequence.length] : style;
     let frame = '';
     if (activeKind === 'tracing_1_to_10') {
       const traceNum = (idx % 10) + 1;
-      frame = pageFrame(p, totalPages, `Number ${traceNum} Tracing`, `Trace number ${traceNum} carefully over the single dots along every line!`, '', buildFullPage1to10TracingContent(idx));
+      frame = pageFrame(p, pdfTotal, `Number ${traceNum} Tracing`, `Trace number ${traceNum} carefully over the single dots along every line!`, '', buildFullPage1to10TracingContent(idx));
     } else if (activeKind === 'line_tracing') {
-      frame = pageFrame(p, totalPages, 'Line Tracing', 'Follow the dotted paths slowly with your crayon or pencil!', '#397BB5', buildLineTracingContent(idx));
+      frame = pageFrame(p, pdfTotal, 'Line Tracing', 'Follow the dotted paths slowly with your crayon or pencil!', '#397BB5', buildLineTracingContent(idx));
     } else if (activeKind === 'alphabet') {
-      frame = pageFrame(p, totalPages, 'Alphabet Tracing', 'Say the letter sound aloud, color the picture, and trace each line!', '#2563EB', buildAlphabetContent(idx));
+      frame = pageFrame(p, pdfTotal, 'Alphabet Tracing', 'Say the letter sound aloud, color the picture, and trace each line!', '#2563EB', buildAlphabetContent(idx));
     } else if (activeKind === 'numbers') {
-      frame = pageFrame(p, totalPages, 'Number Practice', 'Count each picture aloud, check the Ten-Frame, and trace carefully!', '#EA580C', buildNumberContent(idx + 1));
+      frame = pageFrame(p, pdfTotal, 'Number Practice', 'Count each picture aloud, check the Ten-Frame, and trace carefully!', '#EA580C', buildNumberContent(idx + 1));
     } else if (activeKind === 'shapes_matching') {
-      frame = pageFrame(p, totalPages, 'Shape Matching', 'Look at each colorful shape on the left and draw a line to match!', '#059669', buildShapesMatchingContent(idx));
+      frame = pageFrame(p, pdfTotal, 'Shape Matching', 'Look at each colorful shape on the left and draw a line to match!', '#059669', buildShapesMatchingContent(idx));
     } else if (activeKind === 'math_addition') {
-      frame = pageFrame(p, totalPages, 'Picture Addition', 'Count both picture groups and write the total inside the dashed box!', '#4F46E5', buildMathAdditionContent(idx));
+      frame = pageFrame(p, pdfTotal, 'Picture Addition', 'Count both picture groups and write the total inside the dashed box!', '#4F46E5', buildMathAdditionContent(idx));
     } else if (activeKind === 'coloring') {
-      frame = pageFrame(p, totalPages, 'Creative Coloring', 'Use your favorite bright crayons to color inside the bold outlines!', '#DB2777', buildColoringContent(idx));
+      frame = pageFrame(p, pdfTotal, 'Creative Coloring', 'Use your favorite bright crayons to color inside the bold outlines!', '#DB2777', buildColoringContent(idx));
     } else {
-      frame = pageFrame(p, totalPages, 'Feelings & Words', 'Look at each friendly face and trace the emotion word underneath!', '#7C3AED', buildEmotionsContent());
+      frame = pageFrame(p, pdfTotal, 'Feelings & Words', 'Look at each friendly face and trace the emotion word underneath!', '#7C3AED', buildEmotionsContent());
     }
     pagesHtml.push(frame);
   }
@@ -722,7 +829,8 @@ ${pagesHtml.join('\n')}
     category: categoryMap[style] || 'Tracing',
     learningNeed,
     skillArea: style === 'math_addition' || style === 'shapes_matching' ? 'Cognitive Skills' : 'Fine Motor',
-    pages: totalPages,
+    pages: pagesHtml.length,
+    hasCoverInPdf: hasCoverPage,
     style,
     coverSvg,
     coverDataUrl: 'data:image/svg+xml;base64,' + Buffer.from(coverSvg, 'utf8').toString('base64'),

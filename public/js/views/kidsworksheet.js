@@ -192,11 +192,15 @@ export async function renderKidsWorksheet(container) {
           </div>
         </div>
 
-        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px;">
           <button id="kw-generate-btn" type="button"
             style="padding: 13px 24px; border-radius: 12px; border: none; background: linear-gradient(135deg, #10b981, #0ea5e9); color: #ffffff; font-size: 15px; font-weight: 900; cursor: pointer; box-shadow: 0 8px 20px rgba(16,185,129,0.28);">
             ✨ Best Kids Worksheet બનાવો
           </button>
+          <label style="display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: #e2e8f0; font-weight: 700; cursor: pointer;">
+            <input id="kw-include-cover" type="checkbox" checked style="width: 16px; height: 16px; accent-color: #10b981;" />
+            <span>📕 PDF ના પહેલા પેજ પર Colorful Cover Book ઉમેરો</span>
+          </label>
           <span id="kw-status" style="font-size: 13.5px; color: #94a3b8; font-weight: 600;"></span>
         </div>
       </div>
@@ -302,6 +306,7 @@ export async function renderKidsWorksheet(container) {
   const ageEl = container.querySelector('#kw-age');
   const pagesEl = container.querySelector('#kw-pages');
   const needEl = container.querySelector('#kw-need');
+  const includeCoverEl = container.querySelector('#kw-include-cover');
   const generateBtn = container.querySelector('#kw-generate-btn');
   const statusEl = container.querySelector('#kw-status');
   const resultArea = container.querySelector('#kw-result-area');
@@ -325,14 +330,16 @@ export async function renderKidsWorksheet(container) {
   function renderPreview() {
     if (!currentPack) return;
     const totalPages = (currentPack.pagesHtml || []).length;
+    const startSheetIdx = currentPack.hasCoverInPdf ? 1 : 0;
 
     const thumbButtons = [
-      `<button type="button" data-mode="cover" style="padding: 5px 10px; border-radius: 8px; border: 1px solid ${currentViewMode === 'cover' ? '#34d399' : '#334155'}; background: ${currentViewMode === 'cover' ? 'rgba(16,185,129,0.25)' : '#1e293b'}; color: #f8fafc; font-size: 12px; font-weight: 700; cursor: pointer;">🖼️ Cover</button>`
+      `<button type="button" data-mode="cover" style="padding: 5px 10px; border-radius: 8px; border: 1px solid ${currentViewMode === 'cover' ? '#f472b6' : '#334155'}; background: ${currentViewMode === 'cover' ? 'rgba(236,72,153,0.25)' : '#1e293b'}; color: #f8fafc; font-size: 12px; font-weight: 700; cursor: pointer;">📕 Cover</button>`
     ];
-    for (let i = 0; i < totalPages; i++) {
+    for (let i = startSheetIdx; i < totalPages; i++) {
+      const sheetNum = i - startSheetIdx + 1;
       const active = currentViewMode === 'page' && currentPageIndex === i;
       thumbButtons.push(
-        `<button type="button" data-mode="page" data-page="${i}" style="padding: 5px 10px; border-radius: 8px; border: 1px solid ${active ? '#38bdf8' : '#334155'}; background: ${active ? 'rgba(56,189,248,0.25)' : '#1e293b'}; color: #f8fafc; font-size: 12px; font-weight: 700; cursor: pointer;">P${i + 1}</button>`
+        `<button type="button" data-mode="page" data-page="${i}" style="padding: 5px 10px; border-radius: 8px; border: 1px solid ${active ? '#38bdf8' : '#334155'}; background: ${active ? 'rgba(56,189,248,0.25)' : '#1e293b'}; color: #f8fafc; font-size: 12px; font-weight: 700; cursor: pointer;">P${sheetNum}</button>`
       );
     }
     thumbsEl.innerHTML = thumbButtons.join('');
@@ -343,7 +350,7 @@ export async function renderKidsWorksheet(container) {
           currentViewMode = 'cover';
         } else {
           currentViewMode = 'page';
-          currentPageIndex = Number(btn.dataset.page || 0);
+          currentPageIndex = Number(btn.dataset.page || startSheetIdx);
         }
         renderPreview();
       });
@@ -353,13 +360,15 @@ export async function renderKidsWorksheet(container) {
       previewFrame.style.display = 'none';
       coverPreview.style.display = 'block';
       coverPreview.src = currentPack.coverDataUrl;
-      pageCaption.textContent = `Book Cover • ${currentPack.title}`;
+      pageCaption.textContent = `📕 Front Cover • ${currentPack.title}`;
     } else {
       coverPreview.style.display = 'none';
       previewFrame.style.display = 'block';
       const pageHtml = (currentPack.pagesHtml || [])[currentPageIndex] || '';
       previewFrame.srcdoc = buildPagePreviewSrcdoc(pageHtml);
-      pageCaption.textContent = `Page ${currentPageIndex + 1} of ${totalPages} • ${currentPack.ageGroup} Yrs • ${currentPack.learningNeed}`;
+      const sheetNum = currentPageIndex - startSheetIdx + 1;
+      const sheetCount = totalPages - startSheetIdx;
+      pageCaption.textContent = `Page ${sheetNum} of ${sheetCount} • ${currentPack.ageGroup} Yrs • ${currentPack.learningNeed}`;
     }
   }
 
@@ -393,7 +402,8 @@ export async function renderKidsWorksheet(container) {
           worksheetType: typeEl.value,
           ageGroup: ageEl.value,
           pageCount: Number(pagesEl.value || 8),
-          learningNeed: needEl.value
+          learningNeed: needEl.value,
+          includeCoverInPdf: includeCoverEl ? includeCoverEl.checked : true
         })
       });
       const data = await res.json();
@@ -402,8 +412,8 @@ export async function renderKidsWorksheet(container) {
       }
 
       currentPack = data.pack;
-      currentViewMode = 'page';
-      currentPageIndex = 0;
+      currentViewMode = currentPack.hasCoverInPdf ? 'cover' : 'page';
+      currentPageIndex = currentPack.hasCoverInPdf ? 1 : 0;
 
       resultArea.style.display = 'grid';
       renderPreview();
@@ -426,9 +436,16 @@ export async function renderKidsWorksheet(container) {
       typeEl.value = preset.type;
       ageEl.value = preset.age;
       needEl.value = preset.need;
-      if (preset.pages) pagesEl.value = String(preset.pages);
+      if (preset.pages) {
+        pagesEl.value = String(preset.pages);
+        if (includeCoverEl) includeCoverEl.checked = preset.pages > 1;
+      }
       generatePack();
     });
+  });
+
+  pagesEl.addEventListener('change', () => {
+    if (includeCoverEl) includeCoverEl.checked = Number(pagesEl.value || 8) > 1;
   });
 
   generateBtn.addEventListener('click', generatePack);
@@ -438,8 +455,9 @@ export async function renderKidsWorksheet(container) {
 
   prevBtn.addEventListener('click', () => {
     if (!currentPack) return;
+    const startSheetIdx = currentPack.hasCoverInPdf ? 1 : 0;
     if (currentViewMode === 'cover') return;
-    if (currentPageIndex === 0) {
+    if (currentPageIndex <= startSheetIdx) {
       currentViewMode = 'cover';
     } else {
       currentPageIndex--;
@@ -450,9 +468,10 @@ export async function renderKidsWorksheet(container) {
   nextBtn.addEventListener('click', () => {
     if (!currentPack) return;
     const total = (currentPack.pagesHtml || []).length;
+    const startSheetIdx = currentPack.hasCoverInPdf ? 1 : 0;
     if (currentViewMode === 'cover') {
       currentViewMode = 'page';
-      currentPageIndex = 0;
+      currentPageIndex = startSheetIdx;
     } else if (currentPageIndex < total - 1) {
       currentPageIndex++;
     }
