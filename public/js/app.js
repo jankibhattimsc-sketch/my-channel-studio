@@ -28,7 +28,7 @@ import { renderSavedAudios } from './views/savedaudios.js?v=101.4';
 import { renderSmartAsk } from './views/smartask.js?v=102.1';
 import { renderFacebookTool } from './views/facebook.js?v=101.5';
 import { renderTalkingAvatar } from './views/talkingavatar.js?v=103.2';
-import { renderKidsWorksheet } from './views/kidsworksheet.js?v=103.5';
+import { renderKidsWorksheet } from './views/kidsworksheet.js?v=103.6';
 import { initMobileLinkAndOfflineSystem } from './utils/mobileLinkModal.js?v=99.0';
 
 class App {

@@ -36,18 +36,22 @@ function buildPagePreviewSrcdoc(pageHtml) {
     overflow: hidden;
   }
   .ws-page {
+    position: relative;
     width: 794px;
     height: 1122px;
-    padding: 34px;
+    padding: 42px;
     background: #FFFFFF;
     overflow: hidden;
   }
   .ws-inner-border {
+    position: relative;
+    z-index: 3;
     width: 100%;
     height: 100%;
-    border: 3px solid #397BB5;
-    border-radius: 18px;
-    padding: 16px 20px;
+    background: #FFFFFF;
+    border: 3.5px solid #397BB5;
+    border-radius: 22px;
+    padding: 20px 26px;
     display: flex;
     flex-direction: column;
     gap: 12px;

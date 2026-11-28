@@ -125,18 +125,105 @@ function buildCoverSvg({ title, ageGroup, learningNeed, pageCount, style }) {
 </svg>`;
 }
 
+const PAGE_FRAME_THEMES = [
+  { outerBg: '#E0F2FE', border: '#0284C7', dash: '#38BDF8', pillBg: '#E0F2FE', accent: '#0284C7', dots: ['#38BDF8', '#FACC15', '#FB7185', '#34D399'] },
+  { outerBg: '#FCE7F3', border: '#DB2777', dash: '#F472B6', pillBg: '#FCE7F3', accent: '#DB2777', dots: ['#F472B6', '#A78BFA', '#FBBF24', '#38BDF8'] },
+  { outerBg: '#DCFCE7', border: '#059669', dash: '#34D399', pillBg: '#DCFCE7', accent: '#059669', dots: ['#34D399', '#38BDF8', '#FACC15', '#F472B6'] },
+  { outerBg: '#FEF3C7', border: '#EA580C', dash: '#FBBF24', pillBg: '#FEF3C7', accent: '#EA580C', dots: ['#FB923C', '#FACC15', '#38BDF8', '#EC4899'] },
+  { outerBg: '#EDE9FE', border: '#7C3AED', dash: '#A78BFA', pillBg: '#EDE9FE', accent: '#7C3AED', dots: ['#A78BFA', '#F472B6', '#34D399', '#FBBF24'] },
+  { outerBg: '#FFE4E6', border: '#E11D48', dash: '#FB7185', pillBg: '#FFE4E6', accent: '#E11D48', dots: ['#FB7185', '#38BDF8', '#A78BFA', '#34D399'] }
+];
+
+function buildCuteFrameOrnaments(theme) {
+  const [c1, c2, c3, c4] = theme.dots;
+  const sideSvg = (isRight) => `
+    <svg viewBox="0 0 26 980" width="22" height="100%" preserveAspectRatio="none"
+      style="position:absolute; top:56px; bottom:56px; height:calc(100% - 112px); ${isRight ? 'right:6px;' : 'left:6px;'} pointer-events:none; z-index:4;">
+      ${Array.from({ length: 14 }, (_, i) => {
+        const y = 32 + i * 68;
+        const fill = theme.dots[(i + (isRight ? 2 : 0)) % 4];
+        const kind = (i + (isRight ? 1 : 0)) % 3;
+        if (kind === 0) {
+          return `<circle cx="13" cy="${y}" r="6.5" fill="${fill}" opacity="0.88"/><circle cx="13" cy="${y}" r="2.2" fill="#FFFFFF"/>`;
+        }
+        if (kind === 1) {
+          return `<polygon points="13,${y - 8} 15.5,${y - 2} 21.5,${y - 1.5} 17,${y + 2.5} 18.2,${y + 8.5} 13,${y + 5.2} 7.8,${y + 8.5} 9,${y + 2.5} 4.5,${y - 1.5} 10.5,${y - 2}" fill="${fill}" opacity="0.9"/>`;
+        }
+        return `<rect x="7" y="${y - 6}" width="12" height="12" rx="4" transform="rotate(45 13 ${y})" fill="${fill}" opacity="0.82"/>`;
+      }).join('')}
+    </svg>
+  `;
+
+  // Top-Left: Cute Smiling Sunshine
+  const topLeftCorner = `
+    <svg viewBox="0 0 64 64" width="46" height="46" style="position:absolute; top:14px; left:14px; pointer-events:none; z-index:6;">
+      <circle cx="32" cy="32" r="26" fill="#FFFFFF" stroke="${theme.border}" stroke-width="2.5"/>
+      <g stroke="#F59E0B" stroke-width="3" stroke-linecap="round">
+        <line x1="32" y1="9" x2="32" y2="14"/><line x1="32" y1="50" x2="32" y2="55"/>
+        <line x1="9" y1="32" x2="14" y2="32"/><line x1="50" y1="32" x2="55" y2="32"/>
+        <line x1="16" y1="16" x2="20" y2="20"/><line x1="44" y1="44" x2="48" y2="48"/>
+        <line x1="48" y1="16" x2="44" y2="20"/><line x1="20" y1="44" x2="16" y2="48"/>
+      </g>
+      <circle cx="32" cy="32" r="14" fill="#FDE047" stroke="#D97706" stroke-width="2.2"/>
+      <circle cx="27" cy="30" r="2" fill="#1E293B"/><circle cx="37" cy="30" r="2" fill="#1E293B"/>
+      <path d="M27 35 Q32 40 37 35" fill="none" stroke="#1E293B" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  `;
+
+  // Top-Right: Cute Smiling Pastel Rainbow Cloud
+  const topRightCorner = `
+    <svg viewBox="0 0 64 64" width="46" height="46" style="position:absolute; top:14px; right:14px; pointer-events:none; z-index:6;">
+      <circle cx="32" cy="32" r="26" fill="#FFFFFF" stroke="${theme.border}" stroke-width="2.5"/>
+      <path d="M16 37 A16 16 0 0 1 48 37" fill="none" stroke="${c4}" stroke-width="4.5" stroke-linecap="round"/>
+      <path d="M20 37 A12 12 0 0 1 44 37" fill="none" stroke="${c2}" stroke-width="4.5" stroke-linecap="round"/>
+      <path d="M24 37 A8 8 0 0 1 40 37" fill="none" stroke="${c1}" stroke-width="4.5" stroke-linecap="round"/>
+      <circle cx="22" cy="40" r="6" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.8"/>
+      <circle cx="42" cy="40" r="6" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.8"/>
+      <rect x="21" y="38" width="22" height="8" rx="4" fill="#E0F2FE"/>
+    </svg>
+  `;
+
+  // Bottom-Left: Cute Pencil & Stars
+  const bottomLeftCorner = `
+    <svg viewBox="0 0 64 64" width="46" height="46" style="position:absolute; bottom:14px; left:14px; pointer-events:none; z-index:6;">
+      <circle cx="32" cy="32" r="26" fill="#FFFFFF" stroke="${theme.border}" stroke-width="2.5"/>
+      <polygon points="32,12 37,24 50,25 40,34 43,47 32,40 21,47 24,34 14,25 27,24" fill="#FACC15" stroke="#B45309" stroke-width="2.2" stroke-linejoin="round"/>
+      <circle cx="28" cy="29" r="1.8" fill="#1E293B"/><circle cx="36" cy="29" r="1.8" fill="#1E293B"/>
+      <path d="M29 34 Q32 37 35 34" fill="none" stroke="#1E293B" stroke-width="1.8" stroke-linecap="round"/>
+    </svg>
+  `;
+
+  // Bottom-Right: Cute Smiley Heart & Sparkles
+  const bottomRightCorner = `
+    <svg viewBox="0 0 64 64" width="46" height="46" style="position:absolute; bottom:14px; right:14px; pointer-events:none; z-index:6;">
+      <circle cx="32" cy="32" r="26" fill="#FFFFFF" stroke="${theme.border}" stroke-width="2.5"/>
+      <path d="M32 48 C32 48 15 37 15 26 C15 19.5 20.2 16 25.2 16 C28.4 16 30.8 18 32 20.5 C33.2 18 35.6 16 38.8 16 C43.8 16 49 19.5 49 26 C49 37 32 48 32 48 Z" fill="#FB7185" stroke="#BE123C" stroke-width="2.2"/>
+      <circle cx="27" cy="27" r="1.8" fill="#FFFFFF"/><circle cx="37" cy="27" r="1.8" fill="#FFFFFF"/>
+      <path d="M28 33 Q32 37 36 33" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  `;
+
+  return sideSvg(false) + sideSvg(true) + topLeftCorner + topRightCorner + bottomLeftCorner + bottomRightCorner;
+}
+
 function pageFrame(pageNum, totalPages, tag, instruction, accentColor, innerHtml) {
+  const theme = PAGE_FRAME_THEMES[(pageNum - 1) % PAGE_FRAME_THEMES.length];
+  const pillColor = accentColor || theme.accent;
+  const ornaments = buildCuteFrameOrnaments(theme);
+
   return `
-    <div class="ws-page" style="border-color: ${accentColor};">
-      <div class="ws-inner-border">
+    <div class="ws-page" style="background: linear-gradient(135deg, ${theme.outerBg} 0%, #FFFFFF 50%, ${theme.outerBg} 100%);">
+      <div style="position:absolute; inset:5mm; border:3px dashed ${theme.dash}; border-radius:26px; pointer-events:none; z-index:2;"></div>
+      ${ornaments}
+      <div class="ws-inner-border" style="border-color: ${theme.border}; box-shadow: 0 0 0 4px #FFFFFF;">
         <div class="ws-top-bar">
           <div class="ws-name-row">
             <span><strong>Name:</strong> ___________________________</span>
-            <span><strong>Date:</strong> _______________</span>
+            <span><strong>Date:</strong> _____________</span>
           </div>
-          <div class="ws-title-pill" style="background: ${accentColor}; color: #FFFFFF;">${escHtml(tag)}</div>
+          <div class="ws-title-pill" style="background: ${pillColor}; color: #FFFFFF; box-shadow: 0 2px 6px rgba(0,0,0,0.12);">${escHtml(tag)}</div>
         </div>
-        <div class="ws-instruction-box">
+        <div class="ws-instruction-box" style="background: ${theme.pillBg}; border: 1.5px solid ${theme.dash};">
           <span class="ws-star-badge">★</span>
           <span>${escHtml(instruction)}</span>
         </div>
@@ -144,8 +231,8 @@ function pageFrame(pageNum, totalPages, tag, instruction, accentColor, innerHtml
           ${innerHtml}
         </div>
         <div class="ws-footer-bar">
-          <span>Special Kids Worksheets • Printable A4 Learning Sheet</span>
-          <span class="ws-reward-stars">Rate Your Effort: ☆ ☆ ☆ &nbsp;|&nbsp; Page ${pageNum} of ${totalPages}</span>
+          <span>✨ Special Kids Worksheets • Printable A4 Fun Sheet</span>
+          <span class="ws-reward-stars">Great Job! ★ ★ ★ &nbsp;|&nbsp; Page ${pageNum} of ${totalPages}</span>
         </div>
       </div>
     </div>
@@ -542,7 +629,7 @@ async function generateWorksheetPack({
     let frame = '';
     if (activeKind === 'tracing_1_to_10') {
       const traceNum = (idx % 10) + 1;
-      frame = pageFrame(p, totalPages, `Number ${traceNum} Tracing`, `Trace number ${traceNum} carefully over the single dots along every line!`, '#2563EB', buildFullPage1to10TracingContent(idx));
+      frame = pageFrame(p, totalPages, `Number ${traceNum} Tracing`, `Trace number ${traceNum} carefully over the single dots along every line!`, '', buildFullPage1to10TracingContent(idx));
     } else if (activeKind === 'line_tracing') {
       frame = pageFrame(p, totalPages, 'Line Tracing', 'Follow the dotted paths slowly with your crayon or pencil!', '#397BB5', buildLineTracingContent(idx));
     } else if (activeKind === 'alphabet') {
@@ -571,9 +658,10 @@ async function generateWorksheetPack({
   * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   body { margin: 0; padding: 0; background: #FFFFFF; font-family: 'Nunito Sans', 'Segoe UI', system-ui, sans-serif; color: #1E293B; }
   .ws-page {
+    position: relative;
     width: 210mm;
     height: 296.5mm;
-    padding: 9mm;
+    padding: 11mm;
     background: #FFFFFF;
     overflow: hidden;
     page-break-after: always;
@@ -581,11 +669,14 @@ async function generateWorksheetPack({
   }
   .ws-page:last-child { page-break-after: auto; break-after: auto; }
   .ws-inner-border {
+    position: relative;
+    z-index: 3;
     width: 100%;
     height: 100%;
-    border: 3px solid #397BB5;
-    border-radius: 18px;
-    padding: 16px 20px;
+    background: #FFFFFF;
+    border: 3.5px solid #397BB5;
+    border-radius: 22px;
+    padding: 20px 26px;
     display: flex;
     flex-direction: column;
     gap: 12px;
