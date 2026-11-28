@@ -1,14 +1,15 @@
 import { copyToClipboard } from '../utils/clipboard.js?v=90.0';
 
 const PRESET_TOPICS = [
-  { label: '1️⃣ Number Tracing 1-10', topic: 'Number Tracing 1 to 10 & Ten Frames', type: 'numbers', age: '4-6', need: 'Early Learning' },
-  { label: '🔤 Alphabet Tracing A-Z', topic: 'Alphabet Tracing A to Z Phonics Pack', type: 'alphabet', age: '4-6', need: 'Early Learning' },
-  { label: '✏️ Pre-Writing Lines', topic: 'Pre-Writing Lines, Loops & Zigzag Tracing', type: 'line_tracing', age: '2-5', need: 'Fine Motor Skills' },
-  { label: '🔺 Shape Matching', topic: 'Visual Shape & Shadow Matching Game', type: 'shapes_matching', age: '2-5', need: 'Autism Support' },
-  { label: '➕ Picture Addition Math', topic: 'Visual Picture Addition & Counting Math', type: 'math_addition', age: '6-8', need: 'ADHD Activities' },
-  { label: '🦁 Animal Coloring Book', topic: 'Cute Animals Bold Outline Coloring Book', type: 'coloring', age: '2-5', need: 'Fine Motor Skills' },
-  { label: '😊 Emotions & Social Skills', topic: 'Emotions Recognition & Calm Feelings Pack', type: 'emotions', age: '4-6', need: 'Autism Support' },
-  { label: '🌟 All-in-One Special Kids Pack', topic: 'Complete Special Kids Learning Workbook', type: 'auto', age: '4-6', need: 'Autism Support' }
+  { label: '🔢 1 to 10 Full-Page Tracing Only', topic: 'Full Page Number Tracing 1 to 10 (Dotted Practice Only)', type: 'tracing_1_to_10', age: '4-6', need: 'Fine Motor Skills', pages: 1 },
+  { label: '1️⃣ Number 1-10 + Ten Frames', topic: 'Number Tracing 1 to 10 & Ten Frames Counting', type: 'numbers', age: '4-6', need: 'Early Learning', pages: 8 },
+  { label: '🔤 Alphabet Tracing A-Z', topic: 'Alphabet Tracing A to Z Phonics Pack', type: 'alphabet', age: '4-6', need: 'Early Learning', pages: 8 },
+  { label: '✏️ Pre-Writing Lines', topic: 'Pre-Writing Lines, Loops & Zigzag Tracing', type: 'line_tracing', age: '2-5', need: 'Fine Motor Skills', pages: 5 },
+  { label: '🔺 Shape Matching', topic: 'Visual Shape & Shadow Matching Game', type: 'shapes_matching', age: '2-5', need: 'Autism Support', pages: 5 },
+  { label: '➕ Picture Addition Math', topic: 'Visual Picture Addition & Counting Math', type: 'math_addition', age: '6-8', need: 'ADHD Activities', pages: 8 },
+  { label: '🦁 Animal Coloring Book', topic: 'Cute Animals Bold Outline Coloring Book', type: 'coloring', age: '2-5', need: 'Fine Motor Skills', pages: 8 },
+  { label: '😊 Emotions & Social Skills', topic: 'Emotions Recognition & Calm Feelings Pack', type: 'emotions', age: '4-6', need: 'Autism Support', pages: 5 },
+  { label: '🌟 All-in-One Special Kids Pack', topic: 'Complete Special Kids Learning Workbook', type: 'auto', age: '4-6', need: 'Autism Support', pages: 8 }
 ];
 
 function escapeHtml(str) {
@@ -142,6 +143,7 @@ export async function renderKidsWorksheet(container) {
             <label for="kw-type" style="display: block; font-size: 12px; font-weight: 700; color: #94a3b8; margin-bottom: 6px;">📚 Worksheet Style</label>
             <select id="kw-type" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 13.5px;">
               <option value="auto">🌟 Auto Best Mix (Balanced Pack)</option>
+              <option value="tracing_1_to_10">🔢 Full-Page 1 to 10 Tracing Only (No Blank)</option>
               <option value="numbers">1️⃣ Number Tracing & Ten-Frames</option>
               <option value="alphabet">🔤 Alphabet Tracing & Phonics</option>
               <option value="line_tracing">✏️ Pre-Writing Line Tracing</option>
@@ -165,6 +167,7 @@ export async function renderKidsWorksheet(container) {
           <div>
             <label for="kw-pages" style="display: block; font-size: 12px; font-weight: 700; color: #94a3b8; margin-bottom: 6px;">📄 Total Pages</label>
             <select id="kw-pages" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 13.5px;">
+              <option value="1">1 Page (Single Full Sheet)</option>
               <option value="5">5 Pages (Quick Starter)</option>
               <option value="8" selected>8 Pages (Best Standard Pack)</option>
               <option value="10">10 Pages (Full Workbook)</option>
@@ -419,6 +422,7 @@ export async function renderKidsWorksheet(container) {
       typeEl.value = preset.type;
       ageEl.value = preset.age;
       needEl.value = preset.need;
+      if (preset.pages) pagesEl.value = String(preset.pages);
       generatePack();
     });
   });

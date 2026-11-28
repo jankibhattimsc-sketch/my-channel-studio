@@ -59,6 +59,9 @@ function cuteSmallItemSvg(kind, fill = '#EF4444', stroke = '#991B1B') {
 function inferWorksheetStyle(topic = '', explicitType = 'auto') {
   if (explicitType && explicitType !== 'auto') return explicitType;
   const t = topic.toLowerCase();
+  if ((t.includes('1-10') || t.includes('1 to 10') || t.includes('1_10')) && !t.includes('ten frame') && !t.includes('ten-frame') && !t.includes('math')) {
+    return 'tracing_1_to_10';
+  }
   if (t.includes('alphabet') || t.includes('a-z') || t.includes('abc') || t.includes('letter')) return 'alphabet';
   if (t.includes('number') || t.includes('count') || t.includes('1-10') || t.includes('1 to 10')) return 'numbers';
   if (t.includes('add') || t.includes('math') || t.includes('sum')) return 'math_addition';
@@ -216,6 +219,78 @@ function buildAlphabetContent(idx = 0) {
         ${dottedRow(item.letter.toLowerCase())}
         ${dottedRow(pair)}
       </div>
+    </div>
+  `;
+}
+
+function buildFullPage1to10TracingContent(variant = 0) {
+  const mode = variant % 3;
+
+  // Mode 0: Full-page 8 rows of complete 1 2 3 4 5 6 7 8 9 10 dotted tracing (ZERO blank cells)
+  if (mode === 0) {
+    const xs = [36, 102, 168, 234, 300, 366, 432, 498, 564, 636];
+    const rowIndices = [0, 1, 2, 3, 4, 5, 6, 7];
+    return `
+      <div style="display:flex; flex-direction:column; justify-content:space-between; height:100%; gap:8px;">
+        ${rowIndices.map((r) => `
+          <div style="position:relative; flex:1; min-height:78px; border-top:2px solid #64748B; border-bottom:2px solid #64748B; background:#FFFFFF; display:flex; align-items:center;">
+            <div style="position:absolute; left:0; right:0; top:50%; border-top:1.8px dashed #CBD5E1;"></div>
+            <svg viewBox="0 0 680 76" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="position:relative; z-index:2;">
+              ${xs.map((x, idx) => {
+                const n = idx + 1;
+                const isFirstRow = r === 0;
+                return `
+                  <text x="${x}" y="58" font-family="Nunito Sans, Arial Rounded MT Bold, sans-serif" font-size="54" font-weight="900" text-anchor="middle"
+                    fill="${isFirstRow ? '#EFF6FF' : 'none'}" stroke="${isFirstRow ? '#2563EB' : '#64748B'}" stroke-width="2.1" stroke-dasharray="4 3.5">${n}</text>
+                `;
+              }).join('')}
+            </svg>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  // Mode 1: Row-by-row 1 through 10 matrix — every row has 8 dotted tracing copies of that number
+  if (mode === 1) {
+    const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    const rowColors = ['#EA580C', '#2563EB', '#16A34A', '#9333EA', '#E11D48', '#0284C7', '#D97706', '#059669', '#4F46E5', '#DC2626'];
+    const xs = [98, 174, 250, 326, 402, 478, 554, 634];
+    return `
+      <div style="display:flex; flex-direction:column; justify-content:space-between; height:100%; gap:5px;">
+        ${numbers.map((num, idx) => `
+          <div style="position:relative; flex:1; min-height:62px; border-top:1.8px solid #94A3B8; border-bottom:1.8px solid #94A3B8; background:#FFFFFF; display:flex; align-items:center;">
+            <div style="position:absolute; left:64px; right:0; top:50%; border-top:1.5px dashed #CBD5E1;"></div>
+            <svg viewBox="0 0 680 62" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="position:relative; z-index:2;">
+              <rect x="6" y="6" width="52" height="50" rx="10" fill="${rowColors[idx]}18" stroke="${rowColors[idx]}" stroke-width="2"/>
+              <text x="32" y="45" font-family="Nunito Sans, Arial Rounded MT Bold, sans-serif" font-size="38" font-weight="900" text-anchor="middle" fill="${rowColors[idx]}">${num}</text>
+              ${xs.map((x) => `
+                <text x="${x}" y="48" font-family="Nunito Sans, Arial Rounded MT Bold, sans-serif" font-size="45" font-weight="900" text-anchor="middle" fill="none" stroke="#64748B" stroke-width="2" stroke-dasharray="3.5 3.5">${num}</text>
+              `).join('')}
+            </svg>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  // Mode 2: Extra-large 1-5 & 6-10 full-sheet tracing (5 tall rows, 100% dotted)
+  const isSecondHalf = Math.floor(variant / 3) % 2 === 1;
+  const groupNums = isSecondHalf ? [6, 7, 8, 9, 10] : [1, 2, 3, 4, 5];
+  const bigXs = [100, 194, 288, 382, 476, 570, 650];
+  return `
+    <div style="display:flex; flex-direction:column; justify-content:space-between; height:100%; gap:12px;">
+      ${groupNums.map((num, idx) => `
+        <div style="position:relative; flex:1; min-height:120px; border-top:2.5px solid #64748B; border-bottom:2.5px solid #64748B; background:#FFFFFF; display:flex; align-items:center;">
+          <div style="position:absolute; left:0; right:0; top:50%; border-top:2px dashed #CBD5E1;"></div>
+          <svg viewBox="0 0 700 116" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="position:relative; z-index:2;">
+            <text x="38" y="88" font-family="Nunito Sans, Arial Rounded MT Bold, sans-serif" font-size="82" font-weight="900" text-anchor="middle" fill="#EFF6FF" stroke="#2563EB" stroke-width="2.6" stroke-dasharray="5 4">${num}</text>
+            ${bigXs.map((x) => `
+              <text x="${x}" y="88" font-family="Nunito Sans, Arial Rounded MT Bold, sans-serif" font-size="82" font-weight="900" text-anchor="middle" fill="none" stroke="#64748B" stroke-width="2.5" stroke-dasharray="4.5 4">${num}</text>
+            `).join('')}
+          </svg>
+        </div>
+      `).join('')}
     </div>
   `;
 }
@@ -434,15 +509,19 @@ async function generateWorksheetPack({
   worksheetType = 'auto',
   ageGroup = '4-6',
   pageCount = 10,
-  learningNeed = 'General Support'
+  learningNeed = 'General Support',
+  includeCoverInPdf
 } = {}) {
   const rawTopic = String(topic || 'Printable Kids Learning Workbook').trim();
   const isGenericShortcut = /^kids[-_\s]*work\s*sheet[s]?$/i.test(rawTopic);
   const cleanTopic = isGenericShortcut
     ? `Best Kids Learning & Tracing Activity Workbook (Ages ${ageGroup})`
     : rawTopic;
-  const totalPages = Math.max(4, Math.min(20, Number(pageCount) || 10));
+  const totalPages = Math.max(1, Math.min(20, Number(pageCount) || 10));
   const style = inferWorksheetStyle(cleanTopic, worksheetType);
+  const putCoverInPdf = typeof includeCoverInPdf === 'boolean'
+    ? includeCoverInPdf
+    : style !== 'tracing_1_to_10';
 
   let aiSeo = null;
   if (openaiService.isConfigured() || openaiService.getGeminiApiKey()) {
@@ -477,21 +556,26 @@ async function generateWorksheetPack({
   });
 
   const pagesHtml = [];
-  // Page 1: Illustrated Cover Sheet inside PDF
-  pagesHtml.push(`
-    <div class="ws-page" style="padding: 0; border: none; background: #FFFFFF;">
-      <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; padding:8mm; box-sizing:border-box;">
-        ${coverSvg.replace('width="600" height="780"', 'style="width:100%; height:100%; max-height:280mm; display:block;"')}
+  if (putCoverInPdf && totalPages > 1) {
+    // Page 1: Illustrated Cover Sheet inside PDF
+    pagesHtml.push(`
+      <div class="ws-page" style="padding: 0; border: none; background: #FFFFFF;">
+        <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; padding:8mm; box-sizing:border-box;">
+          ${coverSvg.replace('width="600" height="780"', 'style="width:100%; height:100%; max-height:280mm; display:block;"')}
+        </div>
       </div>
-    </div>
-  `);
+    `);
+  }
 
+  const startPage = pagesHtml.length ? 2 : 1;
   const mixSequence = ['line_tracing', 'alphabet', 'numbers', 'shapes_matching', 'math_addition', 'coloring', 'emotions'];
-  for (let p = 2; p <= totalPages; p++) {
-    const idx = p - 2;
+  for (let p = startPage; p <= totalPages; p++) {
+    const idx = p - startPage;
     const activeKind = style === 'auto' ? mixSequence[idx % mixSequence.length] : style;
     let frame = '';
-    if (activeKind === 'line_tracing') {
+    if (activeKind === 'tracing_1_to_10') {
+      frame = pageFrame(p, totalPages, '1 to 10 Tracing', 'Trace every dotted number from 1 to 10 slowly along the lines!', '#2563EB', buildFullPage1to10TracingContent(idx));
+    } else if (activeKind === 'line_tracing') {
       frame = pageFrame(p, totalPages, 'Line Tracing', 'Follow the dotted paths slowly with your crayon or pencil!', '#397BB5', buildLineTracingContent(idx));
     } else if (activeKind === 'alphabet') {
       frame = pageFrame(p, totalPages, 'Alphabet Tracing', 'Say the letter sound aloud, color the picture, and trace each line!', '#2563EB', buildAlphabetContent(idx));
@@ -559,6 +643,7 @@ ${pagesHtml.join('\n')}
 </html>`;
 
   const categoryMap = {
+    tracing_1_to_10: 'Numbers',
     line_tracing: 'Tracing',
     alphabet: 'Alphabets',
     numbers: 'Numbers',
