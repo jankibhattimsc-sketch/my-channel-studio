@@ -223,70 +223,37 @@ function buildAlphabetContent(idx = 0) {
   `;
 }
 
+const SINGLE_DOT_DIGIT_PATHS = {
+  1: 'M 22 15 L 32 8 L 32 54',
+  2: 'M 16 19 C 16 6, 46 6, 46 21 C 46 33, 22 43, 16 54 L 47 54',
+  3: 'M 17 14 C 23 6, 45 7, 45 20 C 45 28, 36 30, 27 30 C 37 30, 47 34, 47 44 C 47 56, 22 57, 16 48',
+  4: 'M 37 10 L 15 39 L 48 39 M 38 18 L 38 54',
+  5: 'M 44 9 L 20 9 L 18 28 C 28 22, 46 26, 46 41 C 46 55, 22 57, 17 48',
+  6: 'M 42 12 C 30 6, 16 18, 16 37 C 16 51, 25 55, 33 55 C 43 55, 48 47, 48 39 C 48 30, 39 26, 31 26 C 23 26, 18 31, 16 37',
+  7: 'M 15 9 L 47 9 L 25 54',
+  8: 'M 32 29 C 20 27, 18 9, 32 9 C 46 9, 44 27, 32 29 C 17 31, 15 54, 32 54 C 49 54, 47 31, 32 29',
+  9: 'M 45 23 C 45 13, 37 9, 29 9 C 20 9, 16 17, 16 24 C 16 33, 23 38, 31 38 C 39 38, 44 33, 45 24 M 45 16 L 45 54',
+  10: 'M 9 16 L 17 9 L 17 54 M 44 9 C 34 9, 29 19, 29 31.5 C 29 44, 34 54, 44 54 C 54 54, 58 44, 58 31.5 C 58 19, 54 9, 44 9'
+};
+
 function buildFullPage1to10TracingContent(variant = 0) {
-  const mode = variant % 3;
+  const num = (variant % 10) + 1;
+  const digitPath = SINGLE_DOT_DIGIT_PATHS[num] || SINGLE_DOT_DIGIT_PATHS[1];
+  const cols = num === 10
+    ? [12, 105, 198, 291, 384, 477, 570]
+    : [12, 95, 178, 261, 344, 427, 510, 593];
+  const rowIndices = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 
-  // Mode 0: Full-page 8 rows of complete 1 2 3 4 5 6 7 8 9 10 dotted tracing (ZERO blank cells)
-  if (mode === 0) {
-    const xs = [36, 102, 168, 234, 300, 366, 432, 498, 564, 636];
-    const rowIndices = [0, 1, 2, 3, 4, 5, 6, 7];
-    return `
-      <div style="display:flex; flex-direction:column; justify-content:space-between; height:100%; gap:8px;">
-        ${rowIndices.map((r) => `
-          <div style="position:relative; flex:1; min-height:78px; border-top:2px solid #64748B; border-bottom:2px solid #64748B; background:#FFFFFF; display:flex; align-items:center;">
-            <div style="position:absolute; left:0; right:0; top:50%; border-top:1.8px dashed #CBD5E1;"></div>
-            <svg viewBox="0 0 680 76" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="position:relative; z-index:2;">
-              ${xs.map((x, idx) => {
-                const n = idx + 1;
-                const isFirstRow = r === 0;
-                return `
-                  <text x="${x}" y="58" font-family="Nunito Sans, Arial Rounded MT Bold, sans-serif" font-size="54" font-weight="900" text-anchor="middle"
-                    fill="${isFirstRow ? '#EFF6FF' : 'none'}" stroke="${isFirstRow ? '#2563EB' : '#64748B'}" stroke-width="2.1" stroke-dasharray="4 3.5">${n}</text>
-                `;
-              }).join('')}
-            </svg>
-          </div>
-        `).join('')}
-      </div>
-    `;
-  }
-
-  // Mode 1: Row-by-row 1 through 10 matrix — every row has 8 dotted tracing copies of that number
-  if (mode === 1) {
-    const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    const rowColors = ['#EA580C', '#2563EB', '#16A34A', '#9333EA', '#E11D48', '#0284C7', '#D97706', '#059669', '#4F46E5', '#DC2626'];
-    const xs = [98, 174, 250, 326, 402, 478, 554, 634];
-    return `
-      <div style="display:flex; flex-direction:column; justify-content:space-between; height:100%; gap:5px;">
-        ${numbers.map((num, idx) => `
-          <div style="position:relative; flex:1; min-height:62px; border-top:1.8px solid #94A3B8; border-bottom:1.8px solid #94A3B8; background:#FFFFFF; display:flex; align-items:center;">
-            <div style="position:absolute; left:64px; right:0; top:50%; border-top:1.5px dashed #CBD5E1;"></div>
-            <svg viewBox="0 0 680 62" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="position:relative; z-index:2;">
-              <rect x="6" y="6" width="52" height="50" rx="10" fill="${rowColors[idx]}18" stroke="${rowColors[idx]}" stroke-width="2"/>
-              <text x="32" y="45" font-family="Nunito Sans, Arial Rounded MT Bold, sans-serif" font-size="38" font-weight="900" text-anchor="middle" fill="${rowColors[idx]}">${num}</text>
-              ${xs.map((x) => `
-                <text x="${x}" y="48" font-family="Nunito Sans, Arial Rounded MT Bold, sans-serif" font-size="45" font-weight="900" text-anchor="middle" fill="none" stroke="#64748B" stroke-width="2" stroke-dasharray="3.5 3.5">${num}</text>
-              `).join('')}
-            </svg>
-          </div>
-        `).join('')}
-      </div>
-    `;
-  }
-
-  // Mode 2: Extra-large 1-5 & 6-10 full-sheet tracing (5 tall rows, 100% dotted)
-  const isSecondHalf = Math.floor(variant / 3) % 2 === 1;
-  const groupNums = isSecondHalf ? [6, 7, 8, 9, 10] : [1, 2, 3, 4, 5];
-  const bigXs = [100, 194, 288, 382, 476, 570, 650];
   return `
-    <div style="display:flex; flex-direction:column; justify-content:space-between; height:100%; gap:12px;">
-      ${groupNums.map((num, idx) => `
-        <div style="position:relative; flex:1; min-height:120px; border-top:2.5px solid #64748B; border-bottom:2.5px solid #64748B; background:#FFFFFF; display:flex; align-items:center;">
-          <div style="position:absolute; left:0; right:0; top:50%; border-top:2px dashed #CBD5E1;"></div>
-          <svg viewBox="0 0 700 116" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="position:relative; z-index:2;">
-            <text x="38" y="88" font-family="Nunito Sans, Arial Rounded MT Bold, sans-serif" font-size="82" font-weight="900" text-anchor="middle" fill="#EFF6FF" stroke="#2563EB" stroke-width="2.6" stroke-dasharray="5 4">${num}</text>
-            ${bigXs.map((x) => `
-              <text x="${x}" y="88" font-family="Nunito Sans, Arial Rounded MT Bold, sans-serif" font-size="82" font-weight="900" text-anchor="middle" fill="none" stroke="#64748B" stroke-width="2.5" stroke-dasharray="4.5 4">${num}</text>
+    <div style="display:flex; flex-direction:column; justify-content:space-between; height:100%; gap:5px;">
+      ${rowIndices.map(() => `
+        <div style="flex:1; min-height:76px; display:flex; align-items:center; background:#FFFFFF;">
+          <svg viewBox="0 0 680 86" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="display:block;">
+            <line x1="8" y1="73" x2="672" y2="73" stroke="#94A3B8" stroke-width="2"/>
+            ${cols.map((cx) => `
+              <g transform="translate(${cx}, 8) scale(1.15)">
+                <path d="${digitPath}" fill="none" stroke="#475569" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="0.2 7.2"/>
+              </g>
             `).join('')}
           </svg>
         </div>
@@ -574,7 +541,8 @@ async function generateWorksheetPack({
     const activeKind = style === 'auto' ? mixSequence[idx % mixSequence.length] : style;
     let frame = '';
     if (activeKind === 'tracing_1_to_10') {
-      frame = pageFrame(p, totalPages, '1 to 10 Tracing', 'Trace every dotted number from 1 to 10 slowly along the lines!', '#2563EB', buildFullPage1to10TracingContent(idx));
+      const traceNum = (idx % 10) + 1;
+      frame = pageFrame(p, totalPages, `Number ${traceNum} Tracing`, `Trace number ${traceNum} carefully over the single dots along every line!`, '#2563EB', buildFullPage1to10TracingContent(idx));
     } else if (activeKind === 'line_tracing') {
       frame = pageFrame(p, totalPages, 'Line Tracing', 'Follow the dotted paths slowly with your crayon or pencil!', '#397BB5', buildLineTracingContent(idx));
     } else if (activeKind === 'alphabet') {

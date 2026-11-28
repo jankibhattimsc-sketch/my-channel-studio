@@ -1,7 +1,7 @@
 import { copyToClipboard } from '../utils/clipboard.js?v=90.0';
 
 const PRESET_TOPICS = [
-  { label: '🔢 1 to 10 Full-Page Tracing Only', topic: 'Full Page Number Tracing 1 to 10 (Dotted Practice Only)', type: 'tracing_1_to_10', age: '4-6', need: 'Fine Motor Skills', pages: 1 },
+  { label: '🔢 1 to 10 Single-Dots (1 Page Each)', topic: 'Single-Line Single-Dots Number Tracing 1 to 10 (One Number Per Page)', type: 'tracing_1_to_10', age: '4-6', need: 'Fine Motor Skills', pages: 10 },
   { label: '1️⃣ Number 1-10 + Ten Frames', topic: 'Number Tracing 1 to 10 & Ten Frames Counting', type: 'numbers', age: '4-6', need: 'Early Learning', pages: 8 },
   { label: '🔤 Alphabet Tracing A-Z', topic: 'Alphabet Tracing A to Z Phonics Pack', type: 'alphabet', age: '4-6', need: 'Early Learning', pages: 8 },
   { label: '✏️ Pre-Writing Lines', topic: 'Pre-Writing Lines, Loops & Zigzag Tracing', type: 'line_tracing', age: '2-5', need: 'Fine Motor Skills', pages: 5 },
@@ -143,7 +143,7 @@ export async function renderKidsWorksheet(container) {
             <label for="kw-type" style="display: block; font-size: 12px; font-weight: 700; color: #94a3b8; margin-bottom: 6px;">📚 Worksheet Style</label>
             <select id="kw-type" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 13.5px;">
               <option value="auto">🌟 Auto Best Mix (Balanced Pack)</option>
-              <option value="tracing_1_to_10">🔢 Full-Page 1 to 10 Tracing Only (No Blank)</option>
+              <option value="tracing_1_to_10">🔢 1 to 10 Single-Dots (1 Number Per Page)</option>
               <option value="numbers">1️⃣ Number Tracing & Ten-Frames</option>
               <option value="alphabet">🔤 Alphabet Tracing & Phonics</option>
               <option value="line_tracing">✏️ Pre-Writing Line Tracing</option>
