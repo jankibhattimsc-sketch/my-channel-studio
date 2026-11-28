@@ -28,6 +28,7 @@ app.use(express.urlencoded({ extended: true, limit: '150mb' }));
 
 app.use('/uploads/covers', express.static(COVERS_DIR));
 app.use(express.static(path.join(BASE_DIR, 'public'), {
+  index: false,
   etag: false,
   maxAge: 0,
   setHeaders: (res) => {
@@ -35,6 +36,7 @@ app.use(express.static(path.join(BASE_DIR, 'public'), {
   }
 }));
 app.use(express.static(path.join(BASE_DIR, 'admin-portal'), {
+  index: false,
   etag: false,
   maxAge: 0,
   setHeaders: (res) => {
@@ -534,12 +536,142 @@ app.get('/sitemap.xml', (req, res) => {
   res.send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`);
 });
 
+function escapeHtmlAttr(str) {
+  return String(str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function renderSeoHtml(req, routeKey, detailId = '') {
+  const host = `${req.headers['x-forwarded-proto'] || req.protocol || 'https'}://${req.get('host')}`;
+  const books = storeDb.getPublicBooks();
+  const routeMeta = {
+    home: {
+      title: 'Special Kids Worksheets — Free Printable Learning Worksheets PDF',
+      desc: 'Free printable PDF learning worksheets for children with Autism, ADHD, learning disabilities, fine motor skills, tracing, numbers and coloring.',
+      h1: 'Printable Learning Worksheets for Special Kids',
+      path: '/'
+    },
+    worksheets: {
+      title: 'Printable Worksheet Library — Tracing, Numbers & Phonics PDFs',
+      desc: 'Browse printable A4 PDF activity worksheets organized by age group and learning need for parents, teachers and caregivers.',
+      h1: 'Printable Worksheet Library',
+      path: '/worksheets'
+    },
+    categories: {
+      title: 'Worksheet Categories — Autism, ADHD, Fine Motor & Early Learning',
+      desc: 'Explore printable learning sheets for Autism Support, ADHD Activities, Fine Motor Skills, Communication & Early Learning.',
+      h1: 'Worksheet Categories',
+      path: '/categories'
+    },
+    free: {
+      title: 'Free Printable Kids Worksheets PDF Downloads',
+      desc: 'Download 100% free printable A4 PDF tracing, matching, counting and coloring worksheets for home learning.',
+      h1: 'Free Worksheets Download',
+      path: '/free'
+    },
+    resources: {
+      title: 'Parent Resources, Learning Guides & Kids Activity Tips',
+      desc: 'Practical parenting guides, calm home routine tips and wipe-clean worksheet activity ideas for parents and educators.',
+      h1: 'Parent Resources & Learning Guides',
+      path: '/resources'
+    },
+    about: {
+      title: 'About Special Kids Worksheets — Inclusive Learning Materials',
+      desc: 'Dedicated printable educational worksheet platform helping parents and caregivers support every child at their own pace.',
+      h1: 'About Special Kids Worksheets',
+      path: '/about'
+    },
+    contact: {
+      title: 'Contact & Parent Feedback — Special Kids Worksheets',
+      desc: 'Share feedback or request new printable worksheet topics for your child.',
+      h1: 'Contact & Share Feedback',
+      path: '/contact'
+    },
+    faq: {
+      title: 'FAQ, Privacy Policy & Terms — Special Kids Worksheets',
+      desc: 'Frequently asked questions about free printable PDF worksheets, printing, privacy policy and terms of use.',
+      h1: 'Frequently Asked Questions & Policies',
+      path: '/faq'
+    }
+  };
+
+  let meta = routeMeta[routeKey] || routeMeta.home;
+  let bookObj = null;
+  if (routeKey === 'detail') {
+    bookObj = books.find(b => b.id === detailId) || books[0];
+    if (bookObj) {
+      meta = {
+        title: `${bookObj.title} — Printable A4 PDF Worksheet | Special Kids Worksheets`,
+        desc: bookObj.description || bookObj.subtitle || routeMeta.worksheets.desc,
+        h1: bookObj.title,
+        path: `/worksheet/${encodeURIComponent(bookObj.id)}`,
+        image: bookObj.coverUrl ? (bookObj.coverUrl.startsWith('/') ? `${host}${bookObj.coverUrl}` : bookObj.coverUrl) : `${host}/assets/hero-banner-hd.png`
+      };
+    }
+  }
+
+  const canonical = `${host}${meta.path}`;
+  const ogImage = meta.image || `${host}/assets/hero-banner-hd.png`;
+  const bookLinksHtml = books.map(b =>
+    `<li><a href="/worksheet/${encodeURIComponent(b.id)}">${escapeHtmlAttr(b.title)}</a> — ${escapeHtmlAttr(b.ageGroup)} Years (${escapeHtmlAttr(b.category)}): ${escapeHtmlAttr(b.description || b.subtitle)}</li>`
+  ).join('');
+  const ssrMain = `<main id="main-content" class="container page-wrap"><section><h1>${escapeHtmlAttr(meta.h1)}</h1><p>${escapeHtmlAttr(meta.desc)}</p>${books.length ? `<h2>Printable Worksheets</h2><ul>${bookLinksHtml}</ul>` : ''}</section></main>`;
+
+  const schemaNodes = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: 'Special Kids Worksheets',
+      url: host,
+      description: routeMeta.home.desc
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'Special Kids Worksheets',
+      url: host,
+      logo: `${host}/assets/hero-banner-hd.png`
+    }
+  ];
+  if (bookObj) {
+    schemaNodes.push({
+      '@context': 'https://schema.org',
+      '@type': 'LearningResource',
+      name: bookObj.title,
+      description: bookObj.description || bookObj.subtitle,
+      learningResourceType: 'Worksheet',
+      isAccessibleForFree: Number(bookObj.price) === 0,
+      url: canonical,
+      image: ogImage
+    });
+  }
+  const schemaTag = `<script type="application/ld+json">${JSON.stringify(schemaNodes)}</script>`;
+
+  let html = fs.readFileSync(path.join(BASE_DIR, 'public', 'index.html'), 'utf8');
+  html = html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtmlAttr(meta.title)}</title>`);
+  html = html.replace(/<meta name="description" content="[^"]*"\s*\/?>/i, `<meta name="description" content="${escapeHtmlAttr(meta.desc)}" />`);
+  html = html.replace(/<link rel="canonical" href="[^"]*"\s*\/?>/i, `<link rel="canonical" href="${escapeHtmlAttr(canonical)}" />`);
+  html = html.replace(/<meta property="og:title" content="[^"]*"\s*\/?>/i, `<meta property="og:title" content="${escapeHtmlAttr(meta.title)}" />`);
+  html = html.replace(/<meta property="og:description" content="[^"]*"\s*\/?>/i, `<meta property="og:description" content="${escapeHtmlAttr(meta.desc)}" />`);
+  html = html.replace(/<meta property="og:image" content="[^"]*"\s*\/?>/i, `<meta property="og:image" content="${escapeHtmlAttr(ogImage)}" />`);
+  html = html.replace(/<meta property="og:url" content="[^"]*"\s*\/?>/i, `<meta property="og:url" content="${escapeHtmlAttr(canonical)}" />`);
+  html = html.replace('<!-- SEO_SCHEMA -->', schemaTag);
+  html = html.replace('<main id="main-content" class="container page-wrap"></main>', ssrMain);
+  return html;
+}
+
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(BASE_DIR, 'admin-portal', 'index.html'));
 });
 
-app.get(['/worksheets', '/categories', '/free', '/resources', '/about', '/contact', '/faq', '/worksheet/:id', '/book/:id'], (req, res) => {
-  res.sendFile(path.join(BASE_DIR, 'public', 'index.html'));
+app.get(['/', '/worksheets', '/categories', '/free', '/resources', '/about', '/contact', '/faq'], (req, res) => {
+  const key = req.path.replace(/^\/+|\/+$/g, '') || 'home';
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.send(renderSeoHtml(req, key));
+});
+
+app.get(['/worksheet/:id', '/book/:id'], (req, res) => {
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.send(renderSeoHtml(req, 'detail', req.params.id));
 });
 
 app.listen(PORT, '0.0.0.0', () => {

@@ -63,13 +63,32 @@
   function navigateTo(route, id = '') {
     currentRoute = route;
     detailId = id;
-    const hashTarget = route === 'detail' ? `worksheet/${id}` : route;
-    if (window.location.hash.replace(/^#/, '') !== hashTarget) {
-      window.location.hash = hashTarget;
+    const cleanPath = route === 'home' ? '/' : (route === 'detail' ? `/worksheet/${encodeURIComponent(id)}` : `/${route}`);
+    if (window.location.pathname !== cleanPath || window.location.hash) {
+      window.history.pushState(null, '', cleanPath);
     }
     updateActiveNav();
     renderCurrentPage();
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function updateSeoHeadForRoute() {
+    const titles = {
+      home: 'Special Kids Worksheets — Free Printable Learning Worksheets PDF',
+      worksheets: 'Printable Worksheet Library — Tracing, Numbers & Phonics PDFs',
+      categories: 'Worksheet Categories — Autism, ADHD, Fine Motor & Early Learning',
+      free: 'Free Printable Kids Worksheets PDF Downloads',
+      resources: 'Parent Resources, Learning Guides & Kids Activity Tips',
+      about: 'About Special Kids Worksheets — Inclusive Learning Materials',
+      contact: 'Contact & Parent Feedback — Special Kids Worksheets',
+      faq: 'FAQ, Privacy Policy & Terms — Special Kids Worksheets'
+    };
+    let title = titles[currentRoute] || titles.home;
+    if (currentRoute === 'detail') {
+      const ws = worksheets.find(x => x.id === detailId) || worksheets[0];
+      if (ws) title = `${ws.title} — Printable A4 PDF Worksheet | Special Kids Worksheets`;
+    }
+    document.title = title;
   }
 
   function updateActiveNav() {
@@ -100,6 +119,14 @@
   });
 
   window.addEventListener('hashchange', () => {
+    const parsed = parseRouteFromLocation();
+    currentRoute = parsed.route;
+    detailId = parsed.id;
+    updateActiveNav();
+    renderCurrentPage();
+  });
+
+  window.addEventListener('popstate', () => {
     const parsed = parseRouteFromLocation();
     currentRoute = parsed.route;
     detailId = parsed.id;
@@ -721,6 +748,7 @@
   }
 
   function renderCurrentPage() {
+    updateSeoHeadForRoute();
     switch (currentRoute) {
       case 'worksheets': return renderLibraryPage();
       case 'categories': return renderCategoriesPage();
