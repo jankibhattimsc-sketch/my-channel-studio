@@ -72,19 +72,6 @@ function inferWorksheetStyle(topic = '', explicitType = 'auto') {
   return 'auto';
 }
 
-let cachedNumberCoverArtUri = null;
-function getNumberCoverArtDataUri() {
-  if (cachedNumberCoverArtUri) return cachedNumberCoverArtUri;
-  try {
-    const imgPath = path.join(BASE_ROOT, 'public', 'images', 'kids_1to10_cover_art.jpg');
-    if (fs.existsSync(imgPath)) {
-      cachedNumberCoverArtUri = 'data:image/jpeg;base64,' + fs.readFileSync(imgPath).toString('base64');
-      return cachedNumberCoverArtUri;
-    }
-  } catch (_) {}
-  return '';
-}
-
 function wrapTitleLines(text, maxChars = 22) {
   const words = String(text || '').trim().split(/\s+/).filter(Boolean);
   if (!words.length) return ['Kids Tracing Workbook'];
@@ -107,181 +94,177 @@ function wrapTitleLines(text, maxChars = 22) {
 
 function buildCoverSvg({ title, ageGroup, learningNeed, pageCount, style }) {
   const palette = {
-    tracing_1_to_10: { bgTop: '#BAE6FD', bgMid: '#FEF9C3', bgBot: '#FCE7F3', accent: '#E11D48', border2: '#0284C7', badge: '#FDE047' },
-    alphabet: { bgTop: '#DBEAFE', bgMid: '#F0F9FF', bgBot: '#E0E7FF', accent: '#2563EB', border2: '#4F46E5', badge: '#FEF08A' },
-    numbers: { bgTop: '#FFEDD5', bgMid: '#FEF9C3', bgBot: '#FCE7F3', accent: '#EA580C', border2: '#DB2777', badge: '#BBF7D0' },
-    coloring: { bgTop: '#FCE7F3', bgMid: '#FFF1F2', bgBot: '#FEF3C7', accent: '#DB2777', border2: '#F59E0B', badge: '#FEF08A' },
-    math_addition: { bgTop: '#E0E7FF', bgMid: '#F5F3FF', bgBot: '#DBEAFE', accent: '#4F46E5', border2: '#0284C7', badge: '#FDE68A' },
-    shapes_matching: { bgTop: '#D1FAE5', bgMid: '#ECFDF5', bgBot: '#E0F2FE', accent: '#059669', border2: '#0284C7', badge: '#FDE68A' },
-    emotions: { bgTop: '#EDE9FE', bgMid: '#FDF4FF', bgBot: '#FFE4E6', accent: '#7C3AED', border2: '#EC4899', badge: '#FEF08A' },
-    line_tracing: { bgTop: '#E0F2FE', bgMid: '#ECFDF5', bgBot: '#FEF9C3', accent: '#0284C7', border2: '#10B981', badge: '#FED7AA' },
-    auto: { bgTop: '#BAE6FD', bgMid: '#FEF9C3', bgBot: '#FCE7F3', accent: '#E11D48', border2: '#0284C7', badge: '#FDE047' }
-  }[style] || { bgTop: '#BAE6FD', bgMid: '#FEF9C3', bgBot: '#FCE7F3', accent: '#2563EB', border2: '#059669', badge: '#FDE047' };
+    tracing_1_to_10: { bg: '#E0F2FE', border: '#0284C7', dash: '#38BDF8', accent: '#E11D48', subBg: '#DBEAFE', subStroke: '#60A5FA', subText: '#1E40AF' },
+    alphabet: { bg: '#EFF6FF', border: '#2563EB', dash: '#60A5FA', accent: '#4F46E5', subBg: '#E0E7FF', subStroke: '#818CF8', subText: '#3730A3' },
+    numbers: { bg: '#FFF7ED', border: '#EA580C', dash: '#FB923C', accent: '#DB2777', subBg: '#FFEDD5', subStroke: '#FDBA74', subText: '#9A3412' },
+    coloring: { bg: '#FDF2F8', border: '#DB2777', dash: '#F472B6', accent: '#EA580C', subBg: '#FCE7F3', subStroke: '#F9A8D4', subText: '#9D174D' },
+    math_addition: { bg: '#EEF2FF', border: '#4F46E5', dash: '#818CF8', accent: '#0284C7', subBg: '#E0E7FF', subStroke: '#A5B4FC', subText: '#3730A3' },
+    shapes_matching: { bg: '#ECFDF5', border: '#059669', dash: '#34D399', accent: '#0284C7', subBg: '#D1FAE5', subStroke: '#6EE7B7', subText: '#065F46' },
+    emotions: { bg: '#F5F3FF', border: '#7C3AED', dash: '#A78BFA', accent: '#DB2777', subBg: '#EDE9FE', subStroke: '#C4B5FD', subText: '#5B21B6' },
+    line_tracing: { bg: '#E0F2FE', border: '#0284C7', dash: '#38BDF8', accent: '#059669', subBg: '#DCFCE7', subStroke: '#6EE7B7', subText: '#065F46' },
+    auto: { bg: '#E0F2FE', border: '#0284C7', dash: '#38BDF8', accent: '#E11D48', subBg: '#FEF3C7', subStroke: '#FCD34D', subText: '#92400E' }
+  }[style] || { bg: '#E0F2FE', border: '#0284C7', dash: '#38BDF8', accent: '#E11D48', subBg: '#DBEAFE', subStroke: '#60A5FA', subText: '#1E40AF' };
 
   const isNumberTheme = style === 'tracing_1_to_10' || style === 'numbers';
-  const displayTitle = isNumberTheme && /single-line/i.test(String(title || ''))
-    ? 'My Fun 1 to 10 Tracing Book'
-    : (title || 'Special Kids Activity Workbook');
-  const titleLines = wrapTitleLines(displayTitle, 21);
-  const titleColors = ['#1D4ED8', '#DB2777'];
-  const numberArtUri = isNumberTheme ? getNumberCoverArtDataUri() : '';
+  const isDefaultNumTitle = isNumberTheme && /single-line|single-dots|number tracing|1 to 10|1-10|best kids/i.test(String(title || ''));
+  const line1Text = isDefaultNumTitle ? '1 TO 10 NUMBERS' : wrapTitleLines(title || 'Kids Activity', 18)[0];
+  const line2Text = isDefaultNumTitle
+    ? 'TRACING WORKBOOK'
+    : (wrapTitleLines(title || 'Workbook', 18)[1] || (isNumberTheme ? 'TRACING WORKBOOK' : 'ACTIVITY WORKBOOK'));
 
-  if (numberArtUri) {
-    const titleStartY = titleLines.length > 1 ? 102 : 122;
-    const subPillY = titleLines.length > 1 ? 166 : 146;
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="780" viewBox="0 0 600 780">
-  <defs>
-    <clipPath id="coverFrameClip">
-      <rect x="12" y="12" width="576" height="756" rx="30"/>
-    </clipPath>
-    <linearGradient id="ribbonGrad" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#F97316"/>
-      <stop offset="50%" stop-color="#EC4899"/>
-      <stop offset="100%" stop-color="#8B5CF6"/>
-    </linearGradient>
-  </defs>
+  const sheetCountLabel = style === 'tracing_1_to_10' ? `${pageCount} Full-Page Sheets` : `${pageCount} Printable Sheets`;
+  const subBannerText = style === 'tracing_1_to_10'
+    ? `Single-Dot Guided Tracing  •  ${sheetCountLabel}`
+    : `${learningNeed}  •  ${sheetCountLabel}`;
 
-  <rect width="600" height="780" fill="#FFFFFF"/>
-  <g clip-path="url(#coverFrameClip)">
-    <image href="${numberArtUri}" x="0" y="0" width="600" height="780" preserveAspectRatio="xMidYMid slice"/>
-  </g>
-  <rect x="12" y="12" width="576" height="756" rx="30" fill="none" stroke="#38BDF8" stroke-width="6"/>
-  <rect x="22" y="22" width="556" height="736" rx="24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-dasharray="10 7" opacity="0.85"/>
+  const wagonColors = ['#EF4444', '#F97316', '#EAB308', '#22C55E', '#0EA5E9', '#3B82F6', '#6366F1', '#A855F7', '#EC4899', '#F43F5E'];
 
-  <!-- Top Colorful Ribbon -->
-  <rect x="122" y="30" width="356" height="36" rx="18" fill="url(#ribbonGrad)" stroke="#FFFFFF" stroke-width="3"/>
-  <text x="300" y="53" font-family="Nunito Sans, Comic Sans MS, sans-serif" font-size="15.5" font-weight="900" fill="#FFFFFF" text-anchor="middle">⭐ KIDS FUN WORKBOOK • AGES ${escHtml(ageGroup)} ⭐</text>
+  const renderWagon = (num, x, y, color, hasLeftCoupler = true) => `
+    <g transform="translate(${x}, ${y})">
+      ${hasLeftCoupler ? '<line x1="-10" y1="36" x2="2" y2="36" stroke="#475569" stroke-width="4" stroke-linecap="round"/>' : ''}
+      <rect x="0" y="0" width="66" height="54" rx="11" fill="${color}" stroke="#1E293B" stroke-width="2.5"/>
+      <rect x="0" y="0" width="66" height="10" rx="5" fill="#FFFFFF" opacity="0.28"/>
+      <circle cx="17" cy="56" r="9" fill="#334155" stroke="#0F172A" stroke-width="2"/>
+      <circle cx="17" cy="56" r="3.5" fill="#E2E8F0"/>
+      <circle cx="49" cy="56" r="9" fill="#334155" stroke="#0F172A" stroke-width="2"/>
+      <circle cx="49" cy="56" r="3.5" fill="#E2E8F0"/>
+      <text x="33" y="40" font-family="Nunito Sans, Arial Rounded MT Bold, sans-serif" font-size="${num === 10 ? 30 : 34}" font-weight="900" fill="#FFFFFF" stroke="#1E293B" stroke-width="1.2" text-anchor="middle">${num}</text>
+    </g>
+  `;
 
-  <!-- Sticker-Outlined Playful Title Over Clean Sky -->
-  ${titleLines.map((line, i) => `
-    <text x="300" y="${titleStartY + i * 44}" font-family="Nunito Sans, Arial Rounded MT Bold, sans-serif" font-size="37" font-weight="900"
-      fill="${titleColors[i % 2]}" stroke="#FFFFFF" stroke-width="9" stroke-linejoin="round" style="paint-order: stroke;" text-anchor="middle">${escHtml(line)}</text>
-  `).join('')}
-
-  <!-- Subtitle Pill -->
-  <rect x="118" y="${subPillY}" width="364" height="30" rx="15" fill="#FFFFFF" fill-opacity="0.92" stroke="#38BDF8" stroke-width="2"/>
-  <text x="300" y="${subPillY + 20}" font-family="Nunito Sans, sans-serif" font-size="14" font-weight="900" fill="#0369A1" text-anchor="middle">✏️ ${escHtml(learningNeed)} • ${pageCount} Fun Sheets</text>
-
-  <!-- Clean Label Inside Illustrated Bottom Cream Plaque -->
-  <text x="300" y="715" font-family="Nunito Sans, Comic Sans MS, sans-serif" font-size="17" font-weight="900" fill="#78350F" text-anchor="middle">🎒 Name: __________________________</text>
-</svg>`;
-  }
-
-  const confettiColors = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#EC4899', '#8B5CF6'];
-  const confetti = Array.from({ length: 24 }, (_, i) => {
-    const angle = (i / 24) * Math.PI * 2;
-    const x = Math.round(300 + Math.cos(angle) * 268);
-    const y = Math.round(390 + Math.sin(angle) * 352);
-    const col = confettiColors[i % confettiColors.length];
-    return i % 2 === 0
-      ? `<circle cx="${x}" cy="${y}" r="6" fill="${col}" opacity="0.88"/>`
-      : `<rect x="${x - 5}" y="${y - 5}" width="10" height="10" rx="3" transform="rotate(${i * 25} ${x} ${y})" fill="${col}" opacity="0.82"/>`;
-  }).join('');
-
-  const blockColors = ['#EF4444', '#F97316', '#EAB308', '#22C55E', '#06B6D4', '#3B82F6', '#8B5CF6', '#EC4899', '#14B8A6', '#E11D48'];
   const centerArt = isNumberTheme
     ? `
-      <!-- Playful Sunny Hill & Rainbow Sky -->
-      <ellipse cx="300" cy="482" rx="205" ry="118" fill="#FFFBEB" stroke="#FDE68A" stroke-width="3"/>
-      <path d="M128 452 A172 145 0 0 1 472 452" fill="none" stroke="#FB7185" stroke-width="14" stroke-linecap="round"/>
-      <path d="M144 452 A156 130 0 0 1 456 452" fill="none" stroke="#FBBF24" stroke-width="14" stroke-linecap="round"/>
-      <path d="M160 452 A140 115 0 0 1 440 452" fill="none" stroke="#34D399" stroke-width="14" stroke-linecap="round"/>
-      <path d="M176 452 A124 100 0 0 1 424 452" fill="none" stroke="#38BDF8" stroke-width="14" stroke-linecap="round"/>
-      <path d="M192 452 A108 85 0 0 1 408 452" fill="none" stroke="#A78BFA" stroke-width="14" stroke-linecap="round"/>
+      <!-- Subtle Sky & Pastel Rainbow Behind Track -->
+      <path d="M135 375 A165 130 0 0 1 465 375" fill="none" stroke="#FCA5A5" stroke-width="11" stroke-linecap="round" opacity="0.7"/>
+      <path d="M148 375 A152 118 0 0 1 452 375" fill="none" stroke="#FDE047" stroke-width="11" stroke-linecap="round" opacity="0.75"/>
+      <path d="M161 375 A139 106 0 0 1 439 375" fill="none" stroke="#86EFAC" stroke-width="11" stroke-linecap="round" opacity="0.75"/>
+      <path d="M174 375 A126 94 0 0 1 426 375" fill="none" stroke="#93C5FD" stroke-width="11" stroke-linecap="round" opacity="0.75"/>
 
-      <!-- Cute Smiling Sunshine (Left) -->
-      <circle cx="116" cy="318" r="32" fill="#FDE047" stroke="#D97706" stroke-width="3"/>
-      <circle cx="107" cy="314" r="3" fill="#1E293B"/><circle cx="125" cy="314" r="3" fill="#1E293B"/>
-      <path d="M107 324 Q116 332 125 324" fill="none" stroke="#1E293B" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Cheerful 2D Sun & Clouds -->
+      <g transform="translate(68, 242)">
+        <g stroke="#F59E0B" stroke-width="3.5" stroke-linecap="round">
+          <line x1="28" y1="2" x2="28" y2="9"/><line x1="28" y1="47" x2="28" y2="54"/>
+          <line x1="2" y1="28" x2="9" y2="28"/><line x1="47" y1="28" x2="54" y2="28"/>
+          <line x1="10" y1="10" x2="15" y2="15"/><line x1="41" y1="41" x2="46" y2="46"/>
+          <line x1="46" y1="10" x2="41" y2="15"/><line x1="15" y1="41" x2="10" y2="46"/>
+        </g>
+        <circle cx="28" cy="28" r="17" fill="#FDE047" stroke="#D97706" stroke-width="2.5"/>
+        <circle cx="22" cy="26" r="2" fill="#1E293B"/><circle cx="34" cy="26" r="2" fill="#1E293B"/>
+        <path d="M22 32 Q28 37 34 32" fill="none" stroke="#1E293B" stroke-width="2" stroke-linecap="round"/>
+      </g>
+      <g transform="translate(454, 248)">
+        <circle cx="22" cy="26" r="16" fill="#FFFFFF" stroke="#BAE6FD" stroke-width="2.5"/>
+        <circle cx="42" cy="22" r="19" fill="#FFFFFF" stroke="#BAE6FD" stroke-width="2.5"/>
+        <circle cx="62" cy="27" r="15" fill="#FFFFFF" stroke="#BAE6FD" stroke-width="2.5"/>
+        <rect x="18" y="24" width="48" height="17" rx="8" fill="#FFFFFF"/>
+      </g>
 
-      <!-- Cute Smiling Cloud (Right) -->
-      <circle cx="468" cy="324" r="22" fill="#FFFFFF" stroke="#38BDF8" stroke-width="3"/>
-      <circle cx="492" cy="324" r="20" fill="#FFFFFF" stroke="#38BDF8" stroke-width="3"/>
-      <circle cx="480" cy="309" r="21" fill="#FFFFFF" stroke="#38BDF8" stroke-width="3"/>
-      <rect x="462" y="318" width="38" height="24" rx="10" fill="#FFFFFF"/>
-      <circle cx="474" cy="325" r="2.6" fill="#1E293B"/><circle cx="488" cy="325" r="2.6" fill="#1E293B"/>
-      <path d="M476 332 Q481 337 486 332" fill="none" stroke="#1E293B" stroke-width="2.2" stroke-linecap="round"/>
+      <!-- Mini Tracing Slate Sneak Peek Card (Exact Single-Dot Look!) -->
+      <g transform="translate(175, 248)">
+        <rect x="0" y="0" width="250" height="114" rx="16" fill="#FFFFFF" stroke="#0284C7" stroke-width="3"/>
+        <rect x="65" y="-11" width="120" height="22" rx="11" fill="#FEF08A" stroke="#D97706" stroke-width="2"/>
+        <text x="125" y="4" font-family="Nunito Sans, sans-serif" font-size="10.5" font-weight="900" fill="#92400E" text-anchor="middle">INSIDE PREVIEW</text>
+        <line x1="18" y1="88" x2="232" y2="88" stroke="#94A3B8" stroke-width="2"/>
+        <!-- Exact Single-Dot 1, 2, 3 paths matching real pages -->
+        <g transform="translate(16, 22) scale(1.05)">
+          <path d="M 22 15 L 32 8 L 32 54" fill="none" stroke="#334155" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="0.2 7.2"/>
+        </g>
+        <g transform="translate(74, 22) scale(1.05)">
+          <path d="M 16 19 C 16 6, 46 6, 46 21 C 46 33, 22 43, 16 54 L 47 54" fill="none" stroke="#334155" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="0.2 7.2"/>
+        </g>
+        <g transform="translate(132, 22) scale(1.05)">
+          <path d="M 17 14 C 23 6, 45 7, 45 20 C 45 28, 36 30, 27 30 C 37 30, 47 34, 47 44 C 47 56, 22 57, 16 48" fill="none" stroke="#2563EB" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="0.2 7.2"/>
+        </g>
+        <!-- Crisp 2D Pencil Illustration -->
+        <g transform="translate(216, 30) rotate(22)">
+          <rect x="0" y="0" width="14" height="38" rx="2" fill="#FACC15" stroke="#1E293B" stroke-width="2"/>
+          <rect x="0" y="-8" width="14" height="9" rx="2" fill="#FB7185" stroke="#1E293B" stroke-width="2"/>
+          <polygon points="0,38 14,38 7,52" fill="#FDE68A" stroke="#1E293B" stroke-width="2"/>
+          <polygon points="4,46 10,46 7,52" fill="#1E293B"/>
+        </g>
+      </g>
 
-      <!-- 1 to 10 Colorful Glossy Toy Blocks (Row 1: 1-5, Row 2: 6-10) -->
-      ${[1, 2, 3, 4, 5].map((n, i) => {
-        const bx = 94 + i * 86;
-        const by = 412;
-        const col = blockColors[i];
-        return `
-          <rect x="${bx}" y="${by}" width="72" height="72" rx="18" fill="${col}" stroke="#FFFFFF" stroke-width="4"/>
-          <rect x="${bx + 6}" y="${by + 6}" width="60" height="14" rx="7" fill="#FFFFFF" opacity="0.28"/>
-          <text x="${bx + 36}" y="${by + 51}" font-family="Nunito Sans, Arial Rounded MT Bold, sans-serif" font-size="40" font-weight="900" fill="#FFFFFF" text-anchor="middle">${n}</text>
-        `;
-      }).join('')}
-      ${[6, 7, 8, 9, 10].map((n, i) => {
-        const bx = 94 + i * 86;
-        const by = 496;
-        const col = blockColors[i + 5];
-        return `
-          <rect x="${bx}" y="${by}" width="72" height="72" rx="18" fill="${col}" stroke="#FFFFFF" stroke-width="4"/>
-          <rect x="${bx + 6}" y="${by + 6}" width="60" height="14" rx="7" fill="#FFFFFF" opacity="0.28"/>
-          <text x="${bx + 36}" y="${by + 51}" font-family="Nunito Sans, Arial Rounded MT Bold, sans-serif" font-size="${n === 10 ? 34 : 40}" font-weight="900" fill="#FFFFFF" text-anchor="middle">${n}</text>
-        `;
-      }).join('')}
+      <!-- Sunny Green Grass Hills (Contained cleanly inside inner frame) -->
+      <path d="M40 584 Q175 548 310 572 T560 568 L560 622 L40 622 Z" fill="#BBF7D0"/>
+      <path d="M40 596 Q210 570 400 594 T560 586 L560 622 L40 622 Z" fill="#86EFAC"/>
 
-      <!-- Cute Happy Pencil Helper Badge -->
-      <rect x="190" y="580" width="220" height="32" rx="16" fill="#DCFCE7" stroke="#16A34A" stroke-width="2.2"/>
-      <text x="300" y="601" font-family="Nunito Sans, sans-serif" font-size="14.5" font-weight="900" fill="#166534" text-anchor="middle">✏️ Easy Single-Dot Tracing!</text>
+      <!-- Row 1 Train Track: Cute Engine + Wagons 1 2 3 4 5 -->
+      <line x1="48" y1="468" x2="552" y2="468" stroke="#64748B" stroke-width="4" stroke-linecap="round"/>
+      <!-- Cute Choo-Choo Engine -->
+      <g transform="translate(54, 396)">
+        <circle cx="14" cy="-14" r="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2"/>
+        <circle cx="28" cy="-24" r="10" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2"/>
+        <rect x="10" y="2" width="14" height="16" rx="3" fill="#334155" stroke="#0F172A" stroke-width="2"/>
+        <rect x="34" y="6" width="32" height="24" rx="5" fill="#3B82F6" stroke="#1E293B" stroke-width="2.5"/>
+        <rect x="40" y="12" width="18" height="12" rx="3" fill="#E0F2FE" stroke="#1E293B" stroke-width="1.5"/>
+        <rect x="4" y="18" width="66" height="36" rx="9" fill="#EF4444" stroke="#1E293B" stroke-width="2.5"/>
+        <polygon points="4,38 -6,54 4,54" fill="#FACC15" stroke="#1E293B" stroke-width="2"/>
+        <circle cx="20" cy="56" r="9" fill="#334155" stroke="#0F172A" stroke-width="2"/><circle cx="20" cy="56" r="3.5" fill="#E2E8F0"/>
+        <circle cx="52" cy="56" r="10" fill="#334155" stroke="#0F172A" stroke-width="2"/><circle cx="52" cy="56" r="4" fill="#FACC15"/>
+      </g>
+      ${[1, 2, 3, 4, 5].map((n, idx) => renderWagon(n, 136 + idx * 78, 396, wagonColors[idx], true)).join('')}
+
+      <!-- Row 2 Train Track: Wagons 6 7 8 9 10 -->
+      <line x1="80" y1="564" x2="520" y2="564" stroke="#64748B" stroke-width="4" stroke-linecap="round"/>
+      ${[6, 7, 8, 9, 10].map((n, idx) => renderWagon(n, 104 + idx * 80, 492, wagonColors[idx + 5], idx > 0)).join('')}
+
+      <!-- Cute Meadow Flowers -->
+      ${[76, 150, 456, 524].map((fx, i) => `
+        <g transform="translate(${fx}, ${i % 2 === 0 ? 592 : 586})">
+          <circle cx="0" cy="-5" r="4" fill="#F472B6"/><circle cx="5" cy="0" r="4" fill="#F472B6"/>
+          <circle cx="0" cy="5" r="4" fill="#F472B6"/><circle cx="-5" cy="0" r="4" fill="#F472B6"/>
+          <circle cx="0" cy="0" r="3.5" fill="#FACC15"/>
+        </g>
+      `).join('')}
     `
     : `
-      <circle cx="300" cy="435" r="150" fill="#EFF6FF" stroke="${palette.accent}" stroke-width="3.5" stroke-dasharray="9 8"/>
-      <path d="M174 456 A126 126 0 0 1 426 456" fill="none" stroke="#FB7185" stroke-width="15" stroke-linecap="round"/>
-      <path d="M193 456 A107 107 0 0 1 407 456" fill="none" stroke="#FBBF24" stroke-width="15" stroke-linecap="round"/>
-      <path d="M212 456 A88 88 0 0 1 388 456" fill="none" stroke="#34D399" stroke-width="15" stroke-linecap="round"/>
-      <path d="M231 456 A69 69 0 0 1 369 456" fill="none" stroke="#60A5FA" stroke-width="15" stroke-linecap="round"/>
-
-      <rect x="174" y="458" width="72" height="72" rx="16" fill="#EF4444" stroke="#FFFFFF" stroke-width="4"/>
+      <circle cx="300" cy="435" r="145" fill="#FFFFFF" stroke="${palette.border}" stroke-width="3.5" stroke-dasharray="9 7"/>
+      <path d="M174 456 A126 126 0 0 1 426 456" fill="none" stroke="#FB7185" stroke-width="14" stroke-linecap="round"/>
+      <path d="M193 456 A107 107 0 0 1 407 456" fill="none" stroke="#FBBF24" stroke-width="14" stroke-linecap="round"/>
+      <path d="M212 456 A88 88 0 0 1 388 456" fill="none" stroke="#34D399" stroke-width="14" stroke-linecap="round"/>
+      <path d="M231 456 A69 69 0 0 1 369 456" fill="none" stroke="#60A5FA" stroke-width="14" stroke-linecap="round"/>
+      <rect x="174" y="458" width="72" height="72" rx="16" fill="#EF4444" stroke="#1E293B" stroke-width="3"/>
       <text x="210" y="508" font-family="Nunito Sans, sans-serif" font-size="40" font-weight="900" fill="#FFFFFF" text-anchor="middle">A</text>
-      <rect x="264" y="444" width="72" height="72" rx="16" fill="#FACC15" stroke="#FFFFFF" stroke-width="4"/>
+      <rect x="264" y="444" width="72" height="72" rx="16" fill="#FACC15" stroke="#1E293B" stroke-width="3"/>
       <text x="300" y="494" font-family="Nunito Sans, sans-serif" font-size="40" font-weight="900" fill="#1E293B" text-anchor="middle">1</text>
-      <rect x="354" y="458" width="72" height="72" rx="16" fill="#3B82F6" stroke="#FFFFFF" stroke-width="4"/>
+      <rect x="354" y="458" width="72" height="72" rx="16" fill="#3B82F6" stroke="#1E293B" stroke-width="3"/>
       <text x="390" y="508" font-family="Nunito Sans, sans-serif" font-size="40" font-weight="900" fill="#FFFFFF" text-anchor="middle">B</text>
-      <polygon points="145,326 153,344 173,346 158,359 162,378 145,368 128,378 132,359 117,346 137,344" fill="#FACC15" stroke="#CA8A04" stroke-width="2.5"/>
-      <polygon points="456,322 463,337 479,339 467,350 470,366 456,358 442,366 445,350 433,339 449,337" fill="#FACC15" stroke="#CA8A04" stroke-width="2.5"/>
     `;
 
+  const dotColors = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#EC4899', '#8B5CF6'];
+  const borderDots = Array.from({ length: 14 }, (_, i) => {
+    const y = 62 + i * 52;
+    const col1 = dotColors[i % dotColors.length];
+    const col2 = dotColors[(i + 3) % dotColors.length];
+    return `<circle cx="14" cy="${y}" r="5.5" fill="${col1}"/><circle cx="586" cy="${y}" r="5.5" fill="${col2}"/>`;
+  }).join('');
+
   return `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="780" viewBox="0 0 600 780">
-  <defs>
-    <linearGradient id="coverSkyGrad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="${palette.bgTop}"/>
-      <stop offset="52%" stop-color="${palette.bgMid}"/>
-      <stop offset="100%" stop-color="${palette.bgBot}"/>
-    </linearGradient>
-    <linearGradient id="ribbonGrad" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#F97316"/>
-      <stop offset="50%" stop-color="#EC4899"/>
-      <stop offset="100%" stop-color="#8B5CF6"/>
-    </linearGradient>
-  </defs>
+  <rect width="600" height="780" fill="${palette.bg}"/>
+  ${borderDots}
+  <rect x="24" y="20" width="552" height="740" rx="28" fill="#FFFFFF" stroke="${palette.border}" stroke-width="5"/>
+  <rect x="34" y="30" width="532" height="720" rx="22" fill="${palette.bg}" fill-opacity="0.35" stroke="${palette.dash}" stroke-width="2.5" stroke-dasharray="9 6"/>
 
-  <rect width="600" height="780" fill="url(#coverSkyGrad)"/>
-  ${confetti}
-  <rect x="26" y="26" width="548" height="728" rx="34" fill="#FFFFFF" stroke="${palette.border2}" stroke-width="7"/>
-  <rect x="42" y="42" width="516" height="696" rx="26" fill="none" stroke="${palette.accent}" stroke-width="3.5" stroke-dasharray="10 7"/>
+  <!-- Clean Publisher Top Header Zone -->
+  <rect x="95" y="44" width="410" height="34" rx="17" fill="#F59E0B" stroke="#B45309" stroke-width="2"/>
+  <text x="300" y="66" font-family="Nunito Sans, Arial Rounded MT Bold, sans-serif" font-size="14" font-weight="900" letter-spacing="0.8" fill="#FFFFFF" text-anchor="middle">AGES ${escHtml(ageGroup)} YEARS  •  PRESCHOOL EDITION</text>
 
-  <!-- Top Colorful Ribbon -->
-  <rect x="108" y="60" width="384" height="44" rx="22" fill="url(#ribbonGrad)" stroke="#FFFFFF" stroke-width="3"/>
-  <text x="300" y="88" font-family="Nunito Sans, Comic Sans MS, sans-serif" font-size="18" font-weight="900" fill="#FFFFFF" text-anchor="middle">⭐ KIDS FUN WORKBOOK • AGES ${escHtml(ageGroup)} ⭐</text>
+  <!-- Crisp High-Contrast 2-Line Book Banner -->
+  <text x="300" y="120" font-family="Nunito Sans, Arial Rounded MT Bold, sans-serif" font-size="40" font-weight="900" letter-spacing="0.5" fill="#1E3A8A" text-anchor="middle">${escHtml(line1Text)}</text>
+  <text x="300" y="164" font-family="Nunito Sans, Arial Rounded MT Bold, sans-serif" font-size="34" font-weight="900" letter-spacing="0.5" fill="${palette.accent}" text-anchor="middle">${escHtml(line2Text)}</text>
 
-  <!-- Bold Multi-Color Title -->
-  ${titleLines.map((line, i) => `
-    <text x="300" y="${158 + i * 48}" font-family="Nunito Sans, Arial Rounded MT Bold, sans-serif" font-size="38" font-weight="900" fill="${titleColors[i % 2]}" text-anchor="middle">${escHtml(line)}</text>
-  `).join('')}
-
-  <rect x="115" y="${titleLines.length > 1 ? 226 : 186}" width="370" height="36" rx="18" fill="#E0F2FE" stroke="#7DD3FC" stroke-width="2"/>
-  <text x="300" y="${titleLines.length > 1 ? 249 : 209}" font-family="Nunito Sans, sans-serif" font-size="15.5" font-weight="900" fill="#0369A1" text-anchor="middle">${escHtml(learningNeed)} • ${pageCount} Printable A4 Sheets</text>
+  <!-- Clear Subtitle Pill -->
+  <rect x="85" y="182" width="430" height="34" rx="17" fill="${palette.subBg}" stroke="${palette.subStroke}" stroke-width="2"/>
+  <text x="300" y="204" font-family="Nunito Sans, sans-serif" font-size="14.5" font-weight="900" fill="${palette.subText}" text-anchor="middle">${escHtml(subBannerText)}</text>
 
   ${centerArt}
 
-  <!-- Name Plaque -->
-  <rect x="82" y="628" width="436" height="82" rx="22" fill="#FFFBEB" stroke="#F59E0B" stroke-width="3"/>
-  <text x="114" y="662" font-family="Nunito Sans, sans-serif" font-size="18" font-weight="900" fill="#B45309">🎒 This Fun Book Belongs To:</text>
-  <line x1="114" y1="692" x2="486" y2="692" stroke="#D97706" stroke-width="2.5" stroke-dasharray="7 5"/>
+  <!-- Authentic Book Name Box -->
+  <rect x="74" y="636" width="452" height="82" rx="18" fill="#FFFBEB" stroke="#D97706" stroke-width="3"/>
+  <text x="104" y="668" font-family="Nunito Sans, sans-serif" font-size="17" font-weight="900" fill="#92400E">This Book Belongs To:</text>
+  <line x1="104" y1="698" x2="496" y2="698" stroke="#B45309" stroke-width="2" stroke-dasharray="6 4"/>
+
+  <text x="300" y="741" font-family="Nunito Sans, sans-serif" font-size="11" font-weight="800" letter-spacing="1.2" fill="#64748B" text-anchor="middle">PRINT-READY A4 WORKBOOK  •  CLEAR DOTTED GUIDES</text>
 </svg>`;
 }
 
