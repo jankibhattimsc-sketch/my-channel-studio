@@ -25,6 +25,7 @@ const voiceRoutes = require('./routes/voice');
 const plannerRoutes = require('./routes/planner');
 const previewRoutes = require('./routes/preview');
 const avatarRoutes = require('./routes/avatar');
+const worksheetsRoutes = require('./routes/worksheets');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -171,6 +172,7 @@ app.use('/voice', voiceRoutes);
 app.use('/api/planner', plannerRoutes);
 app.use('/api/preview', previewRoutes);
 app.use('/api/avatar', avatarRoutes);
+app.use('/api/worksheet-studio', worksheetsRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

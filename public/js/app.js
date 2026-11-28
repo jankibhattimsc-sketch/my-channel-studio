@@ -28,6 +28,7 @@ import { renderSavedAudios } from './views/savedaudios.js?v=101.4';
 import { renderSmartAsk } from './views/smartask.js?v=102.1';
 import { renderFacebookTool } from './views/facebook.js?v=101.5';
 import { renderTalkingAvatar } from './views/talkingavatar.js?v=103.2';
+import { renderKidsWorksheet } from './views/kidsworksheet.js?v=103.3';
 import { initMobileLinkAndOfflineSystem } from './utils/mobileLinkModal.js?v=99.0';
 
 class App {
@@ -329,6 +330,8 @@ class App {
       fb: '📘 ૧૩. Facebook Video & SEO Tool',
       talkingavatar: '🗣️ ૧૪. AI Talking Avatar (ફોટો + Speech → અસલી વિડિયો)',
       avatar: '🗣️ ૧૪. AI Talking Avatar (ફોટો + Speech → અસલી વિડિયો)',
+      kidsworksheet: '🧩 ૧૫. Kids Worksheet AI Studio (A4 PDF + Store Publish)',
+      worksheet: '🧩 ૧૫. Kids Worksheet AI Studio (A4 PDF + Store Publish)',
       home: '📊 ૧. 48h YouTube AI Studio',
       dashboard: '📊 ૧. 48h YouTube AI Studio',
       pastetopics: '📝 ૨. Paste Topics (મારા વિષયો પેસ્ટ કરો)',
@@ -446,6 +449,10 @@ class App {
         case 'talkingavatar':
         case 'avatar':
           await renderTalkingAvatar(this.container, navCallback);
+          break;
+        case 'kidsworksheet':
+        case 'worksheet':
+          await renderKidsWorksheet(this.container, navCallback);
           break;
         case 'analytics':
           await renderAnalytics(this.container, navCallback);
