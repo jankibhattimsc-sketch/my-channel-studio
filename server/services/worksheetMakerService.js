@@ -72,6 +72,20 @@ function inferWorksheetStyle(topic = '', explicitType = 'auto') {
   return 'auto';
 }
 
+let cachedFredokaFontUri = null;
+function getFredokaFontDataUri() {
+  if (cachedFredokaFontUri !== null) return cachedFredokaFontUri;
+  try {
+    const fontPath = path.join(BASE_ROOT, 'public', 'fonts', 'Fredoka-Bold.woff2');
+    if (fs.existsSync(fontPath)) {
+      cachedFredokaFontUri = 'data:font/woff2;base64,' + fs.readFileSync(fontPath).toString('base64');
+      return cachedFredokaFontUri;
+    }
+  } catch (_) {}
+  cachedFredokaFontUri = '';
+  return '';
+}
+
 let cachedWoodlandCoverUri = null;
 function getWoodlandCoverArtDataUri() {
   if (cachedWoodlandCoverUri) return cachedWoodlandCoverUri;
@@ -132,29 +146,91 @@ function buildCoverSvg({ title, ageGroup, learningNeed, pageCount, style }) {
 
   const woodlandArtUri = isNumberTheme ? getWoodlandCoverArtDataUri() : '';
   if (woodlandArtUri) {
-    const numColors = ['#E11D48', '#EA580C', '#D97706', '#16A34A', '#0284C7', '#2563EB', '#7C3AED', '#DB2777', '#0D9488', '#DC2626'];
-    const numTokens = Array.from({ length: 10 }, (_, idx) => {
-      const n = idx + 1;
-      const row = idx < 5 ? 0 : 1;
-      const col = idx % 5;
-      const cx = 164 + col * 68;
-      const cy = 304 + row * 68;
-      const colHex = numColors[idx];
-      return `
-        <g transform="translate(${cx}, ${cy})">
-          <circle cx="0" cy="2" r="25" fill="#1E293B" opacity="0.08"/>
-          <circle cx="0" cy="0" r="25" fill="#FFFFFF" stroke="${colHex}" stroke-width="3.2"/>
-          <circle cx="0" cy="0" r="20.5" fill="${colHex}" opacity="0.11"/>
-          <text x="0" y="9" font-family="Nunito Sans, Arial Rounded MT Bold, sans-serif" font-size="${n === 10 ? 23 : 26}" font-weight="900" fill="${colHex}" text-anchor="middle">${n}</text>
-        </g>
-      `;
-    }).join('');
+    const fredokaUri = getFredokaFontDataUri();
+    const fontFaceRule = fredokaUri
+      ? `<style>@font-face { font-family: 'FredokaBook'; src: url('${fredokaUri}') format('woff2'); font-weight: 600 700; }</style>`
+      : '';
+    const kidsFont = fredokaUri ? "'FredokaBook', 'Comic Sans MS', cursive, sans-serif" : "'Comic Sans MS', 'Trebuchet MS', sans-serif";
 
-    const mainHeadLine = isDefaultNumTitle ? '1 to 10' : line1Text;
-    const subHeadLine = isDefaultNumTitle ? 'NUMBER TRACING' : line2Text;
+    const pastelCards = [
+      { bg: '#FFE4E6', border: '#E11D48', ink: '#BE123C' },
+      { bg: '#FFEDD5', border: '#EA580C', ink: '#C2410C' },
+      { bg: '#FEF9C3', border: '#D97706', ink: '#B45309' },
+      { bg: '#DCFCE7', border: '#16A34A', ink: '#15803D' },
+      { bg: '#E0F2FE', border: '#0284C7', ink: '#0369A1' },
+      { bg: '#DBEAFE', border: '#2563EB', ink: '#1D4ED8' },
+      { bg: '#F3E8FF', border: '#7C3AED', ink: '#6D28D9' },
+      { bg: '#FCE7F3', border: '#DB2777', ink: '#BE185D' },
+      { bg: '#CCFBF1', border: '#0D9488', ink: '#0F766E' },
+      { bg: '#FEE2E2', border: '#DC2626', ink: '#B91C1C' }
+    ];
+
+    // Two gentle arched garden-twine bunting rows (1-5 and 6-10) tucked cleanly above the woodland animals
+    const renderBuntingRow = (nums, startNumIdx, baseY, arcDip) => {
+      const xs = [166, 233, 300, 367, 434];
+      const tilts = [-6, -3, 0, 3, 6];
+      const curvePath = `M 122 ${baseY - 6} Q 300 ${baseY + arcDip + 16} 478 ${baseY - 6}`;
+      const flags = nums.map((n, col) => {
+        const x = xs[col];
+        const t = (col - 2) / 2; // -1..+1
+        const sagY = baseY + (1 - t * t) * (arcDip * 0.72);
+        const pal = pastelCards[startNumIdx + col];
+        const rot = tilts[col];
+        return `
+          <g transform="translate(${x}, ${sagY}) rotate(${rot})">
+            <!-- Cute wooden pin clip -->
+            <rect x="-4" y="-8" width="8" height="12" rx="3" fill="#D97706" stroke="#5C3A21" stroke-width="1.6"/>
+            <!-- Soft scalloped pennant card -->
+            <path d="M -23 2 C -23 -2, 23 -2, 23 2 L 23 36 Q 23 44, 0 51 Q -23 44, -23 36 Z"
+              fill="${pal.bg}" stroke="#5C3A21" stroke-width="2.2" stroke-linejoin="round"/>
+            <path d="M -18 5 L 18 5 L 18 34 Q 18 40, 0 46 Q -18 40, -18 34 Z"
+              fill="none" stroke="${pal.border}" stroke-width="1.3" stroke-dasharray="3 2.5" opacity="0.65"/>
+            <text x="0" y="32" font-family="${kidsFont}" font-size="${n === 10 ? 23 : 26}" font-weight="700"
+              fill="${pal.ink}" stroke="#FFFFFF" stroke-width="2.5" stroke-linejoin="round" style="paint-order: stroke;" text-anchor="middle">${n}</text>
+          </g>
+        `;
+      }).join('');
+      return `
+        <path d="${curvePath}" fill="none" stroke="#78350F" stroke-width="2.2" stroke-linecap="round"/>
+        ${flags}
+      `;
+    };
+
+    const isDefaultCoverTitle = isDefaultNumTitle;
+    const titleBlock = isDefaultCoverTitle
+      ? `
+        <text x="300" y="102" font-family="${kidsFont}" font-size="25" font-weight="600" fill="#9A3412"
+          stroke="#FFFDF7" stroke-width="5" stroke-linejoin="round" style="paint-order: stroke;" text-anchor="middle">My First</text>
+
+        <!-- Chunky Bouncy Multi-Color 1 to 10 Hero Title -->
+        <g transform="translate(300, 158)">
+          <g transform="translate(-88, 0) rotate(-6)">
+            <text x="0" y="0" font-family="${kidsFont}" font-size="64" font-weight="700" fill="#EF4444"
+              stroke="#5C3A21" stroke-width="3.5" stroke-linejoin="round" style="paint-order: stroke;" text-anchor="middle">1</text>
+          </g>
+          <text x="-18" y="-4" font-family="${kidsFont}" font-size="40" font-weight="700" fill="#F59E0B"
+            stroke="#5C3A21" stroke-width="2.6" stroke-linejoin="round" style="paint-order: stroke;" text-anchor="middle">to</text>
+          <g transform="translate(68, 0) rotate(5)">
+            <text x="0" y="0" font-family="${kidsFont}" font-size="64" font-weight="700" fill="#0EA5E9"
+              stroke="#5C3A21" stroke-width="3.5" stroke-linejoin="round" style="paint-order: stroke;" text-anchor="middle">10</text>
+          </g>
+        </g>
+
+        <text x="300" y="205" font-family="${kidsFont}" font-size="33" font-weight="700" letter-spacing="0.6"
+          fill="#BE185D" stroke="#FFFDF7" stroke-width="7" stroke-linejoin="round" style="paint-order: stroke;" text-anchor="middle">Number Tracing</text>
+      `
+      : `
+        <text x="300" y="102" font-family="${kidsFont}" font-size="24" font-weight="600" fill="#9A3412"
+          stroke="#FFFDF7" stroke-width="5" stroke-linejoin="round" style="paint-order: stroke;" text-anchor="middle">My Fun Workbook</text>
+        <text x="300" y="156" font-family="${kidsFont}" font-size="42" font-weight="700" fill="#0EA5E9"
+          stroke="#5C3A21" stroke-width="3" stroke-linejoin="round" style="paint-order: stroke;" text-anchor="middle">${escHtml(line1Text)}</text>
+        <text x="300" y="204" font-family="${kidsFont}" font-size="30" font-weight="700" fill="#BE185D"
+          stroke="#FFFDF7" stroke-width="6" stroke-linejoin="round" style="paint-order: stroke;" text-anchor="middle">${escHtml(line2Text)}</text>
+      `;
 
     return `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="780" viewBox="0 0 600 780">
   <defs>
+    ${fontFaceRule}
     <clipPath id="woodlandClip">
       <rect x="0" y="0" width="600" height="780"/>
     </clipPath>
@@ -164,34 +240,36 @@ function buildCoverSvg({ title, ageGroup, learningNeed, pageCount, style }) {
     <image href="${woodlandArtUri}" x="0" y="0" width="600" height="780" preserveAspectRatio="xMidYMid slice"/>
   </g>
 
-  <!-- Subtle Classic Hardcover Pinstripe Inner Frame -->
-  <rect x="16" y="16" width="568" height="748" rx="18" fill="none" stroke="#FFFFFF" stroke-width="4" opacity="0.85"/>
-  <rect x="22" y="22" width="556" height="736" rx="14" fill="none" stroke="#D97706" stroke-width="1.6" stroke-dasharray="6 5" opacity="0.65"/>
+  <!-- Subtle Storybook Double Stitch Frame -->
+  <rect x="16" y="16" width="568" height="748" rx="22" fill="none" stroke="#FFFDF7" stroke-width="4.5" opacity="0.9"/>
+  <rect x="23" y="23" width="554" height="734" rx="17" fill="none" stroke="#854D0E" stroke-width="1.5" stroke-dasharray="6 5" opacity="0.45"/>
 
-  <!-- Editorial Top Seal -->
-  <rect x="105" y="38" width="390" height="30" rx="15" fill="#0F766E" stroke="#FFFFFF" stroke-width="2"/>
-  <text x="300" y="58" font-family="Nunito Sans, Arial Rounded MT Bold, sans-serif" font-size="12.5" font-weight="800" letter-spacing="1.1" fill="#FFFFFF" text-anchor="middle">AGES ${escHtml(ageGroup)} YEARS  •  PRESCHOOL SERIES</text>
+  <!-- Cute Folded Storybook Swallowtail Ribbon Banner -->
+  <g transform="translate(300, 48)">
+    <polygon points="-182,-10 -196,-10 -186,2 -196,14 -168,14 -168,-10" fill="#C2410C" stroke="#5C3A21" stroke-width="1.6"/>
+    <polygon points="182,-10 196,-10 186,2 196,14 168,14 168,-10" fill="#C2410C" stroke="#5C3A21" stroke-width="1.6"/>
+    <rect x="-176" y="-14" width="352" height="28" rx="14" fill="#F97316" stroke="#5C3A21" stroke-width="2"/>
+    <text x="0" y="5" font-family="${kidsFont}" font-size="13.5" font-weight="700" letter-spacing="0.8" fill="#FFFDF7" text-anchor="middle">AGES ${escHtml(ageGroup)}  •  FUN LEARNING BOOK</text>
+  </g>
 
-  <!-- Warm Storybook Title Lockup in Open Morning Sky -->
-  <text x="300" y="102" font-family="Georgia, 'Times New Roman', serif" font-size="26" font-weight="bold" font-style="italic" fill="#92400E" text-anchor="middle">My First</text>
+  ${titleBlock}
 
-  <text x="300" y="158" font-family="Nunito Sans, Arial Rounded MT Bold, sans-serif" font-size="${mainHeadLine.length > 12 ? 38 : 54}" font-weight="900"
-    fill="#1E3A8A" stroke="#FFFFFF" stroke-width="8" stroke-linejoin="round" style="paint-order: stroke;" text-anchor="middle">${escHtml(mainHeadLine)}</text>
+  <!-- Soft Scalloped Cream Subtitle Pill -->
+  <rect x="108" y="218" width="384" height="30" rx="15" fill="#FFFDF7" fill-opacity="0.93" stroke="#D97706" stroke-width="1.8" stroke-dasharray="4 3"/>
+  <text x="300" y="238" font-family="${kidsFont}" font-size="14" font-weight="600" fill="#78350F" text-anchor="middle">${escHtml(subBannerText)}</text>
 
-  <text x="300" y="198" font-family="Nunito Sans, Arial Rounded MT Bold, sans-serif" font-size="27" font-weight="900" letter-spacing="1"
-    fill="#BE123C" stroke="#FFFFFF" stroke-width="6" stroke-linejoin="round" style="paint-order: stroke;" text-anchor="middle">${escHtml(subHeadLine)}</text>
+  <!-- 1 to 10 Cute Scalloped Woodland Garden Bunting Flags -->
+  ${renderBuntingRow([1, 2, 3, 4, 5], 0, 278, 16)}
+  ${renderBuntingRow([6, 7, 8, 9, 10], 5, 356, 16)}
 
-  <!-- Clean Editorial Sub-Banner -->
-  <rect x="108" y="216" width="384" height="30" rx="15" fill="#FFFFFF" fill-opacity="0.9" stroke="#F59E0B" stroke-width="1.8"/>
-  <text x="300" y="236" font-family="Nunito Sans, sans-serif" font-size="13.5" font-weight="800" fill="#78350F" text-anchor="middle">${escHtml(subBannerText)}</text>
+  <!-- Tiny Playful Sparkle Stars beside Title -->
+  <polygon points="140,126 144,135 154,136 146,142 148,152 140,147 132,152 134,142 126,136 136,135" fill="#FACC15" stroke="#854D0E" stroke-width="1.5"/>
+  <polygon points="462,126 466,135 476,136 468,142 470,152 462,147 454,152 456,142 448,136 458,135" fill="#FACC15" stroke="#854D0E" stroke-width="1.5"/>
 
-  <!-- 1 to 10 Pastel Watercolor Number Medallions (Clean Exact Order 1..10) -->
-  ${numTokens}
-
-  <!-- Book Owner Patch Centered Cleanly on Cream Meadow Clearing -->
-  <rect x="148" y="688" width="304" height="50" rx="14" fill="#FFFDF7" fill-opacity="0.92" stroke="#D97706" stroke-width="1.8" stroke-dasharray="5 4"/>
-  <text x="168" y="718" font-family="Georgia, 'Times New Roman', serif" font-size="15.5" font-weight="bold" fill="#78350F">Name:</text>
-  <line x1="224" y1="721" x2="432" y2="721" stroke="#B45309" stroke-width="1.6" stroke-dasharray="4 3"/>
+  <!-- Cute Cream Owner Patch on Meadow Clearing -->
+  <rect x="148" y="688" width="304" height="50" rx="15" fill="#FFFDF7" fill-opacity="0.92" stroke="#854D0E" stroke-width="1.8" stroke-dasharray="5 4"/>
+  <text x="168" y="718" font-family="${kidsFont}" font-size="16" font-weight="700" fill="#78350F">Name:</text>
+  <line x1="224" y1="721" x2="432" y2="721" stroke="#92400E" stroke-width="1.8" stroke-dasharray="4 3"/>
 </svg>`;
   }
 
