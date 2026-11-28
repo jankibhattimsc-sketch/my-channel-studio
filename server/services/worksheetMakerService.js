@@ -72,6 +72,19 @@ function inferWorksheetStyle(topic = '', explicitType = 'auto') {
   return 'auto';
 }
 
+let cachedNumberCoverArtUri = null;
+function getNumberCoverArtDataUri() {
+  if (cachedNumberCoverArtUri) return cachedNumberCoverArtUri;
+  try {
+    const imgPath = path.join(BASE_ROOT, 'public', 'images', 'kids_1to10_cover_art.jpg');
+    if (fs.existsSync(imgPath)) {
+      cachedNumberCoverArtUri = 'data:image/jpeg;base64,' + fs.readFileSync(imgPath).toString('base64');
+      return cachedNumberCoverArtUri;
+    }
+  } catch (_) {}
+  return '';
+}
+
 function wrapTitleLines(text, maxChars = 22) {
   const words = String(text || '').trim().split(/\s+/).filter(Boolean);
   if (!words.length) return ['Kids Tracing Workbook'];
@@ -109,8 +122,50 @@ function buildCoverSvg({ title, ageGroup, learningNeed, pageCount, style }) {
   const displayTitle = isNumberTheme && /single-line/i.test(String(title || ''))
     ? 'My Fun 1 to 10 Tracing Book'
     : (title || 'Special Kids Activity Workbook');
-  const titleLines = wrapTitleLines(displayTitle, 20);
-  const titleColors = ['#1E3A8A', palette.accent];
+  const titleLines = wrapTitleLines(displayTitle, 21);
+  const titleColors = ['#1D4ED8', '#DB2777'];
+  const numberArtUri = isNumberTheme ? getNumberCoverArtDataUri() : '';
+
+  if (numberArtUri) {
+    const titleStartY = titleLines.length > 1 ? 102 : 122;
+    const subPillY = titleLines.length > 1 ? 166 : 146;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="780" viewBox="0 0 600 780">
+  <defs>
+    <clipPath id="coverFrameClip">
+      <rect x="12" y="12" width="576" height="756" rx="30"/>
+    </clipPath>
+    <linearGradient id="ribbonGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#F97316"/>
+      <stop offset="50%" stop-color="#EC4899"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="600" height="780" fill="#FFFFFF"/>
+  <g clip-path="url(#coverFrameClip)">
+    <image href="${numberArtUri}" x="0" y="0" width="600" height="780" preserveAspectRatio="xMidYMid slice"/>
+  </g>
+  <rect x="12" y="12" width="576" height="756" rx="30" fill="none" stroke="#38BDF8" stroke-width="6"/>
+  <rect x="22" y="22" width="556" height="736" rx="24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-dasharray="10 7" opacity="0.85"/>
+
+  <!-- Top Colorful Ribbon -->
+  <rect x="122" y="30" width="356" height="36" rx="18" fill="url(#ribbonGrad)" stroke="#FFFFFF" stroke-width="3"/>
+  <text x="300" y="53" font-family="Nunito Sans, Comic Sans MS, sans-serif" font-size="15.5" font-weight="900" fill="#FFFFFF" text-anchor="middle">⭐ KIDS FUN WORKBOOK • AGES ${escHtml(ageGroup)} ⭐</text>
+
+  <!-- Sticker-Outlined Playful Title Over Clean Sky -->
+  ${titleLines.map((line, i) => `
+    <text x="300" y="${titleStartY + i * 44}" font-family="Nunito Sans, Arial Rounded MT Bold, sans-serif" font-size="37" font-weight="900"
+      fill="${titleColors[i % 2]}" stroke="#FFFFFF" stroke-width="9" stroke-linejoin="round" style="paint-order: stroke;" text-anchor="middle">${escHtml(line)}</text>
+  `).join('')}
+
+  <!-- Subtitle Pill -->
+  <rect x="118" y="${subPillY}" width="364" height="30" rx="15" fill="#FFFFFF" fill-opacity="0.92" stroke="#38BDF8" stroke-width="2"/>
+  <text x="300" y="${subPillY + 20}" font-family="Nunito Sans, sans-serif" font-size="14" font-weight="900" fill="#0369A1" text-anchor="middle">✏️ ${escHtml(learningNeed)} • ${pageCount} Fun Sheets</text>
+
+  <!-- Clean Label Inside Illustrated Bottom Cream Plaque -->
+  <text x="300" y="715" font-family="Nunito Sans, Comic Sans MS, sans-serif" font-size="17" font-weight="900" fill="#78350F" text-anchor="middle">🎒 Name: __________________________</text>
+</svg>`;
+  }
 
   const confettiColors = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#EC4899', '#8B5CF6'];
   const confetti = Array.from({ length: 24 }, (_, i) => {
