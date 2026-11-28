@@ -21,6 +21,8 @@ const DEFAULT_STORE = {
     defaultPaymentLink: '',
     razorpayKeyId: '',
     razorpayKeySecret: '',
+    adsenseClientId: '',
+    adsenseSlotId: '',
     deliveryMode: 'auto_utr',
     adminPin: '1234',
     maxDownloadsPerOrder: 5
@@ -69,7 +71,7 @@ function updateSettings(updates = {}) {
   const allowed = [
     'storeName', 'tagline', 'currency', 'whatsappNumber', 'supportEmail',
     'upiId', 'upiName', 'defaultPaymentLink', 'razorpayKeyId', 'razorpayKeySecret',
-    'deliveryMode', 'adminPin', 'maxDownloadsPerOrder'
+    'adsenseClientId', 'adsenseSlotId', 'deliveryMode', 'adminPin', 'maxDownloadsPerOrder'
   ];
   for (const key of allowed) {
     if (updates[key] !== undefined) {
@@ -96,6 +98,8 @@ function getPublicSettings() {
     defaultPaymentLink: s.defaultPaymentLink,
     hasRazorpay: Boolean(s.razorpayKeyId && s.razorpayKeySecret),
     razorpayKeyId: s.razorpayKeyId || '',
+    adsenseClientId: s.adsenseClientId || '',
+    adsenseSlotId: s.adsenseSlotId || '',
     deliveryMode: s.deliveryMode || 'auto_utr'
   };
 }

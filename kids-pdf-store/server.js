@@ -525,6 +525,17 @@ app.post('/api/admin/orders/:id/reject', verifyAdmin, (req, res) => {
   res.json({ success: true, order: updated });
 });
 
+app.get('/ads.txt', (req, res) => {
+  const s = storeDb.getSettings();
+  const raw = String(s.adsenseClientId || '').trim();
+  const pub = raw.startsWith('ca-pub-') ? raw.slice(3) : (raw.startsWith('pub-') ? raw : '');
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  if (!pub) {
+    return res.send('# Google AdSense Publisher ID not configured yet in Admin Settings.\n');
+  }
+  res.send(`google.com, ${pub}, DIRECT, f08c47fec0942fa0\n`);
+});
+
 app.get('/sitemap.xml', (req, res) => {
   const host = `${req.headers['x-forwarded-proto'] || req.protocol || 'https'}://${req.get('host')}`;
   const staticPaths = ['', '/worksheets', '/categories', '/free', '/resources', '/about', '/contact', '/faq'];
@@ -644,7 +655,14 @@ function renderSeoHtml(req, routeKey, detailId = '') {
       image: ogImage
     });
   }
-  const schemaTag = `<script type="application/ld+json">${JSON.stringify(schemaNodes)}</script>`;
+  const settings = storeDb.getSettings();
+  const adsId = /^ca-pub-\d{8,}$/i.test(String(settings.adsenseClientId || '').trim())
+    ? String(settings.adsenseClientId).trim()
+    : '';
+  const adsenseHead = adsId
+    ? `\n  <meta name="google-adsense-account" content="${escapeHtmlAttr(adsId)}" />\n  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${escapeHtmlAttr(adsId)}" crossorigin="anonymous"></script>`
+    : '';
+  const schemaTag = `<script type="application/ld+json">${JSON.stringify(schemaNodes)}</script>${adsenseHead}`;
 
   let html = fs.readFileSync(path.join(BASE_DIR, 'public', 'index.html'), 'utf8');
   html = html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtmlAttr(meta.title)}</title>`);

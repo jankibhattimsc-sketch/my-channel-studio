@@ -327,6 +327,8 @@
     document.getElementById('set-default-link').value = s.defaultPaymentLink || '';
     document.getElementById('set-rzp-id').value = s.razorpayKeyId || '';
     document.getElementById('set-rzp-secret').value = s.razorpayKeySecret || '';
+    document.getElementById('set-adsense-id').value = s.adsenseClientId || '';
+    document.getElementById('set-adsense-slot').value = s.adsenseSlotId || '';
     document.getElementById('set-delivery-mode').value = s.deliveryMode || 'auto_utr';
     document.getElementById('set-pin').value = s.adminPin || '1234';
   }
@@ -346,6 +348,8 @@
         defaultPaymentLink: document.getElementById('set-default-link').value.trim(),
         razorpayKeyId: document.getElementById('set-rzp-id').value.trim(),
         razorpayKeySecret: document.getElementById('set-rzp-secret').value.trim(),
+        adsenseClientId: document.getElementById('set-adsense-id').value.trim(),
+        adsenseSlotId: document.getElementById('set-adsense-slot').value.trim(),
         deliveryMode: document.getElementById('set-delivery-mode').value,
         adminPin: newPin
       });

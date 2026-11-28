@@ -684,8 +684,8 @@
 
     const policies = [
       {
-        title: 'Privacy Policy', sub: '(How we protect your data)', badgeBg: '#E4F5EA', icon: '🛡️',
-        body: '<p>We respect family privacy. Free worksheet downloads require zero login or personal details. Feedback submissions only store the name and message you voluntarily share.</p>'
+        title: 'Privacy Policy', sub: '(Data, Cookies & COPPA Safety)', badgeBg: '#E4F5EA', icon: '🛡️',
+        body: '<p>We respect family privacy. Free worksheet downloads require zero login or personal details. Feedback submissions only store the name and message you voluntarily share.</p><p><strong>Parents &amp; Caregivers Notice (COPPA):</strong> This website is an educational resource designed for parents, caregivers, and teachers — we do not knowingly collect personal information from children under 13.</p><p><strong>Advertising &amp; Cookies (Google AdSense):</strong> When advertisements are enabled, third-party vendors including Google may use cookies to serve ads based on visits to this and other websites. Users can manage or opt out of personalized advertising at Google Ads Settings (adssettings.google.com).</p>'
       },
       {
         title: 'Terms & Conditions', sub: '(Website usage rules)', badgeBg: '#EAF4FF', icon: '📄',
@@ -747,19 +747,47 @@
     });
   }
 
+  function renderAdUnitHtml() {
+    const client = String(storeSettings.adsenseClientId || '').trim();
+    const slot = String(storeSettings.adsenseSlotId || '').trim();
+    if (!/^ca-pub-\d{8,}$/i.test(client) || !/^\d{5,}$/.test(slot)) return '';
+    return `
+      <aside style="margin-top:26px; text-align:center;" aria-label="Advertisement">
+        <ins class="adsbygoogle" style="display:block" data-ad-client="${esc(client)}" data-ad-slot="${esc(slot)}" data-ad-format="auto" data-full-width-responsive="true"></ins>
+      </aside>
+    `;
+  }
+
+  function pushAdSenseUnits() {
+    try {
+      if (window.adsbygoogle && document.querySelector('.adsbygoogle')) {
+        document.querySelectorAll('.adsbygoogle').forEach(el => {
+          if (!el.getAttribute('data-adsbygoogle-status')) {
+            (window.adsbygoogle = window.adsbygoogle || []).push({});
+          }
+        });
+      }
+    } catch (_) {}
+  }
+
   function renderCurrentPage() {
     updateSeoHeadForRoute();
     switch (currentRoute) {
-      case 'worksheets': return renderLibraryPage();
-      case 'categories': return renderCategoriesPage();
-      case 'detail': return renderDetailsPage();
-      case 'free': return renderFreePage();
-      case 'resources': return renderResourcesPage();
-      case 'about': return renderAboutPage();
-      case 'contact': return renderContactPage();
-      case 'faq': return renderFaqPage();
+      case 'worksheets': renderLibraryPage(); break;
+      case 'categories': renderCategoriesPage(); break;
+      case 'detail': renderDetailsPage(); break;
+      case 'free': renderFreePage(); break;
+      case 'resources': renderResourcesPage(); break;
+      case 'about': renderAboutPage(); break;
+      case 'contact': renderContactPage(); break;
+      case 'faq': renderFaqPage(); break;
       case 'home':
-      default: return renderHomePage();
+      default: renderHomePage(); break;
+    }
+    const adHtml = renderAdUnitHtml();
+    if (adHtml && !pageRoot.querySelector('.adsbygoogle')) {
+      pageRoot.insertAdjacentHTML('beforeend', adHtml);
+      pushAdSenseUnits();
     }
   }
 
