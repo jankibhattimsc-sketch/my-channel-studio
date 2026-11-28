@@ -171,7 +171,7 @@ class App {
         'script', 'scriptwriter', 'scripteditor', 'voice', 'myvoice', 'videoeditor', 'editing',
         'videoeditdemo', 'workspace', 'thumbnails', 'thumbnail', 'seodescription', 'seo',
         'savedhub', 'saved', 'savedaudios', 'audios', 'smartask', 'promptgpt', 'askgpt', 'facebook', 'fb',
-        'talkingavatar', 'avatar',
+        'talkingavatar', 'avatar', 'kidsworksheet', 'worksheet',
         'publish', 'publishing', 'chatgpt', 'analytics', 'research', 'settings'
       ];
       if (hash && validViews.includes(hash) && hash !== this.currentView) {
